@@ -1,23 +1,25 @@
-import time
-from device_indicator import pin, led_device_indicator
+import curio
+import seatalk
+#from device_indicator import pin, led_device_indicator
+import serial
 
 TCP_PIN_R = 14
 TCP_PIN_G = 7
 TCP_PIN_B = 6
 
+# USB0 Radio
+# USB 1
+# USB2 Wind
+# USB3 Seatalk
 
-def main():
-    pin.I2CPin.write_mask_to_bus()
-    tcp = led_device_indicator.ThreePinLEDIndicator(led_red=led_device_indicator.LEDDeviceIndicator(pin.I2CPin(0x20, TCP_PIN_R, True)),
-                                                    led_blue=led_device_indicator.LEDDeviceIndicator(pin.I2CPin(0x20, TCP_PIN_G, True)),
-                                                    led_green=led_device_indicator.LEDDeviceIndicator(pin.I2CPin(0x20, TCP_PIN_B, True)))
 
+async def main():
+    st = seatalk.SeatalkDevice("Seatalk", port="COM10")
+    await st.initialize()
     while 1:
-        for state in led_device_indicator.DeviceState:
-            tcp.show_state(state)
-            time.sleep(0.5)
+        nmea_sentence = await st.get_nmea_sentence()
+        if nmea_sentence:
+            print(nmea_sentence)
 
 
-
-if __name__ == "__main__":
-    main()
+curio.run(main)
