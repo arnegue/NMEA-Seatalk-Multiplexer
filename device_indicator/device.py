@@ -1,6 +1,7 @@
 import curio
 from abc import abstractmethod
 import threading
+import pathlib
 import serial
 import logger
 from device_indicator.nmea_datagram import NMEADatagram
@@ -73,6 +74,30 @@ class TCPDevice(Device):
 
     async def write_to_device(self, sentence: NMEADatagram):
         await self._write_queue.put(sentence.get_nmea_sentence())
+
+
+class FileDevice(Device):
+    def __init__(self, path_to_file, name="FileDevice"):
+        super().__init__(name=name)
+        self._path_to_file = pathlib.Path(path_to_file)
+        self._last_line = 0
+
+    async def get_nmea_sentence(self):
+        async with curio.aopen(self._path_to_file, "r") as file:
+            lines = await file.readlines()
+        if len(lines) <= self._last_line:
+            self._last_line = 0
+        ret_line = lines[self._last_line]
+        self._last_line = self._last_line + 1 % len(lines)
+        return ret_line
+
+    async def write_to_device(self, sentence: NMEADatagram):
+        async with curio.aopen(self._path_to_file, "a") as file:
+            await file.write(sentence.get_nmea_sentence())
+
+    async def initialize(self):
+        if not self._path_to_file.exists():
+            raise FileNotFoundError(f"File at path \"{str(self._path_to_file)}\" does not exist")
 
 
 class SerialDevice(Device):
