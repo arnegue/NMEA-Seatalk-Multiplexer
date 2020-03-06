@@ -4,7 +4,7 @@ import threading
 import pathlib
 import serial
 import logger
-from device_indicator.nmea_datagram import NMEADatagram
+from nmea_datagram import NMEADatagram
 from device_indicator.led_device_indicator import DeviceIndicator
 
 

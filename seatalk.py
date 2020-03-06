@@ -1,8 +1,8 @@
 from abc import abstractmethod
 import serial
 import logger
-from device_indicator.device import SerialDevice
-from device_indicator import nmea_datagram
+from device import SerialDevice
+import nmea_datagram
 
 
 class SeatalkException(Exception):

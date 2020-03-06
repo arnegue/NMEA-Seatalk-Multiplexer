@@ -1,8 +1,6 @@
 import curio
-import seatalk
 import logger
-from device_indicator import device
-import serial
+import device
 
 TCP_PIN_R = 14
 TCP_PIN_G = 7
