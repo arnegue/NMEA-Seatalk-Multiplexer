@@ -21,7 +21,6 @@ class Device(object):
         self._device_indicator = None
         self._io_device = io_device
         self._observers = []
-        self._queue_size = 10
         self._logger = self.RawDataLogger(self._name)
 
     async def initialize(self):
@@ -57,10 +56,8 @@ class ThreadedDevice(Device):
 
     def __init__(self, name, io_device, max_queue_size=10):
         super().__init__(name, io_device)
-        self._write_queue = curio.UniversalQueue(maxsize=self._queue_size)  # TODO what happens if queue is full? block-waiting, skipping, exception?
-        self._read_queue = curio.UniversalQueue(maxsize=self._queue_size)
+        self._write_queue = curio.UniversalQueue(maxsize=max_queue_size)  # TODO what happens if queue is full? block-waiting, skipping, exception?
         self._read_queue = curio.UniversalQueue(maxsize=max_queue_size)
-        self._write_queue = curio.UniversalQueue(maxsize=max_queue_size)
         self._continue = True
         self._write_thread_handle = None
         self._read_thread_handle = None
@@ -81,7 +78,7 @@ class ThreadedDevice(Device):
             data = self._write_queue.get()
             if not isinstance(data, self.Stop):
                 raw_data = data.encode(encoding='UTF-8')
-                self._serial.write(raw_data)
+                self._io_device.write(raw_data)
 
     async def write_to_device(self, sentence: NMEADatagram):
         await self._write_queue.put(sentence.get_nmea_sentence())
