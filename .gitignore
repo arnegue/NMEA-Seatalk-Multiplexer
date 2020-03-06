@@ -1,4 +1,5 @@
 .idea/
 venv/
+*.log
 __pycache__/
 sandbox.py

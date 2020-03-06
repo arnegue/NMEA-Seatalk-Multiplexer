@@ -15,8 +15,8 @@ class Singleton(type):
 
 
 class Logger(object, metaclass=Singleton):
-    def __init__(self, log_file_path="test_file.log"):
-        log_formatter = logging.Formatter('%(asctime)s %(levelname)s %(funcName)s(%(lineno)d) %(message)s')
+    def __init__(self, log_file_path="test_file.log", log_format="('%(asctime)s %(levelname)s %(message)s"):
+        log_formatter = logging.Formatter(log_format)
 
         my_handler = RotatingFileHandler(log_file_path, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
         my_handler.setFormatter(log_formatter)
@@ -27,14 +27,22 @@ class Logger(object, metaclass=Singleton):
 
         self.app_log.addHandler(my_handler)
 
+        self._log_map = {20: "Info",
+                         30: "Warn",
+                         40: "Error"}
+
+    def _log(self, level, msg):
+        print(self._log_map[level] + ": " + msg)
+        self.app_log.log(level=level, msg=msg)
+
     def warn(self, log_string):
-        self.app_log.log(level=logging.WARN, msg=log_string)
+        self._log(level=logging.WARN, msg=log_string)
 
     def info(self, log_string):
-        self.app_log.log(level=logging.INFO, msg=log_string)
+        self._log(level=logging.INFO, msg=log_string)
 
     def error(self, log_string):
-        self.app_log.log(level=logging.ERROR, msg=log_string)
+        self._log(level=logging.ERROR, msg=log_string)
 
 
 warn = Logger().warn
