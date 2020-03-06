@@ -81,6 +81,13 @@ class TCPDevice(Device):
         self.client = None
         self.__class__.amount_clients -= 1
 
+    async def _write_client(self, client):
+        while self.client:
+            data = self._write_queue.get()
+            if not data:
+                break
+            await client.sendall(data)
+
     async def get_nmea_sentence(self):
         return self._read_queue.get()
 
