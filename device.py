@@ -1,9 +1,8 @@
 import curio
 from abc import abstractmethod
 import threading
-import pathlib
-import serial
 import logger
+import device_io
 from nmea_datagram import NMEADatagram
 from device_indicator.led_device_indicator import DeviceIndicator
 
@@ -17,20 +16,19 @@ class Device(object):
             # TODO encoded data?
             self.info(data)
 
-    def __init__(self, name):
+    def __init__(self, name, io_device: device_io.IO):
         self._name = name
         self._device_indicator = None
+        self._io_device = io_device
         self._observers = []
         self._queue_size = 10
-        self._write_queue = curio.UniversalQueue(maxsize=self._queue_size) # TODO what happens if queue is full? block-waiting, skipping, exception?
-        self._read_queue = curio.UniversalQueue(maxsize=self._queue_size)
         self._logger = self.RawDataLogger(self._name)
 
     async def initialize(self):
         """
         Optional, if needed
         """
-        pass
+        await self._io_device.initialize()
 
     @abstractmethod
     async def get_nmea_sentence(self):
@@ -49,84 +47,18 @@ class Device(object):
     def set_device_indicator(self, indicator: DeviceIndicator):
         self._device_indicator = indicator
 
-
-class TCPDevice(Device):
-    amount_clients = 0
-
-    def __init__(self, port=40000):
-        super().__init__(name=f"TCP-Server")
-
-        self.client = None
-        self._port = port
-
-    async def initialize(self):
-        await curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client)
-
-    # TODO this could get weird with multiple connections
-
-    async def _serve_client(self, client, address):
-        logger.info(f"Incoming connection: {address} | Client {self.__class__.amount_clients}")
-        self.__class__.amount_clients += 1
-        self.client = client
-        while True:
-            data = await client.recv(100000)
-            if not data:
-                break
-            self._logger.write_raw(data)
-            await self._read_queue.put(data)
-            # TODO write-queue
-
-        logger.warn(f"Client {address} closed connection")
-        self.client = None
-        self.__class__.amount_clients -= 1
-
-    async def _write_client(self, client):
-        while self.client:
-            data = self._write_queue.get()
-            if not data:
-                break
-            await client.sendall(data)
-
-    async def get_nmea_sentence(self):
-        return self._read_queue.get()
-
-    async def write_to_device(self, sentence: NMEADatagram):
-        await self._write_queue.put(sentence.get_nmea_sentence())
+    async def shutdown(self):
+        await self._io_device.cancel()
 
 
-class FileDevice(Device):
-    def __init__(self, path_to_file, name="FileDevice"):
-        super().__init__(name=name)
-        self._path_to_file = pathlib.Path(path_to_file)
-        self._last_line = 0
-
-    async def get_nmea_sentence(self):
-        async with curio.aopen(self._path_to_file, "r") as file:
-            lines = await file.readlines()
-        if len(lines) <= self._last_line:
-            self._last_line = 0
-        ret_line = lines[self._last_line]
-        self._last_line = self._last_line + 1 % len(lines)
-        return ret_line
-
-    async def write_to_device(self, sentence: NMEADatagram):
-        async with curio.aopen(self._path_to_file, "a") as file:
-            await file.write(sentence.get_nmea_sentence())
-
-    async def initialize(self):
-        if not self._path_to_file.exists():
-            raise FileNotFoundError(f"File at path \"{str(self._path_to_file)}\" does not exist")
-
-
-class SerialDevice(Device):
+class ThreadedDevice(Device):
     class Stop(object):
         pass
 
-    def __init__(self, name, port, max_queue_size=10, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE):
-        super().__init__(name)
-        self.port = port
-        self._serial = serial.Serial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
-
+    def __init__(self, name, io_device, max_queue_size=10):
+        super().__init__(name, io_device)
+        self._write_queue = curio.UniversalQueue(maxsize=self._queue_size)  # TODO what happens if queue is full? block-waiting, skipping, exception?
+        self._read_queue = curio.UniversalQueue(maxsize=self._queue_size)
         self._read_queue = curio.UniversalQueue(maxsize=max_queue_size)
         self._write_queue = curio.UniversalQueue(maxsize=max_queue_size)
         self._continue = True
@@ -134,11 +66,10 @@ class SerialDevice(Device):
         self._read_thread_handle = None
 
     async def initialize(self):
-        # TODO maybe a mutex is needed for read/write-thread when accessing serial?
         self._write_thread_handle = threading.Thread(target=self._write_thread)
         self._read_thread_handle = threading.Thread(target=self._read_thread)
 
-        #self._write_thread_handle.start()
+        self._write_thread_handle.start()
         self._read_thread_handle.start()
 
     @abstractmethod
@@ -160,27 +91,12 @@ class SerialDevice(Device):
 
     async def shutdown(self):
         self._continue = False
-        self._serial.cancel_read()
-        self._serial.cancel_write()
         await self._write_queue.put(self.Stop())
 
         for thread in self._write_thread_handle, self._read_thread_handle:
             thread.join()
 
 
-class NMEADevice(SerialDevice):
-    def __init__(self, name, port, baudrate=4800):
-        super().__init__(name, port, baudrate)
-
-    def _read_thread(self):
-        finished = False
-        received = []
-        while not finished: # TODO maybe a timeout if that never happens?
-            data = self._serial.read()
-            received.append(data)
-            if data == "\n":
-                self._logger.write_raw(data)
-                return received
 
 
 

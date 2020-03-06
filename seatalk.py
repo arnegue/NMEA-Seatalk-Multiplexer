@@ -1,7 +1,6 @@
 from abc import abstractmethod
-import serial
 import logger
-from device import SerialDevice
+from device import ThreadedDevice
 import nmea_datagram
 
 
@@ -23,16 +22,13 @@ class DataLengthException(DataValidationException):
     """
 
 
-class SeatalkDevice(SerialDevice):
-    class RawSeatalkLogger(SerialDevice.RawDataLogger):
+class SeatalkDevice(ThreadedDevice):
+    class RawSeatalkLogger(ThreadedDevice.RawDataLogger):
         def write_raw_seatalk(self, rec, attribute, data):
             self.write_raw([hex(val) for val in [rec, attribute] + data])
 
-    async def write_to_device(self, sentence: nmea_datagram.NMEADatagram):
-        pass  # Not supported yet, i think
-
-    def __init__(self, name, port):
-        super().__init__(name=name, port=port, parity=serial.PARITY_MARK)
+    def __init__(self, name, io_device):
+        super().__init__(name=name, io_device=io_device)
         self._seatalk_datagram_map = dict()
         for datagram in DepthDatagram, SpeedDatagram, WaterTemperatureDatagram:
             instantiated_datagram = datagram()
@@ -43,14 +39,15 @@ class SeatalkDevice(SerialDevice):
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
         while self._continue:
-            rec = attribute = 0; data = []
+            rec = attribute = 0
+            data = []
             try:
-                rec = list(self._serial.read(1))[0]
+                rec = list(self._io_device.read(1))[0]
                 if rec in self._seatalk_datagram_map:
-                    attribute = list(self._serial.read(1))[0]
+                    attribute = list(self._io_device.read(1))[0]
                     data_length = (attribute & 0b00001111) + 1
                     attr_data = (attribute & 0b11110000) >> 4
-                    data = list(self._serial.read(data_length))
+                    data = list(self._io_device.read(data_length))
 
                     data_gram = self._seatalk_datagram_map[rec]
                     try:
@@ -64,6 +61,11 @@ class SeatalkDevice(SerialDevice):
                     self._logger.write_raw(hex(rec))
             finally:
                 self._logger.write_raw_seatalk(rec, attribute, data)
+
+    def _write_thread(self):
+        while self._continue:
+            logger.warn("Writing to seatalk currently not supported") # TODO
+            return
 
 
 class NotEnoughData(DataLengthException):
