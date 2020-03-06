@@ -1,4 +1,5 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 
@@ -15,10 +16,13 @@ class Singleton(type):
 
 
 class Logger(object, metaclass=Singleton):
-    def __init__(self, log_file_path="test_file.log", log_format="('%(asctime)s %(levelname)s %(message)s"):
+    def __init__(self, log_file_dir="./logs", log_file_name="test_file.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None):
         log_formatter = logging.Formatter(log_format)
-
-        my_handler = RotatingFileHandler(log_file_path, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
+        if not os.path.exists(log_file_dir):
+            os.makedirs(log_file_dir)
+        my_handler = RotatingFileHandler(log_file_dir + "/" + log_file_name, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=0)
+        if terminator is not None:
+            my_handler.terminator = terminator
         my_handler.setFormatter(log_formatter)
         my_handler.setLevel(logging.INFO)
 

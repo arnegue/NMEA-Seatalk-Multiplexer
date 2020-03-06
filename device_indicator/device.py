@@ -8,6 +8,15 @@ from device_indicator.nmea_datagram import NMEADatagram
 from device_indicator.led_device_indicator import DeviceIndicator
 
 
+class RawDataLogger(logger.Logger):
+    def __init__(self, device_name):
+        super().__init__(log_file_name=device_name + "_raw.log", log_format="%(asctime)s %(message)s", terminator="")
+
+    def write_raw(self, data):
+        # TODO encoded data?
+        self.info(data)
+
+
 class Device(object):
     def __init__(self, name):
         self._name = name
@@ -16,6 +25,7 @@ class Device(object):
         self._queue_size = 10
         self._write_queue = curio.UniversalQueue(maxsize=self._queue_size) # TODO what happens if queue is full? block-waiting, skipping, exception?
         self._read_queue = curio.UniversalQueue(maxsize=self._queue_size)
+        self._logger = RawDataLogger(self._name)
 
     async def initialize(self):
         """
@@ -53,21 +63,23 @@ class TCPDevice(Device):
     async def initialize(self):
         await curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client)
 
+    # TODO this could get weird with multiple connections
+
     async def _serve_client(self, client, address):
         logger.info(f"Incoming connection: {address} | Client {self.__class__.amount_clients}")
         self.__class__.amount_clients += 1
         self.client = client
-
         while True:
             data = await client.recv(100000)
             if not data:
                 break
+            self._logger.write_raw(data)
             await self._read_queue.put(data)
+            # TODO write-queue
 
         logger.warn(f"Client {address} closed connection")
         self.client = None
         self.__class__.amount_clients -= 1
-        await self.initialize()  # Reopen connection
 
     async def get_nmea_sentence(self):
         return self._read_queue.get()
