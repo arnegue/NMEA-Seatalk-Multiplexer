@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import serial
+import logger
 from device_indicator.device import SerialDevice
 from device_indicator import nmea_datagram
 
@@ -52,9 +53,9 @@ class SeatalkDevice(SerialDevice):
                     val = data_gram.get_nmea_sentence()
                     self._read_queue.put(val)
                 except SeatalkException as e:
-                    print(repr(e))
+                    logger.error(repr(e))
             else:
-                print(f"Unknown data-byte: {hex(rec)}")
+                logger.error(f"Unknown data-byte: {hex(rec)}")
 
     def _doesnt_work(self):
         while self._continue:
@@ -71,9 +72,9 @@ class SeatalkDevice(SerialDevice):
                     val = data_gram.process_datagram(first_half_byte=attr_data, data=data)
                     self._read_queue.put(val)
                 except SeatalkException as e:
-                    print(repr(e))
+                    logger.error(repr(e))
             else:
-                print(f"Unknown data-byte: {hex(rec)}")
+                logger.error(f"Unknown data-byte: {hex(rec)}")
 
 
 class NotEnoughData(DataLengthException):
