@@ -24,6 +24,9 @@ class DataLengthException(DataValidationException):
 
 
 class SeatalkDevice(SerialDevice):
+    class RawSeatalkLogger(SerialDevice.RawDataLogger):
+        def write_raw_seatalk(self, rec, attribute, data):
+            self.write_raw([hex(val) for val in [rec, attribute] + data])
 
     async def write_to_device(self, sentence: nmea_datagram.NMEADatagram):
         pass  # Not supported yet, i think
@@ -40,41 +43,27 @@ class SeatalkDevice(SerialDevice):
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
         while self._continue:
-            rec = list(self._serial.read(1))[0]
-            if rec in self._seatalk_datagram_map:
-                attribute = list(self._serial.read(1))[0]
-                data_length = (attribute & 0b00001111) + 1
-                attr_data = (attribute & 0b11110000) >> 4
-                data = list(self._serial.read(data_length))
+            rec = attribute = 0; data = []
+            try:
+                rec = list(self._serial.read(1))[0]
+                if rec in self._seatalk_datagram_map:
+                    attribute = list(self._serial.read(1))[0]
+                    data_length = (attribute & 0b00001111) + 1
+                    attr_data = (attribute & 0b11110000) >> 4
+                    data = list(self._serial.read(data_length))
 
-                data_gram = self._seatalk_datagram_map[rec]
-                try:
-                    data_gram.process_datagram(first_half_byte=attr_data, data=data)
-                    val = data_gram.get_nmea_sentence()
-                    self._read_queue.put(val)
-                except SeatalkException as e:
-                    logger.error(repr(e))
-            else:
-                logger.error(f"Unknown data-byte: {hex(rec)}")
-
-    def _doesnt_work(self):
-        while self._continue:
-            rec = list(self._serial.read(1))[0]  # ODO 0?
-            if rec in self._seatalk_datagram_map:
-                data_gram = self._seatalk_datagram_map[rec]
-
-                attribute = list(self._serial.read(1))[0]
-                data_length = (attribute & 0b00001111) + 1
-                attr_data = (attribute & 0b11110000) >> 4
-                data = list(self._serial.read(data_length))
-
-                try:
-                    val = data_gram.process_datagram(first_half_byte=attr_data, data=data)
-                    self._read_queue.put(val)
-                except SeatalkException as e:
-                    logger.error(repr(e))
-            else:
-                logger.error(f"Unknown data-byte: {hex(rec)}")
+                    data_gram = self._seatalk_datagram_map[rec]
+                    try:
+                        data_gram.process_datagram(first_half_byte=attr_data, data=data)
+                        val = data_gram.get_nmea_sentence()
+                        self._read_queue.put(val)
+                    except SeatalkException as e:
+                        logger.error(repr(e))
+                else:
+                    logger.error(f"Unknown data-byte: {hex(rec)}")
+                    self._logger.write_raw(hex(rec))
+            finally:
+                self._logger.write_raw_seatalk(rec, attribute, data)
 
 
 class NotEnoughData(DataLengthException):
