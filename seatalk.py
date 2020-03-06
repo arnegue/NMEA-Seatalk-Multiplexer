@@ -145,3 +145,24 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
         # value = data[0]  # Celsius
         # value = data[1]  # Fahrenheit
         self.speed_knots = self.twos_complement(data[0], 1)
+
+
+class SetLampIntensityDatagram(SeatalkDatagram, None):
+    def __init__(self):
+        SeatalkDatagram.__init__(self, id=0x30, data_length=1)
+        self._intensity = 0
+
+    async def get_set_intensity(self, intensity):
+        if intensity == 0:
+            self._intensity = 0
+        elif intensity == 1:
+            self._intensity = 4
+        elif intensity == 2:
+            self._intensity = 8
+        elif intensity == 3:
+            self._intensity = 12  # That's weird. All the time it's a shifted bit but this is 0x1100
+        return [self.id, 0x00, self._intensity]
+
+    def _process_datagram(self, first_half_byte, data):
+        self._intensity = data[0]  # Should be one byte anyway
+
