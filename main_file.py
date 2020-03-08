@@ -1,7 +1,10 @@
 import curio
 import logger
+
+import serial
 import device
 import device_io
+import seatalk
 
 TCP_PIN_R = 14
 TCP_PIN_G = 7
@@ -28,11 +31,10 @@ async def test_serial():
 
 
 async def main():
-    await test_serial()
-    return
     logger.info("Starting...")
+    st = seatalk.SeatalkDevice("Seatalk", io_device=device_io.Serial(port="COM10", parity=serial.PARITY_MARK))
     #st = seatalk.SeatalkDevice("Seatalk", port="COM10")
-    st = device.FileDevice("./logs/example_gps_dump.log")
+    #st = device.FileDevice("./logs/example_gps_dump.log")
     await st.initialize()
     while 1:
         nmea_sentence = await st.get_nmea_sentence()

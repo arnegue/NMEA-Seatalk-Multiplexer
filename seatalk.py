@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import logger
-from device import ThreadedDevice
+from device import TaskDevice
 import nmea_datagram
 
 
@@ -22,10 +22,13 @@ class DataLengthException(DataValidationException):
     """
 
 
-class SeatalkDevice(ThreadedDevice):
-    class RawSeatalkLogger(ThreadedDevice.RawDataLogger):
+class SeatalkDevice(TaskDevice):
+    class RawSeatalkLogger(TaskDevice.RawDataLogger):
         def write_raw_seatalk(self, rec, attribute, data):
-            self.write_raw([hex(val) for val in [rec, attribute] + data])
+            raw_string = ""
+            for val in [rec, attribute] + data:
+                raw_string += '0x%02X ' % val
+            self.write_raw(raw_string)
 
     def __init__(self, name, io_device):
         super().__init__(name=name, io_device=io_device)
@@ -34,26 +37,29 @@ class SeatalkDevice(ThreadedDevice):
             instantiated_datagram = datagram()
             self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
 
-    def _read_thread(self):
+    def _get_data_logger(self):
+        return self.RawSeatalkLogger(self._name)
+
+    async def _read_task(self):
         """
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
-        while self._continue:
+        while True:
             rec = attribute = 0
             data = []
             try:
-                rec = list(self._io_device.read(1))[0]
+                rec = list(await self._io_device.read(1))[0]
                 if rec in self._seatalk_datagram_map:
-                    attribute = list(self._io_device.read(1))[0]
+                    attribute = list(await self._io_device.read(1))[0]
                     data_length = (attribute & 0b00001111) + 1
                     attr_data = (attribute & 0b11110000) >> 4
-                    data = list(self._io_device.read(data_length))
+                    data = list(await self._io_device.read(data_length))
 
                     data_gram = self._seatalk_datagram_map[rec]
                     try:
                         data_gram.process_datagram(first_half_byte=attr_data, data=data)
                         val = data_gram.get_nmea_sentence()
-                        self._read_queue.put(val)
+                        await self._read_queue.put(val)
                     except SeatalkException as e:
                         logger.error(repr(e))
                 else:
@@ -62,8 +68,8 @@ class SeatalkDevice(ThreadedDevice):
             finally:
                 self._logger.write_raw_seatalk(rec, attribute, data)
 
-    def _write_thread(self):
-        while self._continue:
+    async def _write_task(self):
+        while True:
             logger.warn("Writing to seatalk currently not supported") # TODO
             return
 
@@ -138,7 +144,7 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
         self.speed_knots = self.twos_complement(data[0], 1)
 
 
-class SetLampIntensityDatagram(SeatalkDatagram, None):
+class SetLampIntensityDatagram(SeatalkDatagram):
     def __init__(self):
         SeatalkDatagram.__init__(self, id=0x30, data_length=1)
         self._intensity = 0
