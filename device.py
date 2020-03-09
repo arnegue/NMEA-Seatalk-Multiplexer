@@ -13,7 +13,6 @@ class Device(object):
             super().__init__(log_file_name=device_name + "_raw.log", log_format="%(asctime)s %(message)s", terminator="")
 
         def write_raw(self, data):
-            # TODO encoded data?
             self.info(data)
 
     def __init__(self, name, io_device: device_io.IO):
@@ -79,8 +78,7 @@ class ThreadedDevice(Device):
         while True:
             data = self._write_queue.get()
             if not isinstance(data, self.Stop):
-                raw_data = data.encode(encoding='UTF-8')
-                self._io_device.write(raw_data)
+                self._io_device.write(data)
 
     async def write_to_device(self, sentence: NMEADatagram):
         await self._write_queue.put(sentence.get_nmea_sentence())
@@ -113,9 +111,8 @@ class TaskDevice(Device):
 
     async def _write_task(self):
         while True:
-            data = self._write_queue.get()
-            raw_data = data.encode(encoding='UTF-8')
-            await self._io_device.write(raw_data)
+            data = await self._write_queue.get()
+            await self._io_device.write(data)
 
     async def write_to_device(self, sentence: NMEADatagram):
         await self._write_queue.put(sentence.get_nmea_sentence())

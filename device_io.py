@@ -102,8 +102,10 @@ class Serial(IO):
         self._encoding = encoding
 
     async def write(self, data):
-        raw_data = data.encode(encoding=self._encoding)
-        return await curio.run_in_thread(partial(self._serial.write, raw_data))
+        if self._encoding:
+            data = data.encode(encoding=self._encoding)
+
+        return await curio.run_in_thread(partial(self._serial.write, data))
 
     async def read(self, length=1):
         return await curio.run_in_thread(partial(self._serial.read, length))

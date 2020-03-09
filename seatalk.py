@@ -68,11 +68,6 @@ class SeatalkDevice(TaskDevice):
             finally:
                 self._logger.write_raw_seatalk(rec, attribute, data)
 
-    async def _write_task(self):
-        while True:
-            logger.warn("Writing to seatalk currently not supported") # TODO
-            return
-
 
 class NotEnoughData(DataLengthException):
     def __init__(self, device, expected, actual):
@@ -149,7 +144,7 @@ class SetLampIntensityDatagram(SeatalkDatagram):
         SeatalkDatagram.__init__(self, id=0x30, data_length=1)
         self._intensity = 0
 
-    async def get_set_intensity(self, intensity):
+    def get_set_intensity(self, intensity):
         if intensity == 0:
             self._intensity = 0
         elif intensity == 1:
