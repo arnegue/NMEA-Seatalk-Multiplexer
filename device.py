@@ -3,6 +3,7 @@ from abc import abstractmethod
 import threading
 import logger
 import device_io
+import curio_warpper
 from nmea_datagram import NMEADatagram
 from device_indicator.led_device_indicator import DeviceIndicator
 
@@ -121,7 +122,7 @@ class TaskDevice(Device):
         return await self._read_queue.get()
 
     async def shutdown(self):
-        async with curio.TaskGroup() as g:
+        async with curio_warpper.TaskGroupWrapper() as g:
             await g.spawn(self._write_task_handle.cancel)
             await g.spawn(self._read_task_handle.cancel)
 

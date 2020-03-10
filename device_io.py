@@ -98,8 +98,20 @@ class File(IO):
 
 class Serial(IO):
     def __init__(self, port, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, encoding='UTF-8'):
+        parity = self._get_parity_enum(parity)
         self._serial = serial.Serial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
         self._encoding = encoding
+
+    @staticmethod
+    def _get_parity_enum( parity):
+        """
+        Some wrapper necessary to get that enum. Could also get just the first letter but that doesnt look good
+        """
+        if isinstance(parity, str) and len(parity) > 1:
+            for val in serial.PARITY_NAMES:
+                if serial.PARITY_NAMES[val] == parity:
+                    return val
+        return parity
 
     async def write(self, data):
         if self._encoding:
