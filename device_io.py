@@ -34,34 +34,40 @@ class TCPServer(TCP):
 
     def __init__(self, port):
         super().__init__(port)
-        self._last_index = 0
-        self._read_str = ""
+        self._mtx = curio.Lock()
+        self._read_queue = curio.Queue()
 
     async def initialize(self):
-        await curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client)
+        await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
 
     async def _serve_client(self, client, address):
+        logger.warn(f"Client {client} connected")
         if self.client:
             logger.error("Only one client allowed")
             await client.close()
             return
-
-        self.__class__.amount_clients += 1
-        self.client = client
-        while True:
-            data = await client.recv(100000)
-            if not data:
-                break
-            self._read_str += str(data)
-
-        logger.warn(f"Client {address} closed connection")
-        self.client = None
-        self.__class__.amount_clients -= 1
+        try:
+            self.__class__.amount_clients += 1
+            self.client = client
+            while True:
+                data = await client.recv(100000)
+                if not data:
+                    break
+                async with self._mtx:
+                    for char_ in data.decode("UTF-8"):  # put every letter in it # TODO maybe ansii?
+                        await self._read_queue.put(char_)
+        except Exception:
+            await client.close()
+            raise
+        finally:
+            logger.warn(f"Client {address} closed connection")
+            self.client = None
+            self.__class__.amount_clients -= 1
 
     async def read(self, length=1):
-        ret_val = self._read_str[self._last_index:(self._last_index + length)]
-        self._last_index += length
-        self._read_str = self._read_str[self._last_index:]  # Remove read bytes from buffer
+        ret_val = ""
+        for _ in range(length):
+            ret_val += await self._read_queue.get()
         return ret_val
 
     async def write(self, data):
