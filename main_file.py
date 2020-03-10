@@ -19,20 +19,6 @@ TCP_PIN_B = 6
 # USB3 Seatalk
 
 
-async def test_file():
-    file = device_io.File("logs/example_gps_dump.log")
-    for i in range(3):
-        r = await file.read(2)
-        print(r)
-
-
-async def test_serial():
-    serial = device_io.Serial("COM2")
-    for i in range(5):
-        r = await serial.read(2)
-        print(r)
-
-
 def create_devices_dict():
     devices_dict = {}
     for module in device, seatalk, nmea:
@@ -47,7 +33,6 @@ async def create_devices(path):
     async with curio.aopen(path) as file:
         content = await file.read()
     content = json.loads(content)
-    #list_devices = []
 
     device_classes_dict = create_devices_dict()
     device_instance_dict = {}

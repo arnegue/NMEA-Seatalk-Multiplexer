@@ -3,22 +3,34 @@
     "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
-      "port": "/dev/ttyUSB0"
-    }
+      "port": "/dev/ttyUSB0",
+      "encoding": "ASCII"
+    },
+    "observers": [
+      "TCP"
+    ]
   },
   "GPS": {
     "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
-      "port": "/dev/ttyUSB1"
-    }
+      "port": "/dev/ttyUSB1",
+      "encoding": "ASCII"
+    },
+    "observers": [
+      "TCP"
+    ]
   },
   "Wind": {
     "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
-      "port": "/dev/ttyUSB2"
-    }
+      "port": "/dev/ttyUSB2",
+      "encoding": "ASCII"
+    },
+    "observers": [
+      "TCP"
+    ]
   },
   "Seatalk": {
     "type": "SeatalkDevice",
@@ -27,13 +39,19 @@
       "port": "/dev/ttyUSB3",
       "parity": "Mark",
       "encoding": false
-    }
+    },
+    "observers": [
+      "TCP"
+    ]
   },
   "TCPServer": {
     "type": "NMEADevice",
     "device_io": {
       "type": "TCPServer",
-      "port": "9900"
-    }
+      "port": "9900",
+      "encoding": "UTF-8"
+    },
+    "observers": [
+    ]
   }
 }
