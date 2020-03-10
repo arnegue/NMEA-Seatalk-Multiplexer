@@ -11,7 +11,7 @@ from device_indicator.led_device_indicator import DeviceIndicator
 class Device(object, metaclass=ABCMeta):
     class RawDataLogger(logger.Logger):
         def __init__(self, device_name):
-            super().__init__(log_file_name=device_name + "_raw.log", log_format="%(asctime)s %(message)s", terminator="")
+            super().__init__(log_file_name=device_name + "_raw.log", log_format="%(asctime)s %(message)s", terminator="", print_stdout=False)
 
         def write_raw(self, data):
             self.info(data)
@@ -103,6 +103,7 @@ class TaskDevice(Device, metaclass=ABCMeta):
         self._read_task_handle = None
 
     async def initialize(self):
+        await super().initialize()
         self._write_task_handle = await curio.spawn(self._write_task)
         self._read_task_handle = await curio.spawn(self._read_task)  # threading.Thread(target=self._read_thread)
 

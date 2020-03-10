@@ -16,7 +16,7 @@ class Singleton(type):
 
 
 class Logger(object, metaclass=Singleton):
-    def __init__(self, log_file_dir="./logs", log_file_name="test_file.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None):
+    def __init__(self, log_file_dir="./logs", log_file_name="test_file.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None, print_stdout=True):
         log_formatter = logging.Formatter(log_format)
         if not os.path.exists(log_file_dir):
             os.makedirs(log_file_dir)
@@ -26,6 +26,7 @@ class Logger(object, metaclass=Singleton):
         my_handler.setFormatter(log_formatter)
         my_handler.setLevel(logging.INFO)
 
+        self._print_stdout = print_stdout
         self.app_log = logging.getLogger('root')
         self.app_log.setLevel(logging.INFO)
 
@@ -36,7 +37,8 @@ class Logger(object, metaclass=Singleton):
                          40: "Error"}
 
     def _log(self, level, msg):
-        print(self._log_map[level] + ": " + msg)
+        if self._print_stdout:
+            print(self._log_map[level] + ": " + msg)
         self.app_log.log(level=level, msg=msg)
 
     def warn(self, log_string):
