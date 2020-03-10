@@ -15,7 +15,7 @@ To set up a remote-debugger and cross compiler, it was a little too much just fo
 
 # Features
 
-* Runs on Windows and Linux (Tested Windows 10, Armbian)
+* Runs on Windows and Linux (Tested Windows 10, Armbian 4.19)
 * Python 3 (Tested Python 3.6)
 * Easy logging for raw-data and "normal" logging
 * Support for IO:
