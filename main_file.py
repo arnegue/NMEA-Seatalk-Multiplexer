@@ -58,6 +58,23 @@ async def create_devices(path):
     return device_instance_dict.values()
 
 
+async def device_receiver_task(device_):
+    observers = device_.get_observers()
+    if len(observers):
+        while True:
+            try:
+                logger.info(f"Trying to get NMEA-Sentence from {device_.get_name()}....")
+                sentence = await device_.get_nmea_sentence()
+                logger.info(f"Received {sentence}")
+            except curio.TaskTimeout:
+                logger.warn(f"Timeout reading from {device_.get_name()}")  # Wont work sometimes
+                continue
+            for observer in device_.get_observers():
+                async with curio_wrapper.TaskGroupWrapper() as g:
+                    await g.spawn(observer.write_to_device, sentence)
+            await curio.sleep(1)
+
+
 async def main(devices_path):
     list_devices = await create_devices(devices_path)
     logger.info("Starting...")
@@ -66,28 +83,15 @@ async def main(devices_path):
         for device_ in list_devices:
             await g.spawn(device_.initialize)
 
-    while 1:
-        for device_ in list_devices:
-            observers = device_.get_observers()
-            if len(observers):
-                try:
-                    #async with curio.timeout_after(1):
-                    sentence = await device_.get_nmea_sentence()
-                except curio.TaskTimeout:
-                    logger.warn(f"Timeout reading from {device_.get_name()}")
-                    continue
-                for observer in device_.get_observers():
-                    async with curio_wrapper.TaskGroupWrapper() as g:
-                        await g.spawn(observer.write_to_device, sentence)
-                await curio.sleep(3)
-            else:
-                logger.info(f"Device {device_.get_name()} does not have any observers")
+    # Spawn for every listening device a observer task
+    for device_ in list_devices:
+        async with curio_wrapper.TaskGroupWrapper() as g:
+            await g.spawn(device_receiver_task, device_)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='NMEA-Seatalk-Multiplexer.')
-    parser.add_argument('--devices', default="devices.json",
-                        help='Path to json-file containing needed information for creating devices')
+    parser.add_argument('--devices', default="devices.json", help='Path to json-file containing needed information for creating devices')
 
     args = parser.parse_args()
     curio.run(main, args.devices)

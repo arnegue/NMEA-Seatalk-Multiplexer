@@ -45,7 +45,7 @@ class TCPServer(TCP):
         await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
 
     async def _serve_client(self, client, address):
-        logger.warn(f"Client {client} connected")
+        logger.info(f"Client {client} connected")
         if self.client:
             logger.error("Only one client allowed")
             await client.close()
@@ -96,6 +96,8 @@ class File(IO):
 
         ret_val = lines[self._last_index:(self._last_index + length)]
         self._last_index += length
+        if ret_val == "":
+            await curio.sleep(0)
         return ret_val
 
     async def write(self, data):
