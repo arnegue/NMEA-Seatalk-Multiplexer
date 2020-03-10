@@ -3,7 +3,7 @@ from abc import abstractmethod, ABCMeta
 import threading
 import logger
 import device_io
-import curio_warpper
+import curio_wrapper
 from nmea_datagram import NMEADatagram
 from device_indicator.led_device_indicator import DeviceIndicator
 
@@ -20,7 +20,7 @@ class Device(object, metaclass=ABCMeta):
         self._name = name
         self._device_indicator = None
         self._io_device = io_device
-        self._observers = []
+        self._observers = []  # TODO list
         self._logger = self._get_data_logger()
 
     def _get_data_logger(self):
@@ -42,6 +42,9 @@ class Device(object, metaclass=ABCMeta):
 
     def get_name(self):
         return self._name
+
+    def get_observers(self):
+        return self._observers
 
     def set_observer(self, listener):
         self._observers.append(listener)
@@ -117,13 +120,17 @@ class TaskDevice(Device, metaclass=ABCMeta):
             await self._io_device.write(data)
 
     async def write_to_device(self, sentence: NMEADatagram):
-        await self._write_queue.put(sentence.get_nmea_sentence())
+        if isinstance(sentence, str):
+            sentence_str = sentence
+        else:
+            sentence_str = sentence.get_nmea_sentence()
+        await self._write_queue.put(sentence_str)
 
     async def get_nmea_sentence(self):
         return await self._read_queue.get()
 
     async def shutdown(self):
-        async with curio_warpper.TaskGroupWrapper() as g:
+        async with curio_wrapper.TaskGroupWrapper() as g:
             await g.spawn(self._write_task_handle.cancel)
             await g.spawn(self._read_task_handle.cancel)
 

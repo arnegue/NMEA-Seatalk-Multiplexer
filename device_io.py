@@ -7,6 +7,9 @@ from functools import partial
 
 
 class IO(object):
+    def __init__(self, encoding):
+        self._encoding = encoding
+
     # TODO maybe a mutex is needed for read/write-thread when accessing?
     @abstractmethod
     async def read(self, length=1):
@@ -24,7 +27,8 @@ class IO(object):
 
 
 class TCP(IO, ABC):
-    def __init__(self, port):
+    def __init__(self, port, encoding):
+        super().__init__(encoding)
         self.client = None
         self._port = int(port)
 
@@ -32,8 +36,8 @@ class TCP(IO, ABC):
 class TCPServer(TCP):
     amount_clients = 0
 
-    def __init__(self, port):
-        super().__init__(port)
+    def __init__(self, port, encoding):
+        super().__init__(port, encoding)
         self._mtx = curio.Lock()
         self._read_queue = curio.Queue()
 
@@ -54,7 +58,7 @@ class TCPServer(TCP):
                 if not data:
                     break
                 async with self._mtx:
-                    for char_ in data.decode("UTF-8"):  # put every letter in it # TODO maybe ansii?
+                    for char_ in data.decode(self._encoding):  # put every letter in it # TODO maybe ansii?
                         await self._read_queue.put(char_)
         except Exception:
             await client.close()
@@ -72,7 +76,7 @@ class TCPServer(TCP):
 
     async def write(self, data):
         if self.client:
-            return await self.client.write(data)
+            return await self.client.sendall(data.encode(self._encoding))
 
     async def cancel(self):
         await self.client.close()
@@ -81,7 +85,8 @@ class TCPServer(TCP):
 
 
 class File(IO):
-    def __init__(self, path):
+    def __init__(self, path, encoding):
+        super().__init__(encoding)
         self._path_to_file = pathlib.Path(path)
         self._last_index = 0
 
@@ -103,10 +108,10 @@ class File(IO):
 
 
 class Serial(IO):
-    def __init__(self, port, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, encoding='UTF-8'):
+    def __init__(self, port, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, encoding='ASCII'):
+        super().__init__(encoding)
         parity = self._get_parity_enum(parity)
         self._serial = serial.Serial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
-        self._encoding = encoding
 
     @staticmethod
     def _get_parity_enum(parity):

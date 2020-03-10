@@ -3,7 +3,7 @@ import logger
 import json
 import argparse
 
-import curio_warpper
+import curio_wrapper
 import device
 import nmea
 import device_io
@@ -47,13 +47,13 @@ async def create_devices(path):
     async with curio.aopen(path) as file:
         content = await file.read()
     content = json.loads(content)
-    list_devices = []
+    #list_devices = []
 
-    devices_dict = create_devices_dict()
-
+    device_classes_dict = create_devices_dict()
+    device_instance_dict = {}
     for name in content:
         device_dict = content[name]
-        device_type = devices_dict[device_dict['type']]
+        device_type = device_classes_dict[device_dict['type']]
 
         device_io_dict = device_dict["device_io"]
         device_io_type = device_io_dict.pop("type")
@@ -61,31 +61,42 @@ async def create_devices(path):
 
         device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if (v is not None)})
         device_instance = device_type(name=name, io_device=device_io_instance)
-        list_devices.append(device_instance)
-    return list_devices
+        device_instance_dict[name] = device_instance
+
+    for observable in device_instance_dict.values():
+        observable_name = observable.get_name()
+        observable_instance = device_instance_dict[observable_name]
+        for observer in content[observable_name]["observers"]:
+            observer_instance = device_instance_dict[observer]
+            observable_instance.set_observer(observer_instance)
+
+    return device_instance_dict.values()
 
 
 async def main(devices_path):
     list_devices = await create_devices(devices_path)
     logger.info("Starting...")
 
-    async with curio_warpper.TaskGroupWrapper() as g:
+    async with curio_wrapper.TaskGroupWrapper() as g:
         for device_ in list_devices:
             await g.spawn(device_.initialize)
 
     while 1:
-        sentence = None
         for device_ in list_devices:
-            try:
-                async with curio.timeout_after(1):
-                    if sentence:
-                        await device_.write_to_device(sentence)
+            observers = device_.get_observers()
+            if len(observers):
+                try:
+                    #async with curio.timeout_after(1):
                     sentence = await device_.get_nmea_sentence()
-                    print(sentence)
-            except curio.TaskTimeout:
-                logger.warn(f"Timeout {device_.get_name()}")
-                pass
-            await curio.sleep(3)
+                except curio.TaskTimeout:
+                    logger.warn(f"Timeout reading from {device_.get_name()}")
+                    continue
+                for observer in device_.get_observers():
+                    async with curio_wrapper.TaskGroupWrapper() as g:
+                        await g.spawn(observer.write_to_device, sentence)
+                await curio.sleep(3)
+            else:
+                logger.info(f"Device {device_.get_name()} does not have any observers")
 
 
 if __name__ == '__main__':
