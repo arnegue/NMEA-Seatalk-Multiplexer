@@ -100,7 +100,7 @@ class ThreadedDevice(Device, metaclass=ABCMeta):
 class TaskDevice(Device, metaclass=ABCMeta):
     def __init__(self, name, io_device, max_queue_size=10):
         super().__init__(name, io_device)
-        self._write_queue = curio.Queue(maxsize=max_queue_size)   # TODO what happens if queue is full? block-waiting, skipping, exception?
+        self._write_queue = curio.Queue(maxsize=max_queue_size)
         self._read_queue = curio.Queue(maxsize=max_queue_size)
         self._write_task_handle = None
         self._read_task_handle = None
@@ -108,7 +108,9 @@ class TaskDevice(Device, metaclass=ABCMeta):
     async def initialize(self):
         await super().initialize()
         self._write_task_handle = await curio.spawn(self._write_task)
-        self._read_task_handle = await curio.spawn(self._read_task)  # threading.Thread(target=self._read_thread)
+
+        if len(self.get_observers()): # If there are no observers, don't even bother to start read task
+            self._read_task_handle = await curio.spawn(self._read_task)
 
     @abstractmethod
     async def _read_task(self):

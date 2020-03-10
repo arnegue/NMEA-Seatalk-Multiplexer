@@ -26,47 +26,25 @@ class IO(object):
         pass
 
 
+class StdOutPrinter(IO):
+    async def read(self, length=1):
+        await curio.sleep(0)
+        return ""
+
+    async def write(self, data):
+        await curio.sleep(0)
+        logger.info(data)
+
+
 class TCP(IO, ABC):
+    amount_clients = 0
+
     def __init__(self, port, encoding):
         super().__init__(encoding)
         self.client = None
         self._port = int(port)
 
-
-class TCPServer(TCP):
-    amount_clients = 0
-
-    def __init__(self, port, encoding):
-        super().__init__(port, encoding)
-        self._mtx = curio.Lock()
         self._read_queue = curio.Queue()
-
-    async def initialize(self):
-        await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
-
-    async def _serve_client(self, client, address):
-        logger.info(f"Client {client} connected")
-        if self.client:
-            logger.error("Only one client allowed")
-            await client.close()
-            return
-        try:
-            self.__class__.amount_clients += 1
-            self.client = client
-            while True:
-                data = await client.recv(100000)
-                if not data:
-                    break
-                async with self._mtx:
-                    for char_ in data.decode(self._encoding):  # put every letter in it # TODO maybe ansii?
-                        await self._read_queue.put(char_)
-        except Exception:
-            await client.close()
-            raise
-        finally:
-            logger.warn(f"Client {address} closed connection")
-            self.client = None
-            self.__class__.amount_clients -= 1
 
     async def read(self, length=1):
         ret_val = ""
@@ -81,7 +59,57 @@ class TCPServer(TCP):
     async def cancel(self):
         await self.client.close()
 
-# TODO TCPClient(TCP):
+    async def _serve_client(self, client, address):
+        logger.info(f"Client {client} connected")
+        if self.client:
+            logger.error("Only one client allowed")
+            await client.close()
+            return
+        try:
+            self.__class__.amount_clients += 1
+            self.client = client
+            while True:
+                data = await client.recv(100000)
+                if not data:
+                    break
+                for char_ in data.decode(self._encoding):  # put every letter in it # TODO maybe ansii?
+                    await self._read_queue.put(char_)
+        except Exception:
+            await client.close()
+            raise
+        finally:
+            logger.warn(f"Client {address} closed connection")
+            self.client = None
+            self.__class__.amount_clients -= 1
+
+
+class TCPServer(TCP):
+    async def initialize(self):
+        await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
+
+
+class TCPClient(TCP):
+    def __init__(self, ip, port, encoding):
+        super().__init__(port, encoding)
+        self._ip = ip
+        self._serve_client_task = None
+
+    async def initialize(self):
+        self._serve_client_task = await curio.spawn(self._open_connection)
+
+    async def cancel(self):
+        await super().cancel()
+        await self._serve_client_task.cancel()
+
+    async def _open_connection(self):
+        while True:
+            try:
+                logger.info(f"Trying to connect to {self._ip}:{self._port}...")
+                client = await curio.open_connection(self._ip, self._port)
+                await self._serve_client(client, self._ip)
+            except ConnectionError as e:
+                logger.error("ConnectionError: " + repr(e))
+                await curio.sleep(1)
 
 
 class File(IO):
