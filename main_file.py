@@ -73,9 +73,20 @@ async def main(devices_path):
         for device_ in list_devices:
             await g.spawn(device_.initialize)
 
-    for device_ in reversed(list_devices):
-        sentence = await device_.get_nmea_sentence()
-        print(sentence)
+    while 1:
+        sentence = None
+        for device_ in list_devices:
+            try:
+                async with curio.timeout_after(1):
+                    if sentence:
+                        await device_.write_to_device(sentence)
+                    sentence = await device_.get_nmea_sentence()
+                    print(sentence)
+            except curio.TaskTimeout:
+                logger.warn(f"Timeout {device_.get_name()}")
+                pass
+            await curio.sleep(3)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='NMEA-Seatalk-Multiplexer.')
