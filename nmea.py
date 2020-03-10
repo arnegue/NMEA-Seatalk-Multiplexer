@@ -11,9 +11,10 @@ class NMEADevice(TaskDevice):
             await self._read_queue.put(data)
 
     async def _receive_until_new_line(self):
-        received = []
+        received = ""
         while 1:
             data = await self._io_device.read()
-            received.append(data)
-            if data == "\n":
+            received += data
+            if data == "\r" or data == "\n":
+                self._logger.write_raw(received)
                 return received
