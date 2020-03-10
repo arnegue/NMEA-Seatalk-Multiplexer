@@ -5,7 +5,9 @@ import argparse
 
 import curio_warpper
 import device
+import nmea
 import device_io
+import inspect
 import seatalk
 TCP_PIN_R = 14
 TCP_PIN_G = 7
@@ -31,6 +33,15 @@ async def test_serial():
         print(r)
 
 
+def create_devices_dict():
+    devices_dict = {}
+    for module in device, seatalk, nmea:
+        for name, obj in inspect.getmembers(module):
+            if inspect.isclass(obj) and issubclass(obj, device.Device):
+                devices_dict[name] = obj
+    return devices_dict
+
+
 async def create_devices(path):
     # Read JSon-File
     async with curio.aopen(path) as file:
@@ -38,12 +49,11 @@ async def create_devices(path):
     content = json.loads(content)
     list_devices = []
 
-    # Iterate thorugh dict
+    devices_dict = create_devices_dict()
+
     for name in content:
         device_dict = content[name]
-        device_type = getattr(device, device_dict['type'], None)
-        if not device_type:
-            device_type = getattr(seatalk, device_dict['type'], None)
+        device_type = devices_dict[device_dict['type']]
 
         device_io_dict = device_dict["device_io"]
         device_io_type = device_io_dict.pop("type")
@@ -59,10 +69,13 @@ async def main(devices_path):
     list_devices = await create_devices(devices_path)
     logger.info("Starting...")
 
-    # intensity_diagram.get_set_intensity()
     async with curio_warpper.TaskGroupWrapper() as g:
         for device_ in list_devices:
             await g.spawn(device_.initialize)
+
+    for device_ in reversed(list_devices):
+        sentence = await device_.get_nmea_sentence()
+        print(sentence)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='NMEA-Seatalk-Multiplexer.')

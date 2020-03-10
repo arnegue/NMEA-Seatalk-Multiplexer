@@ -75,8 +75,8 @@ class TCPServer(TCP):
 
 
 class File(IO):
-    def __init__(self, path_to_file):
-        self._path_to_file = pathlib.Path(path_to_file)
+    def __init__(self, path):
+        self._path_to_file = pathlib.Path(path)
         self._last_index = 0
 
     async def read(self, length=1):

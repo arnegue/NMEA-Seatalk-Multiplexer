@@ -1,20 +1,20 @@
 {
   "Radio": {
-    "type": "TaskDevice",
+    "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
       "port": "/dev/ttyUSB0"
     }
   },
   "GPS": {
-    "type": "TaskDevice",
+    "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
       "port": "/dev/ttyUSB1"
     }
   },
   "Wind": {
-    "type": "TaskDevice",
+    "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
       "port": "/dev/ttyUSB2"
@@ -30,7 +30,7 @@
     }
   },
   "TCPServer": {
-    "type": "TaskDevice",
+    "type": "NMEADevice",
     "device_io": {
       "type": "TCPServer",
       "port": "9900"
