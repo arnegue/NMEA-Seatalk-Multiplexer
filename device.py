@@ -1,5 +1,5 @@
 import curio
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
 import threading
 import logger
 import device_io
@@ -8,7 +8,7 @@ from nmea_datagram import NMEADatagram
 from device_indicator.led_device_indicator import DeviceIndicator
 
 
-class Device(object):
+class Device(object, metaclass=ABCMeta):
     class RawDataLogger(logger.Logger):
         def __init__(self, device_name):
             super().__init__(log_file_name=device_name + "_raw.log", log_format="%(asctime)s %(message)s", terminator="")
@@ -53,7 +53,7 @@ class Device(object):
         await self._io_device.cancel()
 
 
-class ThreadedDevice(Device):
+class ThreadedDevice(Device, metaclass=ABCMeta):
     class Stop(object):
         pass
 
@@ -94,7 +94,7 @@ class ThreadedDevice(Device):
             thread.join()
 
 
-class TaskDevice(Device):
+class TaskDevice(Device, metaclass=ABCMeta):
     def __init__(self, name, io_device, max_queue_size=10):
         super().__init__(name, io_device)
         self._write_queue = curio.Queue(maxsize=max_queue_size)   # TODO what happens if queue is full? block-waiting, skipping, exception?
