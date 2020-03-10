@@ -26,7 +26,7 @@ class IO(object):
 class TCP(IO, ABC):
     def __init__(self, port):
         self.client = None
-        self._port = port
+        self._port = int(port)
 
 
 class TCPServer(TCP):
@@ -103,7 +103,7 @@ class Serial(IO):
         self._encoding = encoding
 
     @staticmethod
-    def _get_parity_enum( parity):
+    def _get_parity_enum(parity):
         """
         Some wrapper necessary to get that enum. Could also get just the first letter but that doesnt look good
         """
