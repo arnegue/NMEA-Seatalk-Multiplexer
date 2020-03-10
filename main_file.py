@@ -1,7 +1,7 @@
 import curio
 import logger
 import json
-import serial
+import argparse
 
 import curio_warpper
 import device
@@ -31,7 +31,7 @@ async def test_serial():
         print(r)
 
 
-async def create_devices(path="devices.json"):
+async def create_devices(path):
     # Read JSon-File
     async with curio.aopen(path) as file:
         content = await file.read()
@@ -55,24 +55,20 @@ async def create_devices(path="devices.json"):
     return list_devices
 
 
-async def main():
-    list_devices = await create_devices()
+async def main(devices_path):
+    list_devices = await create_devices(devices_path)
     logger.info("Starting...")
 
     # intensity_diagram.get_set_intensity()
-    #st = seatalk.SeatalkDevice("Seatalk", port="COM10")
-    #st = device.FileDevice("./logs/example_gps_dump.log")
     async with curio_warpper.TaskGroupWrapper() as g:
-        for device in list_devices:
-            await g.spawn(device.initialize)
+        for device_ in list_devices:
+            await g.spawn(device_.initialize)
 
-    last_intensity = 0
-    while 1:
-        print(f"intensity: {last_intensity}")
-        data = intensity_diagram.get_set_intensity(last_intensity)
-        last_intensity = (last_intensity + 1) % 3
-        await st._write_queue.put(data)
-        await curio.sleep(2)
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='NMEA-Seatalk-Multiplexer.')
+    parser.add_argument('--devices', default="devices.json",
+                        help='Path to json-file containing needed information for creating devices')
 
+    args = parser.parse_args()
+    curio.run(main, args.devices)
 
-curio.run(main)

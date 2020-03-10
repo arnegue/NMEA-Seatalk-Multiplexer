@@ -1,0 +1,39 @@
+{
+  "Radio": {
+    "type": "TaskDevice",
+    "device_io": {
+      "type": "Serial",
+      "port": "/dev/ttyUSB0"
+    }
+  },
+  "GPS": {
+    "type": "TaskDevice",
+    "device_io": {
+      "type": "Serial",
+      "port": "/dev/ttyUSB1"
+    }
+  },
+  "Wind": {
+    "type": "TaskDevice",
+    "device_io": {
+      "type": "Serial",
+      "port": "/dev/ttyUSB2"
+    }
+  },
+  "Seatalk": {
+    "type": "SeatalkDevice",
+    "device_io": {
+      "type": "Serial",
+      "port": "/dev/ttyUSB3",
+      "parity": "Mark",
+      "encoding": false
+    }
+  },
+  "TCPServer": {
+    "type": "TaskDevice",
+    "device_io": {
+      "type": "TCPServer",
+      "port": "9900"
+    }
+  }
+}
