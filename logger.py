@@ -27,7 +27,7 @@ class Logger(object, metaclass=Singleton):
         my_handler.setLevel(logging.INFO)
 
         self._print_stdout = print_stdout
-        self.app_log = logging.getLogger('root')
+        self.app_log = logging.getLogger(log_file_name)
         self.app_log.setLevel(logging.INFO)
 
         self.app_log.addHandler(my_handler)
@@ -51,6 +51,7 @@ class Logger(object, metaclass=Singleton):
         self._log(level=logging.ERROR, msg=log_string)
 
 
-warn = Logger().warn
-info = Logger().info
-error = Logger().error
+warn = info = error = None
+if warn is info is error is None:
+    logger = Logger()
+    warn = logger.warn; info = logger.info; error = logger.error
