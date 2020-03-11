@@ -60,7 +60,7 @@ class TCP(IO, ABC):
         await self.client.close()
 
     async def _serve_client(self, client, address):
-        logger.info(f"Client {client} connected")
+        logger.info(f"Client {address[0]}:{address[1]} connected")
         if self.client:
             logger.error("Only one client allowed")
             await client.close()
@@ -78,7 +78,7 @@ class TCP(IO, ABC):
             await client.close()
             raise
         finally:
-            logger.warn(f"Client {address} closed connection")
+            logger.warn(f"Client {address[0]}:{address[1]}  closed connection")
             self.client = None
             self.__class__.amount_clients -= 1
 
@@ -106,7 +106,7 @@ class TCPClient(TCP):
             try:
                 logger.info(f"Trying to connect to {self._ip}:{self._port}...")
                 client = await curio.open_connection(self._ip, self._port)
-                await self._serve_client(client, self._ip)
+                await self._serve_client(client, (self._ip, self._port))
             except ConnectionError as e:
                 logger.error("ConnectionError: " + repr(e))
                 await curio.sleep(1)
