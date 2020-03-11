@@ -20,7 +20,7 @@ class Device(object, metaclass=ABCMeta):
         self._name = name
         self._device_indicator = None
         self._io_device = io_device
-        self._observers = []  # TODO list
+        self._observers = set()
         self._logger = self._get_data_logger()
 
     def _get_data_logger(self):
@@ -47,7 +47,7 @@ class Device(object, metaclass=ABCMeta):
         return self._observers
 
     def set_observer(self, listener):
-        self._observers.append(listener)
+        self._observers.add(listener)
 
     def set_device_indicator(self, indicator: DeviceIndicator):
         self._device_indicator = indicator
@@ -62,7 +62,7 @@ class ThreadedDevice(Device, metaclass=ABCMeta):
 
     def __init__(self, name, io_device, max_queue_size=10):
         super().__init__(name, io_device)
-        self._write_queue = curio.UniversalQueue(maxsize=max_queue_size)  # TODO what happens if queue is full? block-waiting, skipping, exception?
+        self._write_queue = curio.UniversalQueue(maxsize=max_queue_size)
         self._read_queue = curio.UniversalQueue(maxsize=max_queue_size)
         self._write_thread_handle = None
         self._read_thread_handle = None
