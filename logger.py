@@ -16,7 +16,7 @@ class Singleton(type):
 
 
 class Logger(object, metaclass=Singleton):
-    def __init__(self, log_file_dir="./logs", log_file_name="test_file.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None, print_stdout=True):
+    def __init__(self, log_file_dir="./logs", log_file_name="main_log.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None, print_stdout=True):
         log_formatter = logging.Formatter(log_format)
         if not os.path.exists(log_file_dir):
             os.makedirs(log_file_dir)
