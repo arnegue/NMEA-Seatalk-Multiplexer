@@ -26,7 +26,8 @@ class SeatalkDevice(TaskDevice):
     class RawSeatalkLogger(TaskDevice.RawDataLogger):
         def write_raw_seatalk(self, rec, attribute, data):
             raw_string = ""
-            for val in [rec, attribute] + data:
+            data_gram_bytes = bytearray() + rec + attribute + data
+            for val in data_gram_bytes:
                 raw_string += '0x%02X ' % val
             self.write_raw(raw_string)
 
@@ -37,36 +38,45 @@ class SeatalkDevice(TaskDevice):
             instantiated_datagram = datagram()
             self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
 
+    @classmethod
+    def byte_to_str(cls, byte):
+        return '0x%02X ' % cls.get_numeric_byte_value(byte)
+
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
+
+    @staticmethod
+    def get_numeric_byte_value(byte):
+        return int.from_bytes(byte, "big")
 
     async def _read_task(self):
         """
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
         while True:
-            rec = attribute = 0
-            data = []
+            rec = attribute = bytes()
+            data_bytes = bytearray()
             try:
-                rec = list(await self._io_device.read(1))[0]
+                rec = await self._io_device.read(1)
                 if rec in self._seatalk_datagram_map:
-                    attribute = list(await self._io_device.read(1))[0]
-                    data_length = (attribute & 0b00001111) + 1
-                    attr_data = (attribute & 0b11110000) >> 4
-                    data = list(await self._io_device.read(data_length))
+                    attribute = await self._io_device.read(1)
+                    attribute_nr = self.get_numeric_byte_value(attribute)
+                    data_length = (attribute_nr & 0b00001111) + 1
+                    attr_data = (attribute_nr & 0b11110000) >> 4
 
+                    data_bytes += await self._io_device.read(data_length)
                     data_gram = self._seatalk_datagram_map[rec]
                     try:
-                        data_gram.process_datagram(first_half_byte=attr_data, data=data)
+                        data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
                         val = data_gram.get_nmea_sentence()
                         await self._read_queue.put(val)
                     except SeatalkException as e:
                         logger.error(repr(e))
                 else:
-                    logger.error(f"Unknown data-byte: {hex(rec)}")
-                    self._logger.write_raw(hex(rec))
+                    logger.error(f"Unknown data-byte: {self.byte_to_str(rec)}")
+                    self._logger.write_raw(self.byte_to_str(rec))
             finally:
-                self._logger.write_raw_seatalk(rec, attribute, data)
+                self._logger.write_raw_seatalk(rec, attribute, data_bytes)
 
 
 class NotEnoughData(DataLengthException):
@@ -81,7 +91,7 @@ class TooMuchData(DataLengthException):
 
 class SeatalkDatagram(object):
     def __init__(self, id, data_length):
-        self.id = id
+        self.id = bytes([id])
         self.data_length = data_length  # "Attribute" = length + 3 in datagram
         if data_length > 18 + 3:
             raise TooMuchData(self, data_length)
@@ -153,7 +163,7 @@ class SetLampIntensityDatagram(SeatalkDatagram):
             self._intensity = 8
         elif intensity == 3:
             self._intensity = 12  # That's weird. All the time it's a shifted bit but this is 0x1100
-        return [self.id, 0x00, self._intensity]
+        return [self.id, 0x40, self._intensity]
 
     def _process_datagram(self, first_half_byte, data):
         self._intensity = data[0]  # Should be one byte anyway
