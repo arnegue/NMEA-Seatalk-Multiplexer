@@ -6,6 +6,7 @@ import operator
 class NMEAError(Exception):
     pass
 
+
 class NMEAParseError(Exception):
     pass
 
@@ -25,7 +26,7 @@ class NMEADatagram(object):
         pass
 
     def get_nmea_sentence(self):
-        prefix = f"{self._talker_id}{self.nmea_tag},"
+        prefix = f"{self._talker_id}{self.nmea_tag}"
         data = prefix + self._convert_to_nmea()
         checksum = self.checksum(data)
         return f"${data}*{checksum:02X}\r\n"
@@ -47,9 +48,24 @@ class NMEADatagram(object):
         if own_checksum != nmea_str_checksum:
             raise ChecksumError(nmea_str, own_checksum)
 
+    @staticmethod
+    def _get_value(value, unit):
+        """
+        Only create value if it is set
+        """
+        empty_data = ",,"
+        return f",{value:.1f},{unit}" if value is not None else empty_data
+
+    @classmethod
+    def _nmea_conversion(cls, *value_tuple):
+        sentence = ""
+        for value, unit in value_tuple:
+            sentence += cls._get_value(value, unit)
+        return sentence
+
 
 class DepthBelowKeel(NMEADatagram):
-    def __init__(self, depth_m=0.0):
+    def __init__(self, depth_m=None):
         super().__init__(nmea_tag="DBT")
         self.depth_m = depth_m
 
@@ -60,13 +76,13 @@ class DepthBelowKeel(NMEADatagram):
         """
         feet = self.depth_m * 3.28084
         fantoms = self.depth_m * 0.54680665
-        return f"{feet:.1f},f," \
-               f"{self.depth_m:.1f},M," \
-               f"{fantoms:.1f},F"
+        return self._nmea_conversion((feet, 'f'),
+                                     (self.depth_m, 'M'),
+                                     (fantoms, 'F'),)
 
 
 class SpeedOverWater(NMEADatagram):
-    def __init__(self, speed_knots=0.0, heading_degrees_true=0.0, heading_degrees_magnetic=0.0):
+    def __init__(self, speed_knots=None, heading_degrees_true=None, heading_degrees_magnetic=None):
         super().__init__(nmea_tag="VHW")
         self.speed_knots = speed_knots
         self.heading_degrees_true = heading_degrees_true
@@ -77,15 +93,14 @@ class SpeedOverWater(NMEADatagram):
         $--VHW,x.x,T,x.x,M,x.x,N,x.x,K*hh<CR><LF>
         """
         kmh = self.speed_knots * 1.852
-        # TODO mabye test what happens if heading is left out
-        return f"{self.heading_degrees_true:.1f},T," \
-               f"{self.heading_degrees_magnetic:.1f},M," \
-               f"{self.speed_knots:.1f},N," \
-               f"{kmh:.1f},K"
+        return self._nmea_conversion((self.heading_degrees_true, 'T'),
+                                     (self.heading_degrees_magnetic, 'M'),
+                                     (self.speed_knots, 'N'),
+                                     (kmh, 'K'))
 
 
 class WaterTemperature(NMEADatagram):
-    def __init__(self, temperature_c=0.0):
+    def __init__(self, temperature_c=None):
         super().__init__(nmea_tag="MTW")
         self.temperature_c = temperature_c
 
@@ -93,5 +108,5 @@ class WaterTemperature(NMEADatagram):
         """
         $--MTW,x.x,C*hh<CR><LF>
         """
-        return f"{self.temperature_c:.1f}"
+        return self._nmea_conversion((self.temperature_c, "C"))
 
