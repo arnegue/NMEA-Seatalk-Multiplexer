@@ -30,6 +30,7 @@ class Device(object, metaclass=ABCMeta):
         """
         Optional, if needed
         """
+        logger.info(f"Initializing: {self.get_name()}")
         await self._io_device.initialize()
 
     @abstractmethod
@@ -109,7 +110,7 @@ class TaskDevice(Device, metaclass=ABCMeta):
         await super().initialize()
         self._write_task_handle = await curio.spawn(self._write_task)
 
-        if len(self.get_observers()): # If there are no observers, don't even bother to start read task
+        if len(self.get_observers()):  # If there are no observers, don't even bother to start read task
             self._read_task_handle = await curio.spawn(self._read_task)
 
     @abstractmethod
@@ -122,11 +123,12 @@ class TaskDevice(Device, metaclass=ABCMeta):
             await self._io_device.write(data)
 
     async def write_to_device(self, sentence: NMEADatagram):
-        if isinstance(sentence, str):
-            sentence_str = sentence
+        if self._write_queue.full():
+            logger.warn(f"{self.get_name()}: Queue is full. Not writing")
         else:
-            sentence_str = sentence.get_nmea_sentence()
-        await self._write_queue.put(sentence_str)
+            if isinstance(sentence, NMEADatagram):
+                sentence = sentence.get_nmea_sentence()
+            await self._write_queue.put(sentence)
 
     async def get_nmea_sentence(self):
         return await self._read_queue.get()
