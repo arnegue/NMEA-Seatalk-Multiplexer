@@ -57,47 +57,6 @@ class Device(object, metaclass=ABCMeta):
         await self._io_device.cancel()
 
 
-class ThreadedDevice(Device, metaclass=ABCMeta):
-    class Stop(object):
-        pass
-
-    def __init__(self, name, io_device, max_queue_size=10):
-        super().__init__(name, io_device)
-        self._write_queue = curio.UniversalQueue(maxsize=max_queue_size)
-        self._read_queue = curio.UniversalQueue(maxsize=max_queue_size)
-        self._write_thread_handle = None
-        self._read_thread_handle = None
-
-    async def initialize(self):
-        self._write_thread_handle = threading.Thread(target=self._write_thread)
-        self._read_thread_handle = threading.Thread(target=self._read_thread)
-
-        self._write_thread_handle.start()
-        self._read_thread_handle.start()
-
-    @abstractmethod
-    def _read_thread(self):
-        pass
-
-    def _write_thread(self):
-        while True:
-            data = self._write_queue.get()
-            if not isinstance(data, self.Stop):
-                self._io_device.write(data)
-
-    async def write_to_device(self, sentence: NMEADatagram):
-        await self._write_queue.put(sentence.get_nmea_sentence())
-
-    async def get_nmea_sentence(self):
-        return await self._read_queue.get()
-
-    async def shutdown(self):
-        await self._write_queue.put(self.Stop())
-
-        for thread in self._write_thread_handle, self._read_thread_handle:
-            thread.join()
-
-
 class TaskDevice(Device, metaclass=ABCMeta):
     def __init__(self, name, io_device, max_queue_size=10):
         super().__init__(name, io_device)
