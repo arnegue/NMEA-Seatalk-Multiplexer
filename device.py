@@ -4,7 +4,7 @@ import threading
 import logger
 import device_io
 import curio_wrapper
-from nmea_datagram import NMEADatagram
+from nmea_datagram import NMEADatagram, NMEAParseError
 from device_indicator.led_device_indicator import DeviceIndicator
 
 
@@ -79,7 +79,11 @@ class TaskDevice(Device, metaclass=ABCMeta):
     async def _write_task(self):
         while True:
             data = await self._write_queue.get()
-            await self._io_device.write(data)
+            try:
+                NMEADatagram.verify_checksum(data)
+                await self._io_device.write(data)
+            except NMEAParseError as e:  # TODO maybe already do it when write_to_device is called
+                logger.error(f"Will not write to {self.get_name()}: {repr(e)}")
 
     async def write_to_device(self, sentence: NMEADatagram):
         if self._write_queue.full():

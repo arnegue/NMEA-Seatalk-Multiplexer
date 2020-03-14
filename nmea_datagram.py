@@ -3,6 +3,18 @@ from functools import reduce
 import operator
 
 
+class NMEAError(Exception):
+    pass
+
+class NMEAParseError(Exception):
+    pass
+
+
+class ChecksumError(NMEAParseError):
+    def __init__(self, sentence, own_checksum):
+        super().__init__(f"ChecksumError: {sentence} checksum does not match own calculated checksum: {own_checksum}")
+
+
 class NMEADatagram(object):
     def __init__(self, nmea_tag):
         self.nmea_tag = nmea_tag
@@ -21,6 +33,19 @@ class NMEADatagram(object):
     @staticmethod
     def checksum(nmea_str):
         return reduce(operator.xor, map(ord, nmea_str), 0)
+
+    @classmethod
+    def verify_checksum(cls, nmea_str):
+        try:
+            nmea_str_checksum = int(nmea_str[-4:-2], 16)
+            temp_nmea_str = nmea_str[1:]  # Remove dollar
+            temp_nmea_str = temp_nmea_str[:-5]  # Remove \r\n and checksum
+            own_checksum = cls.checksum(temp_nmea_str)
+        except ValueError as e:
+            raise NMEAParseError(f"Could not parse {nmea_str}") from e
+
+        if own_checksum != nmea_str_checksum:
+            raise ChecksumError(nmea_str, own_checksum)
 
 
 class DepthBelowKeel(NMEADatagram):

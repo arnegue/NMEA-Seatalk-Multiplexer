@@ -68,6 +68,7 @@ class SeatalkDevice(TaskDevice):
                     data_gram = self._seatalk_datagram_map[rec]
                     try:
                         data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
+                        # No need to verify checksum since it is generated the same way as it is checked
                         val = data_gram.get_nmea_sentence()
                         await self._read_queue.put(val)
                     except SeatalkException as e:

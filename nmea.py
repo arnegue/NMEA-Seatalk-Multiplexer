@@ -1,4 +1,6 @@
 from device import TaskDevice
+from nmea_datagram import NMEADatagram, NMEAParseError
+import logger
 
 
 class NMEADevice(TaskDevice):
@@ -8,27 +10,17 @@ class NMEADevice(TaskDevice):
     async def _read_task(self):
         while True:
             data = await self._receive_until_new_line()
-            await self._read_queue.put(data)
-
-    async def _redceive_until_new_line(self):
-        received = []
-        while 1:
-            data = await self._io_device.read(1)
-            received.append(data)
             try:
-                int_val = int.from_bytes(data, "big")
-            except TypeError as e:
-                print(e)
-                return []  # TODO what to do now?
-            if int_val == 0x0A:  # if data == "\r" "\n"
-                self._logger.write_raw(received)
-                return received
+                NMEADatagram.verify_checksum(data)
+                await self._read_queue.put(data)
+            except NMEAParseError as e:
+                logger.error(f"Could not read from {self.get_name()}: {repr(e)}")
 
     async def _receive_until_new_line(self):
         received = ""
         while 1:
             data = await self._io_device.read()
             received += data
-            if data == "\r" or data == "\n":
+            if data == "\n":
                 self._logger.write_raw(received)
                 return received
