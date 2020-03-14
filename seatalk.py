@@ -34,7 +34,7 @@ class SeatalkDevice(TaskDevice):
     def __init__(self, name, io_device):
         super().__init__(name=name, io_device=io_device)
         self._seatalk_datagram_map = dict()
-        for datagram in DepthDatagram, SpeedDatagram, WaterTemperatureDatagram:
+        for datagram in DepthDatagram, SpeedDatagram, WaterTemperatureDatagram, SetLampIntensityDatagram:
             instantiated_datagram = datagram()
             self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
 
@@ -69,8 +69,11 @@ class SeatalkDevice(TaskDevice):
                     try:
                         data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
                         # No need to verify checksum since it is generated the same way as it is checked
-                        val = data_gram.get_nmea_sentence()
-                        await self._read_queue.put(val)
+                        if isinstance(data_gram, nmea_datagram.NMEADatagram):
+                            val = data_gram.get_nmea_sentence()
+                            await self._read_queue.put(val)
+                        else:
+                            logger.info(f"{self.get_name()} doesn't have a corresponding NMEADatagram. Not enqueueing")
                     except SeatalkException as e:
                         logger.error(repr(e))
                 else:
@@ -167,5 +170,15 @@ class SetLampIntensityDatagram(SeatalkDatagram):
         return [self.id, 0x40, self._intensity]
 
     def _process_datagram(self, first_half_byte, data):
-        self._intensity = data[0]  # Should be one byte anyway
+        intensity = data[0]
+        if intensity == 0:
+            self._intensity = 0
+        elif intensity == 4:
+            self._intensity = 1
+        elif intensity == 8:
+            self._intensity = 2
+        elif intensity == 12:
+            self._intensity = 3  # That's weird. All the time it's a shifted bit but this is 0x1100
+        # else:
+        #   TODO what now? parse-exception?
 
