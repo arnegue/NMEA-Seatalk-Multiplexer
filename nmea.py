@@ -19,8 +19,12 @@ class NMEADevice(TaskDevice):
     async def _receive_until_new_line(self):
         received = ""
         while 1:
-            data = await self._io_device.read()
-            received += data
-            if data == "\n":
-                self._logger.write_raw(received)
-                return received
+            try:
+                data = await self._io_device.read()
+                received += data
+                if data == "\n":
+                    self._logger.write_raw(received)
+                    return received
+            except TypeError as e:
+                logger.error(f"{self.get_name()}: Error when reading. Wrong encoding?\n{repr(e)}")
+                return ""
