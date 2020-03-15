@@ -1,6 +1,5 @@
 import curio
 from abc import abstractmethod, ABCMeta
-import threading
 import logger
 import device_io
 import curio_wrapper
