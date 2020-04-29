@@ -133,10 +133,10 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):
         self.depth_m = feet / 3.2808  # TODO double-conversion
 
 
-class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedOverWater):  # NMEA: vhw
+class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
     def __init__(self):
         SeatalkDatagram.__init__(self, id=0x20, data_length=2)
-        nmea_datagram.SpeedOverWater.__init__(self)
+        nmea_datagram.SpeedThroughWater.__init__(self)
 
     def _process_datagram(self, first_half_byte, data):
         self.speed_knots = self.get_value(data)

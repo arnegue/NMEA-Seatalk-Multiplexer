@@ -81,7 +81,7 @@ class DepthBelowKeel(NMEADatagram):
                                      (fantoms, 'F'),)
 
 
-class SpeedOverWater(NMEADatagram):
+class SpeedThroughWater(NMEADatagram):
     def __init__(self, speed_knots=None, heading_degrees_true=None, heading_degrees_magnetic=None):
         super().__init__(nmea_tag="VHW")
         self.speed_knots = speed_knots
