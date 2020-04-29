@@ -1,10 +1,9 @@
 import curio
 from abc import abstractmethod, ABCMeta
-import threading
 import logger
 import device_io
 import curio_wrapper
-from nmea_datagram import NMEADatagram
+from nmea_datagram import NMEADatagram, NMEAParseError
 from device_indicator.led_device_indicator import DeviceIndicator
 
 
@@ -30,6 +29,7 @@ class Device(object, metaclass=ABCMeta):
         """
         Optional, if needed
         """
+        logger.info(f"Initializing: {self.get_name()}")
         await self._io_device.initialize()
 
     @abstractmethod
@@ -56,47 +56,6 @@ class Device(object, metaclass=ABCMeta):
         await self._io_device.cancel()
 
 
-class ThreadedDevice(Device, metaclass=ABCMeta):
-    class Stop(object):
-        pass
-
-    def __init__(self, name, io_device, max_queue_size=10):
-        super().__init__(name, io_device)
-        self._write_queue = curio.UniversalQueue(maxsize=max_queue_size)
-        self._read_queue = curio.UniversalQueue(maxsize=max_queue_size)
-        self._write_thread_handle = None
-        self._read_thread_handle = None
-
-    async def initialize(self):
-        self._write_thread_handle = threading.Thread(target=self._write_thread)
-        self._read_thread_handle = threading.Thread(target=self._read_thread)
-
-        self._write_thread_handle.start()
-        self._read_thread_handle.start()
-
-    @abstractmethod
-    def _read_thread(self):
-        pass
-
-    def _write_thread(self):
-        while True:
-            data = self._write_queue.get()
-            if not isinstance(data, self.Stop):
-                self._io_device.write(data)
-
-    async def write_to_device(self, sentence: NMEADatagram):
-        await self._write_queue.put(sentence.get_nmea_sentence())
-
-    async def get_nmea_sentence(self):
-        return await self._read_queue.get()
-
-    async def shutdown(self):
-        await self._write_queue.put(self.Stop())
-
-        for thread in self._write_thread_handle, self._read_thread_handle:
-            thread.join()
-
-
 class TaskDevice(Device, metaclass=ABCMeta):
     def __init__(self, name, io_device, max_queue_size=10):
         super().__init__(name, io_device)
@@ -109,7 +68,7 @@ class TaskDevice(Device, metaclass=ABCMeta):
         await super().initialize()
         self._write_task_handle = await curio.spawn(self._write_task)
 
-        if len(self.get_observers()): # If there are no observers, don't even bother to start read task
+        if len(self.get_observers()):  # If there are no observers, don't even bother to start read task
             self._read_task_handle = await curio.spawn(self._read_task)
 
     @abstractmethod
@@ -119,14 +78,19 @@ class TaskDevice(Device, metaclass=ABCMeta):
     async def _write_task(self):
         while True:
             data = await self._write_queue.get()
-            await self._io_device.write(data)
+            try:
+                NMEADatagram.verify_checksum(data)
+                await self._io_device.write(data)
+            except NMEAParseError as e:  # TODO maybe already do it when write_to_device is called
+                logger.error(f"Will not write to {self.get_name()}: {repr(e)}")
 
     async def write_to_device(self, sentence: NMEADatagram):
-        if isinstance(sentence, str):
-            sentence_str = sentence
+        if self._write_queue.full():
+            logger.warn(f"{self.get_name()}: Queue is full. Not writing")
         else:
-            sentence_str = sentence.get_nmea_sentence()
-        await self._write_queue.put(sentence_str)
+            if isinstance(sentence, NMEADatagram):
+                sentence = sentence.get_nmea_sentence()
+            await self._write_queue.put(sentence)
 
     async def get_nmea_sentence(self):
         return await self._read_queue.get()

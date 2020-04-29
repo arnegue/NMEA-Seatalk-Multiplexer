@@ -1,4 +1,6 @@
 from device import TaskDevice
+from nmea_datagram import NMEADatagram, NMEAParseError
+import logger
 
 
 class NMEADevice(TaskDevice):
@@ -8,13 +10,21 @@ class NMEADevice(TaskDevice):
     async def _read_task(self):
         while True:
             data = await self._receive_until_new_line()
-            await self._read_queue.put(data)
+            try:
+                NMEADatagram.verify_checksum(data)
+                await self._read_queue.put(data)
+            except NMEAParseError as e:
+                logger.error(f"Could not read from {self.get_name()}: {repr(e)}")
 
     async def _receive_until_new_line(self):
         received = ""
         while 1:
-            data = await self._io_device.read()
-            received += data
-            if data == "\r" or data == "\n":
-                self._logger.write_raw(received)
-                return received
+            try:
+                data = await self._io_device.read()
+                received += data
+                if data == "\n":
+                    self._logger.write_raw(received)
+                    return received
+            except TypeError as e:
+                logger.error(f"{self.get_name()}: Error when reading. Wrong encoding?\n{repr(e)}")
+                return ""
