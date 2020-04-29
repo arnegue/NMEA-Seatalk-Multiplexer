@@ -24,6 +24,9 @@ class DataLengthException(DataValidationException):
 
 class SeatalkDevice(TaskDevice):
     class RawSeatalkLogger(TaskDevice.RawDataLogger):
+        def __init__(self, device_name):
+            super().__init__(device_name=device_name, terminator="\n")
+
         def write_raw_seatalk(self, rec, attribute, data):
             raw_string = ""
             data_gram_bytes = bytearray() + rec + attribute + data
@@ -107,7 +110,7 @@ class SeatalkDatagram(object):
 
     @staticmethod
     def get_value(data):
-        return (data[1] << 8 | data[0]) / 10.0
+        return data[1] << 8 | data[0]
 
     @staticmethod
     def twos_complement(value, byte):  # https://stackoverflow.com/questions/6727975
@@ -129,7 +132,7 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):
     def _process_datagram(self, first_half_byte, data):
         if len(data) == 3:  # TODO ? 3
             data = data[1:]
-        feet = self.get_value(data)
+        feet = self.get_value(data) / 10.0
         self.depth_m = feet / 3.2808  # TODO double-conversion
 
 
@@ -139,7 +142,16 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedOverWater):  # NMEA: vhw
         nmea_datagram.SpeedOverWater.__init__(self)
 
     def _process_datagram(self, first_half_byte, data):
-        self.speed_knots = self.get_value(data)
+        self.speed_knots = self.get_value(data) / 10.0
+
+
+class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedOverWater):  # NMEA: vhw
+    def __init__(self):
+        SeatalkDatagram.__init__(self, id=0x26, data_length=5)
+        nmea_datagram.SpeedOverWater.__init__(self)
+
+    def _process_datagram(self, first_half_byte, data):
+        self.speed_knots = self.get_value(data) / 100.0
 
 
 class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
@@ -148,9 +160,17 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
         nmea_datagram.WaterTemperature.__init__(self)
 
     def _process_datagram(self, first_half_byte, data):
-        # value = data[0]  # Celsius
-        # value = data[1]  # Fahrenheit
-        self.speed_knots = self.twos_complement(data[0], 1)
+        # TODO first_half_byte: Flag Z&4: Sensor defective or not connected (Z=4)
+        self.temperature_c = data[0]
+
+
+class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature):
+    def __init__(self):
+        SeatalkDatagram.__init__(self, id=0x27, data_length=2)
+        nmea_datagram.WaterTemperature.__init__(self)
+
+    def _process_datagram(self, first_half_byte, data):
+        self.temperature_c = (self.get_value(data) - 100) / 10
 
 
 class SetLampIntensityDatagram(SeatalkDatagram):
