@@ -44,7 +44,7 @@
       "TCP"
     ]
   },
-  "TCPServer": {
+  "TCP": {
     "type": "NMEADevice",
     "device_io": {
       "type": "TCPServer",
