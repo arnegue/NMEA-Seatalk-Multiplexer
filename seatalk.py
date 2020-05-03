@@ -79,7 +79,7 @@ class SeatalkDevice(TaskDevice):
                         else:
                             logger.info(f"{self.get_name()} doesn't have a corresponding NMEADatagram. Not enqueueing")
                     except SeatalkException as e:
-                        logger.error(repr(e))
+                        logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.byte_to_str(data_bytes))
                 else:
                     logger.error(f"Unknown data-byte: {self.byte_to_str(rec)}")
                     self._logger.write_raw(self.byte_to_str(rec))
@@ -93,8 +93,8 @@ class NotEnoughData(DataLengthException):
 
 
 class TooMuchData(DataLengthException):
-    def __init__(self, device, actual):
-        super().__init__(f"{type(device).__name__}: Length > 18 not allowed. Given length: {actual}")
+    def __init__(self, device, expected, actual):
+        super().__init__(f"{type(device).__name__}: Not enough data arrived. Expected: {expected}, actual {actual}")
 
 
 class SeatalkDatagram(object):
@@ -102,11 +102,13 @@ class SeatalkDatagram(object):
         self.id = bytes([id])
         self.data_length = data_length  # "Attribute" = length + 3 in datagram
         if data_length > 18 + 3:
-            raise TooMuchData(self, data_length)
+            raise TypeError(f"{type(self).__name__}: Length > 18 not allowed. Given length: {data_length + 3}")
 
     def process_datagram(self, first_half_byte, data):
-        if len(data) != self.data_length:
+        if len(data) < self.data_length:
             raise NotEnoughData(device=self, expected=self.data_length, actual=len(data))
+        elif len(data) > self.data_length:
+            raise TooMuchData(device=self, expected=self.data_length, actual=len(data))
         self._process_datagram(first_half_byte, data)
 
     @staticmethod
