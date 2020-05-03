@@ -37,7 +37,8 @@ class SeatalkDevice(TaskDevice):
     def __init__(self, name, io_device):
         super().__init__(name=name, io_device=io_device)
         self._seatalk_datagram_map = dict()
-        for datagram in DepthDatagram, SpeedDatagram, WaterTemperatureDatagram, SetLampIntensityDatagram:
+        # TODO dynamically
+        for datagram in DepthDatagram, SpeedDatagram, SpeedDatagram2, WaterTemperatureDatagram, WaterTemperatureDatagram2, SetLampIntensityDatagram:
             instantiated_datagram = datagram()
             self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
 
@@ -88,12 +89,12 @@ class SeatalkDevice(TaskDevice):
 
 class NotEnoughData(DataLengthException):
     def __init__(self, device, expected, actual):
-        super().__init__(f"{device}: Not enough data arrived. Expected: {expected}, actual {actual}")
+        super().__init__(f"{type(device).__name__}: Not enough data arrived. Expected: {expected}, actual {actual}")
 
 
 class TooMuchData(DataLengthException):
     def __init__(self, device, actual):
-        super().__init__(f"{device}: Length > 18 not allowed. Given length: {actual}")
+        super().__init__(f"{type(device).__name__}: Length > 18 not allowed. Given length: {actual}")
 
 
 class SeatalkDatagram(object):
@@ -154,7 +155,7 @@ class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedOverWater):  # NMEA: vh
         self.speed_knots = self.get_value(data) / 100.0
 
 
-class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
+class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
     def __init__(self):
         SeatalkDatagram.__init__(self, id=0x23, data_length=2)
         nmea_datagram.WaterTemperature.__init__(self)
@@ -164,7 +165,7 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
         self.temperature_c = data[0]
 
 
-class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature):
+class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
     def __init__(self):
         SeatalkDatagram.__init__(self, id=0x27, data_length=2)
         nmea_datagram.WaterTemperature.__init__(self)
