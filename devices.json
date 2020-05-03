@@ -4,7 +4,7 @@
     "device_io": {
       "type": "Serial",
       "port": "/dev/ttyUSB0",
-      "encoding": "ASCII"
+      "encoding": "UTF-8"
     },
     "observers": [
       "TCP"
