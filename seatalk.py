@@ -12,6 +12,14 @@ class SeatalkException(Exception):
     """
 
 
+class NoCorrespondingNMEASentence(SeatalkException):
+    """
+    Exception if Seatalk-Datagram doesn't have a belonging NMEA-Sentence (e.g. some commands for Display-Light)
+    """
+    def __init__(self, device):
+        logger.info(f"{type(device).__name__}: There is no corresponding NMEADatagram")
+
+
 class DataValidationException(SeatalkException):
     """
     Errors happening when converting raw Seatalk-Data
@@ -22,6 +30,24 @@ class DataLengthException(DataValidationException):
     """
     Exceptions happening in validation if length is incorrect
     """
+
+
+class NotEnoughData(DataLengthException):
+    def __init__(self, device, expected, actual):
+        super().__init__(f"{type(device).__name__}: Not enough data arrived. Expected: {expected}, actual {actual}")
+
+
+class TooMuchData(DataLengthException):
+    def __init__(self, device, expected, actual):
+        super().__init__(f"{type(device).__name__}: Too much data arrived. Expected: {expected}, actual {actual}")
+
+
+class DataNotRecognizedException(DataValidationException):
+    """
+    This exception is getting raised if the Command-Byte is not recognized
+    """
+    def __init__(self, device, command_byte):
+        super().__init__(f"{type(device).__name__}: Unknown command-byte: {SeatalkDevice.byte_to_str(command_byte)}")
 
 
 class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
@@ -73,31 +99,21 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
 
                     data_bytes += await self._io_device.read(data_length)
                     data_gram = self._seatalk_datagram_map[rec]
-                    try:
-                        data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
-                        # No need to verify checksum since it is generated the same way as it is checked
-                        if isinstance(data_gram, nmea_datagram.NMEADatagram):
-                            val = data_gram.get_nmea_sentence()
-                            await self._read_queue.put(val)
-                        else:
-                            logger.info(f"{self.get_name()} doesn't have a corresponding NMEADatagram. Not enqueueing")
-                    except SeatalkException as e:
-                        logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.bytes_to_str(data_bytes))
+
+                    data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
+                    # No need to verify checksum since it is generated the same way as it is checked
+                    if isinstance(data_gram, nmea_datagram.NMEADatagram):
+                        val = data_gram.get_nmea_sentence()
+                        await self._read_queue.put(val)
+                    else:
+                        raise NoCorrespondingNMEASentence(self.get_name())
                 else:
-                    logger.error(f"Unknown data-byte: {self.byte_to_str(rec)}")
-                    self._logger.write_raw(self.byte_to_str(rec))
+                    raise DataNotRecognizedException(self.get_name(), rec)
+            except SeatalkException as e:
+                logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.bytes_to_str(data_bytes))
+                # TODO maybe flush afterwards?
             finally:
                 self._logger.write_raw_seatalk(rec, attribute, data_bytes)
-
-
-class NotEnoughData(DataLengthException):
-    def __init__(self, device, expected, actual):
-        super().__init__(f"{type(device).__name__}: Not enough data arrived. Expected: {expected}, actual {actual}")
-
-
-class TooMuchData(DataLengthException):
-    def __init__(self, device, expected, actual):
-        super().__init__(f"{type(device).__name__}: Too much data arrived. Expected: {expected}, actual {actual}")
 
 
 class SeatalkDatagram(object, metaclass=ABCMeta):
