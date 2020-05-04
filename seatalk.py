@@ -1,4 +1,6 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABCMeta
+import inspect
+import sys
 import logger
 from device import TaskDevice
 import nmea_datagram
@@ -22,29 +24,30 @@ class DataLengthException(DataValidationException):
     """
 
 
-class SeatalkDevice(TaskDevice):
+class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
     class RawSeatalkLogger(TaskDevice.RawDataLogger):
         def __init__(self, device_name):
             super().__init__(device_name=device_name, terminator="\n")
 
         def write_raw_seatalk(self, rec, attribute, data):
-            raw_string = ""
             data_gram_bytes = bytearray() + rec + attribute + data
-            for val in data_gram_bytes:
-                raw_string += '0x%02X ' % val
-            self.write_raw(raw_string)
+            self.write_raw(SeatalkDevice.bytes_to_str(data_gram_bytes))
 
     def __init__(self, name, io_device):
         super().__init__(name=name, io_device=io_device)
         self._seatalk_datagram_map = dict()
-        # TODO dynamically
-        for datagram in DepthDatagram, SpeedDatagram, SpeedDatagram2, WaterTemperatureDatagram, WaterTemperatureDatagram2, SetLampIntensityDatagram:
-            instantiated_datagram = datagram()
-            self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
+        for name, obj in inspect.getmembers(sys.modules[__name__]):
+            if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj):
+                instantiated_datagram = obj()
+                self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
 
     @classmethod
     def byte_to_str(cls, byte):
         return '0x%02X ' % cls.get_numeric_byte_value(byte)
+
+    @classmethod
+    def bytes_to_str(cls, bytes):
+        return [cls.byte_to_str(byte) for byte in bytes]
 
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
@@ -79,7 +82,7 @@ class SeatalkDevice(TaskDevice):
                         else:
                             logger.info(f"{self.get_name()} doesn't have a corresponding NMEADatagram. Not enqueueing")
                     except SeatalkException as e:
-                        logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.byte_to_str(data_bytes))
+                        logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.bytes_to_str(data_bytes))
                 else:
                     logger.error(f"Unknown data-byte: {self.byte_to_str(rec)}")
                     self._logger.write_raw(self.byte_to_str(rec))
@@ -97,7 +100,7 @@ class TooMuchData(DataLengthException):
         super().__init__(f"{type(device).__name__}: Too much data arrived. Expected: {expected}, actual {actual}")
 
 
-class SeatalkDatagram(object):
+class SeatalkDatagram(object, metaclass=ABCMeta):
     def __init__(self, id, data_length):
         self.id = bytes([id])
         self.data_length = data_length  # "Attribute" = length + 3 in datagram
