@@ -75,10 +75,10 @@ class DepthBelowKeel(NMEADatagram):
         $SDDBT,7.8,f,2.4,M,1.3,F*0D\r\n
         """
         feet = self.depth_m * 3.28084
-        fantoms = self.depth_m * 0.54680665
+        fathoms = self.depth_m * 0.54680665
         return self._nmea_conversion((feet, 'f'),
                                      (self.depth_m, 'M'),
-                                     (fantoms, 'F'),)
+                                     (fathoms, 'F'),)
 
 
 class SpeedOverWater(NMEADatagram):
