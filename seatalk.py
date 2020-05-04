@@ -146,7 +146,7 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         pass
 
 
-class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):
+class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
     def __init__(self):
         SeatalkDatagram.__init__(self, id=0x00, data_length=3)
         nmea_datagram.DepthBelowKeel.__init__(self)
