@@ -94,7 +94,7 @@ class NotEnoughData(DataLengthException):
 
 class TooMuchData(DataLengthException):
     def __init__(self, device, expected, actual):
-        super().__init__(f"{type(device).__name__}: Not enough data arrived. Expected: {expected}, actual {actual}")
+        super().__init__(f"{type(device).__name__}: Too much data arrived. Expected: {expected}, actual {actual}")
 
 
 class SeatalkDatagram(object):
