@@ -124,6 +124,9 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
             raise TypeError(f"{type(self).__name__}: Length > 18 not allowed. Given length: {data_length + 3}")
 
     def process_datagram(self, first_half_byte, data):
+        """
+        Public method which does some data-validation before calling _process_datagram
+        """
         if len(data) < self.data_length:
             raise NotEnoughData(device=self, expected=self.data_length, actual=len(data))
         elif len(data) > self.data_length:
@@ -132,6 +135,9 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
 
     @staticmethod
     def get_value(data):
+        """
+        Returns the two-byte value as an integer
+        """
         return data[1] << 8 | data[0]
 
     @staticmethod
@@ -143,6 +149,9 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
 
     @abstractmethod
     def _process_datagram(self, first_half_byte, data):
+        """
+        Most important seatalk-method which finally processes given bytes
+        """
         pass
 
 
