@@ -39,9 +39,7 @@ class NMEADatagram(object):
     def verify_checksum(cls, nmea_str):
         try:
             nmea_str_checksum = int(nmea_str[-4:-2], 16)
-            temp_nmea_str = nmea_str[1:]  # Remove dollar
-            temp_nmea_str = temp_nmea_str[:-5]  # Remove \r\n and checksum
-            own_checksum = cls.checksum(temp_nmea_str)
+            own_checksum = cls.checksum(nmea_str[1:-5])  # Remove dollar, \r\n and checksum
         except ValueError as e:
             raise NMEAParseError(f"Could not parse {nmea_str}") from e
 
