@@ -39,9 +39,7 @@ class NMEADatagram(object):
     def verify_checksum(cls, nmea_str):
         try:
             nmea_str_checksum = int(nmea_str[-4:-2], 16)
-            temp_nmea_str = nmea_str[1:]  # Remove dollar
-            temp_nmea_str = temp_nmea_str[:-5]  # Remove \r\n and checksum
-            own_checksum = cls.checksum(temp_nmea_str)
+            own_checksum = cls.checksum(nmea_str[1:-5])  # Remove dollar, \r\n and checksum
         except ValueError as e:
             raise NMEAParseError(f"Could not parse {nmea_str}") from e
 
@@ -75,10 +73,10 @@ class DepthBelowKeel(NMEADatagram):
         $SDDBT,7.8,f,2.4,M,1.3,F*0D\r\n
         """
         feet = self.depth_m * 3.28084
-        fantoms = self.depth_m * 0.54680665
+        fathoms = self.depth_m * 0.54680665
         return self._nmea_conversion((feet, 'f'),
                                      (self.depth_m, 'M'),
-                                     (fantoms, 'F'),)
+                                     (fathoms, 'F'),)
 
 
 class SpeedThroughWater(NMEADatagram):

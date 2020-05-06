@@ -20,6 +20,9 @@ TCP_PIN_B = 6
 
 
 def create_devices_dict():
+    """
+    Creates a list of classes which may be instantiated if given in given devices-json-list
+    """
     devices_dict = {}
     for module in device, seatalk, nmea:
         for name, obj in inspect.getmembers(module):
@@ -29,6 +32,9 @@ def create_devices_dict():
 
 
 async def create_devices(path):
+    """
+    Creates devices-instances and its io-devices from given path to json-file
+    """
     # Read JSon-File
     async with curio.aopen(path) as file:
         content = await file.read()
@@ -44,6 +50,8 @@ async def create_devices(path):
         device_io_type = device_io_dict.pop("type")
         device_io_class = getattr(device_io, device_io_type)
 
+        # Passes named parameters to to-be-created-objects (even None)
+        # if parameter is not given, default value will be assumed
         device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if (v is not None)})
         device_instance = device_type(name=name, io_device=device_io_instance)
         logger.info(f"Instantiated Device {name} of type: {device_type.__name__}, IO {device_io_class.__name__}")

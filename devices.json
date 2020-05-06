@@ -4,7 +4,19 @@
     "device_io": {
       "type": "Serial",
       "port": "/dev/ttyUSB0",
-      "encoding": "ASCII"
+      "encoding": "UTF-8"
+    },
+    "observers": [
+      "TCP"
+    ]
+  },
+  "AIS": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "Serial",
+      "port": "/dev/ttyS2",
+      "baudrate": 38400,
+      "encoding": "UTF-8"
     },
     "observers": [
       "TCP"
@@ -44,7 +56,7 @@
       "TCP"
     ]
   },
-  "TCPServer": {
+  "TCP": {
     "type": "NMEADevice",
     "device_io": {
       "type": "TCPServer",

@@ -148,7 +148,7 @@ class TCPClient(TCP):
                 logger.info(f"Trying to connect to {self._ip}:{self._port}...")
                 client = await curio.open_connection(self._ip, self._port)
                 await self._serve_client(client, (self._ip, self._port))
-            except (TimeoutError, ConnectionError) as e:
+            except (TimeoutError, ConnectionError, OSError) as e:
                 logger.error("ConnectionError: " + repr(e))
                 await curio.sleep(1)
 
