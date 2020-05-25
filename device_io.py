@@ -154,7 +154,7 @@ class TCPClient(TCP):
 
 
 class File(IO):
-    def __init__(self, path, encoding):
+    def __init__(self, path, encoding=False):
         super().__init__(encoding)
         self._path_to_file = pathlib.Path(path)
         self._last_index = 0
@@ -179,7 +179,7 @@ class File(IO):
 
 
 class Serial(IO):
-    def __init__(self, port, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, encoding=None):
+    def __init__(self, port, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, encoding=False):
         super().__init__(encoding)
         parity = self._get_parity_enum(parity)
         self._serial = serial.Serial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
