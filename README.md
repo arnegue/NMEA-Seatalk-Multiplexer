@@ -81,7 +81,7 @@ This example creates a TCP-Server called "MyTCPServer" on port 9900 with ACII-En
  
 ### Client
 
-This example creates a client which will try to connect to ``172.24.1.1:9901``.
+This example creates a client which will try to connect to ``172.24.1.1:9901``. Setting ``ip`` to a hostname does also work.
 
 ```json
 "MyTCPClient": {
