@@ -15,7 +15,7 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class Logger(object, metaclass=Singleton):
+class Logger(object):
     def __init__(self, log_file_dir="./logs", log_file_name="main_log.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None, print_stdout=True):
         log_formatter = logging.Formatter(log_format)
         if not os.path.exists(log_file_dir):
@@ -51,7 +51,11 @@ class Logger(object, metaclass=Singleton):
         self._log(level=logging.ERROR, msg=log_string)
 
 
+class GeneralLogger(Logger, metaclass=Singleton):
+    pass
+
+
 warn = info = error = None
 if warn is info is error is None:
-    logger = Logger()
+    logger = GeneralLogger()
     warn = logger.warn; info = logger.info; error = logger.error

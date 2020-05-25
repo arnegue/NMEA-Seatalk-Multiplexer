@@ -12,8 +12,10 @@ class NMEADevice(TaskDevice):
             data = await self._receive_until_new_line()
             try:
                 NMEADatagram.verify_checksum(data)
+                self._logger.info(data)
                 await self._read_queue.put(data)
             except NMEAParseError as e:
+                self._logger.error(data)
                 logger.error(f"Could not read from {self.get_name()}: {repr(e)}")
 
     async def _receive_until_new_line(self):
@@ -27,4 +29,5 @@ class NMEADevice(TaskDevice):
                     return received
             except TypeError as e:
                 logger.error(f"{self.get_name()}: Error when reading. Wrong encoding?\n{repr(e)}")
+                self._logger.error(received)
                 return ""
