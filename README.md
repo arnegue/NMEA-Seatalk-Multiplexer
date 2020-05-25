@@ -19,7 +19,9 @@ To set up a remote-debugger and cross compiler, it was a little too much just fo
 * Python 3 (Tested Python 3.6)
 * Easy logging for raw-data and "normal" logging
 * Support for IO:
-** TCP
-** File
-** Serial
+  * TCP (Client and Server, currently only one client allowed)
+  * File
+  * Default Serial NMEA-Reading
+  * Seatalk
+  * StdOut (only out)
 * Devices are JSON-configurable (no need to directly write your devices into code)
