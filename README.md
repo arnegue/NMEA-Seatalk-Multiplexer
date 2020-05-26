@@ -174,7 +174,8 @@ There are two different kinds of logging: RawDataLogger and GlobalLogger. Every 
 These logger are using RotatingFileHandler.
 
 > Handler for logging to a set of files, which switches from one file to the next when the current file reaches a certain size.
->  -- <cite>logging.handlers.RotatingFileHandler</cite>
+>
+>  logging.handlers.RotatingFileHandler
 
 * Mode: append
 * MaxSize per file (bytes): 5 * 1024 * 1024
