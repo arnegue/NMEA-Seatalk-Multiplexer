@@ -1,5 +1,5 @@
-# NMEA Seatalk-Multiplexer
-Python-Multiplexer for NMEA and Seatalk-Devices (via Serial, TCP, File...)
+# NMEA-Seatalk-Multiplexer
+Python-Multiplexer for NMEA- and Seatalk-Devices
 
 ## Why
 I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project. But it seemed too complicated and over the top for me:
@@ -28,6 +28,12 @@ To set up a remote-debugger and cross compiler, it was a little too much just fo
   * StdOut (only out)
 * Devices are JSON-configurable (no need to directly write your devices into code)
 
+## Invocation
+
+Start the program with like this:
+
+* Default devices-file: ``python -m main_file``
+* Custom devices-file (in this example ``my_devices.json``): ``python -m main_file --devices my_devices.json``
 
 ## Creating your devices
 
@@ -44,7 +50,7 @@ A typical device is built like this:
         ...
     },
     "observers": [
-       ...
+        ...
     ]
   },
 }
@@ -77,7 +83,7 @@ This example creates a TCP-Server called "MyTCPServer" on port 9900 with ACII-En
   },
   "observers": [
   ]
-},
+}
 ```
  
 #### Client
