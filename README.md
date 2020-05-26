@@ -19,7 +19,7 @@ To set up a remote-debugger and cross compiler, it was a little too much just fo
 * Easy logging for raw-data and "normal" logging
 * Supported data:
   * NMEA
-  * Seatalk
+  * Seatalk (writing partially supported because of missing bit-toggling)
   * (I2C for NASA-Clipper-Devices to be done, [similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
 * Support for IO:
   * TCP (Client and Server, currently only one client allowed)
