@@ -49,10 +49,9 @@ class NMEADatagram(object):
     @staticmethod
     def _get_value(value, unit):
         """
-        Only create value if it is set
+        Only fill in value if it is set
         """
-        empty_data = ",,"
-        return f",{value:.1f},{unit}" if value is not None else empty_data
+        return f",{value:.1f},{unit}" if value is not None else f",,{unit}"
 
     @classmethod
     def _nmea_conversion(cls, *value_tuple):
