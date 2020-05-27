@@ -17,7 +17,7 @@ To set up a remote-debugger and cross compiler, it was a little too much just fo
 * Runs on Windows and Linux (Tested Windows 10, Armbian 4.19)
 * Python 3 (Tested Python 3.6)
 * Easy logging for raw-data and "normal" logging
-* Supported data:
+* Supported Interfaces:
   * NMEA
   * Seatalk (writing partially supported because of missing bit-toggling)
   * (I2C for NASA-Clipper-Devices to be done, [similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
@@ -34,6 +34,30 @@ Start the program with like this:
 
 * Default devices-file: ``python -m main_file``
 * Custom devices-file (in this example ``my_devices.json``): ``python -m main_file --devices my_devices.json``
+
+## Supported Interfaces
+
+### NMEA 0183
+
+Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. No parsing is happening here
+
+### Seatalk 1
+ 
+A big part of help for parsing Seatalk-Sentences and building hardware to be able to receive has come from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
+
+Supported (and tested on ST50 and ST60) Seatalk-IDs:
+
+* 0x00 - Depth
+* 0x20 - Speed through water
+* 0x23 - Water Temperature
+* 0x26 - Speed through water
+* 0x27 - Water Temperature
+* 0x30 - Set Lamp Intensity (No corresponding NMEA), only receiving possible
+
+### I2C
+
+To be done: Testing on [NASA Clipper Instruments](https://www.nasamarine.com/product-category/products/instruments/clipper/)
+
 
 ## Creating your devices
 
