@@ -4,6 +4,10 @@ import curio
 import serial
 import logger
 from functools import partial
+try:
+    import smbus2
+except ModuleNotFoundError:
+    pass
 
 
 class IO(object):
@@ -56,6 +60,21 @@ class StdOutPrinter(IO):
     async def _write(self, data):
         data = data.decode(self._encoding)
         logger.info(data)
+
+
+class I2C(IO):
+    def __init__(self, port, address, encoding=False):
+        super().__init__(encoding)
+        self._port = port
+        self._address = address
+
+    async def _read(self, length=1):
+        with smbus2.SMBus(self._port) as bus:
+            return bus.read_i2c_block_data(self._address, 0, length)
+
+    async def _write(self, data):
+        with smbus2.SMBus(self._port) as bus:
+            bus.write_i2c_block_data(self._address, 0, data)
 
 
 class TCP(IO, ABC):
