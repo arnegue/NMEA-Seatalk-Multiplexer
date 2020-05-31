@@ -73,13 +73,18 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
 
     @classmethod
     def bytes_to_str(cls, bytes):
-        return [cls.byte_to_str(byte) for byte in bytes]
+        bytes_str = ""
+        for byte in bytes:
+            bytes_str += cls.byte_to_str(byte)
+        return bytes_str
 
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
 
     @staticmethod
     def get_numeric_byte_value(byte):
+        if isinstance(byte, int):
+            return byte
         return int.from_bytes(byte, "big")
 
     async def _read_task(self):
@@ -110,10 +115,16 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 else:
                     raise DataNotRecognizedException(self, rec)
             except SeatalkException as e:
-                logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.bytes_to_str(data_bytes))
+                rec_str = self.byte_to_str(rec)
+                attr_str = self.byte_to_str(attribute)
+                data_str = self.bytes_to_str(data_bytes)
+                logger.error(repr(e) + " " + rec_str + attr_str + data_str)
                 # TODO maybe flush afterwards?
             finally:
-                self._logger.write_raw_seatalk(rec, attribute, data_bytes)
+                try:
+                    self._logger.write_raw_seatalk(rec, attribute, data_bytes)
+                except Exception as e:
+                    logger.error(f"Exception in writing to seatalk-log {repr(e)}")
 
 
 class SeatalkDatagram(object, metaclass=ABCMeta):
