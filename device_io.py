@@ -67,7 +67,7 @@ class TCP(IO, ABC):
 
         self._write_task_handle = None
 
-        self._read_write_size = 100000
+        self._read_write_size = 10
         self._read_queue = curio.Queue(self._read_write_size)
         self._write_queue = curio.Queue(self._read_write_size)
 
