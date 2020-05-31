@@ -16,8 +16,8 @@ class NoCorrespondingNMEASentence(SeatalkException):
     """
     Exception if Seatalk-Datagram doesn't have a belonging NMEA-Sentence (e.g. some commands for Display-Light)
     """
-    def __init__(self, device):
-        logger.info(f"{type(device).__name__}: There is no corresponding NMEADatagram")
+    def __init__(self, datagram):
+        logger.info(f"{type(datagram).__name__}: There is no corresponding NMEADatagram")
 
 
 class DataValidationException(SeatalkException):
@@ -47,7 +47,7 @@ class DataNotRecognizedException(DataValidationException):
     This exception is getting raised if the Command-Byte is not recognized
     """
     def __init__(self, device, command_byte):
-        super().__init__(f"{type(device).__name__}: Unknown command-byte: {SeatalkDevice.byte_to_str(command_byte)}")
+        super().__init__(f"{device.get_name()}: Unknown command-byte: {SeatalkDevice.byte_to_str(command_byte)}")
 
 
 class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
@@ -106,9 +106,9 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                         val = data_gram.get_nmea_sentence()
                         await self._read_queue.put(val)
                     else:
-                        raise NoCorrespondingNMEASentence(self.get_name())
+                        raise NoCorrespondingNMEASentence(data_gram)
                 else:
-                    raise DataNotRecognizedException(self.get_name(), rec)
+                    raise DataNotRecognizedException(self, rec)
             except SeatalkException as e:
                 logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.bytes_to_str(data_bytes))
                 # TODO maybe flush afterwards?
