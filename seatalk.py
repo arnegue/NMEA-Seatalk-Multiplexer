@@ -16,8 +16,8 @@ class NoCorrespondingNMEASentence(SeatalkException):
     """
     Exception if Seatalk-Datagram doesn't have a belonging NMEA-Sentence (e.g. some commands for Display-Light)
     """
-    def __init__(self, device):
-        logger.info(f"{type(device).__name__}: There is no corresponding NMEADatagram")
+    def __init__(self, data_gram):
+        logger.info(f"{type(data_gram).__name__}: There is no corresponding NMEADatagram")
 
 
 class DataValidationException(SeatalkException):
@@ -33,21 +33,21 @@ class DataLengthException(DataValidationException):
 
 
 class NotEnoughData(DataLengthException):
-    def __init__(self, device, expected, actual):
-        super().__init__(f"{type(device).__name__}: Not enough data arrived. Expected: {expected}, actual {actual}")
+    def __init__(self, data_gram, expected, actual):
+        super().__init__(f"{type(data_gram).__name__}: Not enough data arrived. Expected: {expected}, actual {actual}")
 
 
 class TooMuchData(DataLengthException):
-    def __init__(self, device, expected, actual):
-        super().__init__(f"{type(device).__name__}: Too much data arrived. Expected: {expected}, actual {actual}")
+    def __init__(self, data_gram, expected, actual):
+        super().__init__(f"{type(data_gram).__name__}: Too much data arrived. Expected: {expected}, actual {actual}")
 
 
 class DataNotRecognizedException(DataValidationException):
     """
     This exception is getting raised if the Command-Byte is not recognized
     """
-    def __init__(self, device, command_byte):
-        super().__init__(f"{type(device).__name__}: Unknown command-byte: {SeatalkDevice.byte_to_str(command_byte)}")
+    def __init__(self, device_name, command_byte):
+        super().__init__(f"{device_name}: Unknown command-byte: {SeatalkDevice.byte_to_str(command_byte)}")
 
 
 class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
@@ -106,7 +106,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                         val = data_gram.get_nmea_sentence()
                         await self._read_queue.put(val)
                     else:
-                        raise NoCorrespondingNMEASentence(self.get_name())
+                        raise NoCorrespondingNMEASentence(data_gram)
                 else:
                     raise DataNotRecognizedException(self.get_name(), rec)
             except SeatalkException as e:
@@ -128,9 +128,9 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         Public method which does some data-validation before calling _process_datagram
         """
         if len(data) < self.data_length:
-            raise NotEnoughData(device=self, expected=self.data_length, actual=len(data))
+            raise NotEnoughData(data_gram=self, expected=self.data_length, actual=len(data))
         elif len(data) > self.data_length:
-            raise TooMuchData(device=self, expected=self.data_length, actual=len(data))
+            raise TooMuchData(data_gram=self, expected=self.data_length, actual=len(data))
         self._process_datagram(first_half_byte, data)
 
     @staticmethod
