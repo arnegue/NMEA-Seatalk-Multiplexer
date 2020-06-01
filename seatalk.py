@@ -77,33 +77,41 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
         while True:
-            rec = attribute = bytes()
+            cmd_byte = attribute = bytes()
             data_bytes = bytearray()
             try:
-                rec = await self._io_device.read(1)
-                if rec in self._seatalk_datagram_map:
+                # Get Command-Byte
+                cmd_byte = await self._io_device.read(1)
+                if cmd_byte in self._seatalk_datagram_map:
+                    # Extract datagram
+                    data_gram = self._seatalk_datagram_map[cmd_byte]
+
+                    # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
                     attribute = await self._io_device.read(1)
-                    attribute_nr = self.get_numeric_byte_value(attribute)
+                    attribute_nr = get_numeric_byte_value(attribute)
                     data_length = (attribute_nr & 0b00001111) + 1
                     attr_data = (attribute_nr & 0b11110000) >> 4
+                    # Verifies length (will raise exception before actually receiving data which won't be needed
+                    data_gram.verify_data_length(data_length)
 
+                    # At this point data_length is okay, finally receive it and progress whole datagram
                     data_bytes += await self._io_device.read(data_length)
-                    data_gram = self._seatalk_datagram_map[rec]
-
                     data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
                     # No need to verify checksum since it is generated the same way as it is checked
+
+                    # Now check if there is a corresponding NMEA-Datagram (e.g. SetLampIntensityDatagram does not have one)
                     if isinstance(data_gram, nmea_datagram.NMEADatagram):
                         val = data_gram.get_nmea_sentence()
                         await self._read_queue.put(val)
                     else:
                         raise NoCorrespondingNMEASentence(data_gram)
                 else:
-                    raise DataNotRecognizedException(self.get_name(), rec)
+                    raise DataNotRecognizedException(self.get_name(), cmd_byte)
             except SeatalkException as e:
-                logger.error(repr(e) + " " + self.byte_to_str(rec) + self.byte_to_str(attribute) + self.bytes_to_str(data_bytes))
+                logger.error(repr(e) + " " + byte_to_str(cmd_byte) + byte_to_str(attribute) + bytes_to_str(data_bytes))
                 # TODO maybe flush afterwards?
             finally:
-                self._logger.write_raw_seatalk(rec, attribute, data_bytes)
+                self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes)
 
 
 class SeatalkDatagram(object, metaclass=ABCMeta):
@@ -113,15 +121,23 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         if data_length > 18 + 3:
             raise TypeError(f"{type(self).__name__}: Length > 18 not allowed. Given length: {data_length + 3}")
 
+    def verify_data_length(self, data_len):
+        """
+        Verifies if received data-length is correct. Raises exception if not
+
+        :param data_len: length of data
+        """
+        if data_len < self.data_length:
+            raise NotEnoughData(data_gram=self, expected=self.data_length, actual=data_len)
+        elif data_len > self.data_length:
+            raise TooMuchData(data_gram=self, expected=self.data_length, actual=data_len)
+
+    @abstractmethod
     def process_datagram(self, first_half_byte, data):
         """
-        Public method which does some data-validation before calling _process_datagram
+        Most important seatalk-method which finally processes given bytes
         """
-        if len(data) < self.data_length:
-            raise NotEnoughData(data_gram=self, expected=self.data_length, actual=len(data))
-        elif len(data) > self.data_length:
-            raise TooMuchData(data_gram=self, expected=self.data_length, actual=len(data))
-        self._process_datagram(first_half_byte, data)
+        raise NotImplementedError()
 
     @staticmethod
     def get_value(data):
@@ -130,27 +146,13 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         """
         return data[1] << 8 | data[0]
 
-    @staticmethod
-    def twos_complement(value, byte):  # https://stackoverflow.com/questions/6727975
-        bits = byte * 8
-        if value & (1 << (bits - 1)):
-            value -= 1 << bits
-        return value
-
-    @abstractmethod
-    def _process_datagram(self, first_half_byte, data):
-        """
-        Most important seatalk-method which finally processes given bytes
-        """
-        pass
-
 
 class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
     def __init__(self):
         SeatalkDatagram.__init__(self, id=0x00, data_length=3)
         nmea_datagram.DepthBelowKeel.__init__(self)
 
-    def _process_datagram(self, first_half_byte, data):
+    def process_datagram(self, first_half_byte, data):
         if len(data) == 3:  # TODO ? 3
             data = data[1:]
         feet = self.get_value(data) / 10.0
@@ -162,7 +164,7 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: 
         SeatalkDatagram.__init__(self, id=0x20, data_length=2)
         nmea_datagram.SpeedThroughWater.__init__(self)
 
-    def _process_datagram(self, first_half_byte, data):
+    def process_datagram(self, first_half_byte, data):
         self.speed_knots = self.get_value(data) / 10.0
 
 
@@ -171,7 +173,7 @@ class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA:
         SeatalkDatagram.__init__(self, id=0x26, data_length=5)
         nmea_datagram.SpeedThroughWater.__init__(self)
 
-    def _process_datagram(self, first_half_byte, data):
+    def process_datagram(self, first_half_byte, data):
         self.speed_knots = self.get_value(data) / 100.0
 
 
@@ -180,7 +182,7 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
         SeatalkDatagram.__init__(self, id=0x23, data_length=2)
         nmea_datagram.WaterTemperature.__init__(self)
 
-    def _process_datagram(self, first_half_byte, data):
+    def process_datagram(self, first_half_byte, data):
         # TODO first_half_byte: Flag Z&4: Sensor defective or not connected (Z=4)
         self.temperature_c = data[0]
 
@@ -190,7 +192,7 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
         SeatalkDatagram.__init__(self, id=0x27, data_length=2)
         nmea_datagram.WaterTemperature.__init__(self)
 
-    def _process_datagram(self, first_half_byte, data):
+    def process_datagram(self, first_half_byte, data):
         self.temperature_c = (self.get_value(data) - 100) / 10
 
 
@@ -210,7 +212,7 @@ class SetLampIntensityDatagram(SeatalkDatagram):
             self._intensity = 12  # That's weird. All the time it's a shifted bit but this is 0x1100
         return [self.id, 0x40, self._intensity]
 
-    def _process_datagram(self, first_half_byte, data):
+    def process_datagram(self, first_half_byte, data):
         intensity = data[0]
         if intensity == 0:
             self._intensity = 0
