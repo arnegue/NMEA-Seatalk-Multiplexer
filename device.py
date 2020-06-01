@@ -92,7 +92,7 @@ class TaskDevice(Device, metaclass=ABCMeta):
                 sentence = sentence.get_nmea_sentence()
             await self._write_queue.put(sentence)
 
-    async def get_nmea_sentence(self):
+    async def get_nmea_sentence(self) -> NMEADatagram:
         return await self._read_queue.get()
 
     async def shutdown(self):

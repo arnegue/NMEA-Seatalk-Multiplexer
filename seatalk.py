@@ -1,6 +1,8 @@
 from abc import abstractmethod, ABCMeta
 import inspect
 import sys
+
+from helper import get_numeric_byte_value, byte_to_str, bytes_to_str
 import logger
 from device import TaskDevice
 import nmea_datagram
@@ -47,7 +49,7 @@ class DataNotRecognizedException(DataValidationException):
     This exception is getting raised if the Command-Byte is not recognized
     """
     def __init__(self, device_name, command_byte):
-        super().__init__(f"{device_name}: Unknown command-byte: {SeatalkDevice.byte_to_str(command_byte)}")
+        super().__init__(f"{device_name}: Unknown command-byte: {byte_to_str(command_byte)}")
 
 
 class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
@@ -57,7 +59,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
 
         def write_raw_seatalk(self, rec, attribute, data):
             data_gram_bytes = bytearray() + rec + attribute + data
-            self.write_raw(SeatalkDevice.bytes_to_str(data_gram_bytes))
+            self.write_raw(bytes_to_str(data_gram_bytes))
 
     def __init__(self, name, io_device):
         super().__init__(name=name, io_device=io_device)
@@ -67,20 +69,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 instantiated_datagram = obj()
                 self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
 
-    @classmethod
-    def byte_to_str(cls, byte):
-        return '0x%02X ' % cls.get_numeric_byte_value(byte)
-
-    @classmethod
-    def bytes_to_str(cls, bytes):
-        return [cls.byte_to_str(byte) for byte in bytes]
-
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
-
-    @staticmethod
-    def get_numeric_byte_value(byte):
-        return int.from_bytes(byte, "big")
 
     async def _read_task(self):
         """
