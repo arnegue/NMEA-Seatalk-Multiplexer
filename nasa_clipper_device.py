@@ -162,11 +162,3 @@ class ClipperLog(NasaClipperDevice):
 
     def convert_value(self, value):
         return value / 1.150  # statute miles miles  to knots
-
-
-a = ClipperEcho(name="fakeEcho", io_device=None)
-
-answer_addr = 0x7c
-cmd = [answer_addr, 0xCE, 0x80, 0xE0, 0xF8, 0x70]
-data = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
-a.get_nmea_datagram(data= data)
