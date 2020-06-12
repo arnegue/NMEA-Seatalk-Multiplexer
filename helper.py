@@ -23,7 +23,3 @@ def bytes_to_str(bytes):
 
 def get_numeric_byte_value(byte):
     return int.from_bytes(byte, "big")
-
-
-a = bytes_to_str(bytearray([0x21, 0x2E]))
-print(a)
