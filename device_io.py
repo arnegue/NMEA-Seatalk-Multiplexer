@@ -63,6 +63,9 @@ class StdOutPrinter(IO):
 
 
 class I2C(IO):
+    """
+    I2C-Class
+    """
     def __init__(self, port, address, encoding=False):
         super().__init__(encoding)
         self._port = port
