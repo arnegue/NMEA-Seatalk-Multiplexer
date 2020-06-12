@@ -7,6 +7,9 @@ from functools import partial
 
 
 class IO(object):
+    """
+    Base IO class, providing read and write methods
+    """
     def __init__(self, encoding=False):
         self._encoding = encoding
         self._read_write_lock = curio.Lock()
@@ -49,6 +52,9 @@ class IO(object):
 
 
 class StdOutPrinter(IO):
+    """
+    IO-Class for StdOut
+    """
     async def _read(self, length=1):
         await curio.sleep(1)
         return bytes([0])
@@ -59,6 +65,9 @@ class StdOutPrinter(IO):
 
 
 class TCP(IO, ABC):
+    """
+    Basic Abstract Class for TCP-Connections
+    """
     def __init__(self, port, encoding=False):
         super().__init__(encoding)
         self.client = None
@@ -125,11 +134,17 @@ class TCP(IO, ABC):
 
 
 class TCPServer(TCP):
+    """
+    TCP-Server Class
+    """
     async def initialize(self):
         await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
 
 
 class TCPClient(TCP):
+    """
+    TCP-Client-Class
+    """
     def __init__(self, ip, port, encoding=False):
         super().__init__(port, encoding)
         self._ip = ip
@@ -154,6 +169,9 @@ class TCPClient(TCP):
 
 
 class File(IO):
+    """
+    Class fro reading and writing to file
+    """
     def __init__(self, path, encoding=False):
         super().__init__(encoding)
         self._path_to_file = pathlib.Path(path)
@@ -179,6 +197,9 @@ class File(IO):
 
 
 class Serial(IO):
+    """
+    IO-Class providing methods to read and write from/to serial periphery
+    """
     def __init__(self, port, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, encoding=False):
         super().__init__(encoding)
         parity = self._get_parity_enum(parity)
