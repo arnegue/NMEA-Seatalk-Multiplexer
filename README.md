@@ -2,7 +2,7 @@
 Python-Multiplexer for NMEA- and Seatalk-Devices
 
 ## Why
-I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project. But it seemed too complicated and over the top for me:
+I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project. But for me it seemed too complicated and over the top:
 
 * Written in C++ 
 * Many dependencies 
@@ -10,16 +10,16 @@ I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library.
 * To set it up is complex/complicated
 
 Why am i writing that? I don't want to run that project on a "big" computer. I wanted to get this done on a Raspberry-like system (Orange Pi zero). 
-To set up a remote-debugger and cross compiler, it was a little too much just for testing.
+It was a little too much just for testing to set up a remote-debugger and cross compiler.
 
 ## Features
 
-* Runs on Windows and Linux (Tested Windows 10, Armbian 4.19)
-* Python 3 (Tested Python 3.6)
+* Runs on Windows and Linux (Tested Windows 10, Armbian 4.19, Raspbian)
+* Python 3 (Tested Python 3.6 and 3.7)
 * Easy logging for raw-data and "normal" logging
-* Supported Interfaces:
+* Supported interfaces:
   * NMEA
-  * Seatalk (writing partially supported because of missing bit-toggling)
+  * Seatalk (writing partially supported because of missing bit-toggling when writing to interface)
   * (I2C for NASA-Clipper-Devices to be done, [similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
 * Support for IO:
   * TCP (Client and Server, currently only one client allowed)
@@ -30,7 +30,7 @@ To set up a remote-debugger and cross compiler, it was a little too much just fo
 
 ## Invocation
 
-Start the program with like this:
+Start the program like this:
 
 * Default devices-file: ``python -m main_file``
 * Custom devices-file (in this example ``my_devices.json``): ``python -m main_file --devices my_devices.json``
@@ -39,7 +39,7 @@ Start the program with like this:
 
 ### NMEA 0183
 
-Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. No parsing is happening here
+Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. No parsing is happening here.
 
 ### Seatalk 1
  
@@ -84,18 +84,18 @@ A typical device is built like this:
 * The ``type`` specifies the type of data the devices receives (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
 * ``device_io`` sets the IO-Settings needed for communication to that device (explained below).
   * Every ``device_io`` needs at least ``type`` to ensure which I/O to be used.
-  * Settings ``encoding`` os optional for every ``device_io``
+  * Settings ``encoding`` is optional for every ``device_io``
   * Every other settings given in that section depend on the ``type``
-* The ``observer`` section contains a list of 0-n DeviceNames which observe this device (getting this device's data)
+* The ``observer`` section contains a list of 0-to-n DeviceNames which observe this device (getting this device's data)
 
 
 ### TCP
 
-You can create either create a TCP-Server or a -Client
+You can create either a TCP-Server or a -Client
 
 #### Server
 
-This example creates a TCP-Server called "MyTCPServer" on port 9900 with ACII-Encoding. This device's type is NMEADevice. So it only transmits/receives NMEA-Strings.
+This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-Encoding. This device's type is NMEADevice. So it only transmits/receives NMEA-Strings.
 
 ```json
 "MyTCPServer": {

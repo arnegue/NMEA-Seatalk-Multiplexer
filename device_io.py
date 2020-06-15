@@ -170,7 +170,7 @@ class TCPClient(TCP):
 
 class File(IO):
     """
-    Class fro reading and writing to file
+    Class for reading and writing to file
     """
     def __init__(self, path, encoding=False):
         super().__init__(encoding)
