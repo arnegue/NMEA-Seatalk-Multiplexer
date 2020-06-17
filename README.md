@@ -20,7 +20,7 @@ To set up a remote-debugger and cross compiler, it was a little too much just fo
 * Supported Interfaces:
   * NMEA
   * Seatalk (writing partially supported because of missing bit-toggling)
-  * (I2C for NASA-Clipper-Devices to be done, [similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
+  * I2C for NASA-Clipper-Devices ([similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
 * Support for IO:
   * TCP (Client and Server, currently only one client allowed)
   * File
@@ -56,7 +56,10 @@ Supported (and tested on ST50 and ST60) Seatalk-IDs:
 
 ### I2C
 
-To be done: Testing on [NASA Clipper Instruments](https://www.nasamarine.com/product-category/products/instruments/clipper/)
+This was created for [NASA Clipper Instruments](https://www.nasamarine.com/product-category/products/instruments/clipper/)
+
+Since there are no default Windows-I2C-Devices I only tested in on a Raspberry. Unfortunately the default Raspberry Pi I2C only works as master. 
+After some research I got to [PiGPIO](https://abyz.me.uk/rpi/pigpio/python.html#bsc_i2c) which supports working as slave on GPIO Pins 18 and 19 [and sometimes 10 and 11]).
 
 
 ## Creating your devices

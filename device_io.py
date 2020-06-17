@@ -4,10 +4,6 @@ import curio
 import serial
 import logger
 from functools import partial
-try:
-    import smbus2
-except ModuleNotFoundError:
-    pass
 
 
 class IO(object):
@@ -63,18 +59,30 @@ class StdOutPrinter(IO):
 
 
 class I2C(IO):
-    def __init__(self, port, address, encoding=False):
+    def __init__(self, address, encoding=False):
+        # TODO port?
+        import pigpio
         super().__init__(encoding)
-        self._port = port
+        self._address = address
+
+        self.pi = pigpio.pi()
+        if not self.pi.connected:
+            raise Exception("Could not connect")
         self._address = address
 
     async def _read(self, length=1):
-        with smbus2.SMBus(self._port) as bus:
-            return bus.read_i2c_block_data(self._address, 0, length)
+        bytes_read = 0
+        while not bytes_read:
+            status, bytes_read, data = self.pi.bsc_i2c(self._address)
+            print("Status: ", status)
+            if not bytes_read:
+                await curio.sleep(0.5)
+        return data
 
-    async def _write(self, data):
-        with smbus2.SMBus(self._port) as bus:
-            bus.write_i2c_block_data(self._address, 0, data)
+    async def cancel(self):
+        self.callback.cancel()
+        self.pi.bsc_i2c(0)  # Disable BSC peripheral
+        self.pi.stop()
 
 
 class TCP(IO, ABC):
