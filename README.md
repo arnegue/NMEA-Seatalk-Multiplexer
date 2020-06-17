@@ -102,7 +102,7 @@ This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-E
   "type": "NMEADevice",
   "device_io": {
     "type": "TCPServer",
-    "port": "9900",
+    "port": 9900,
     "encoding": "ASCII"
   },
   "observers": [
@@ -119,7 +119,7 @@ This example creates a client which will try to connect to ``172.24.1.1:9901``. 
   "type": "NMEADevice",
   "device_io": {
     "type": "TCPClient",
-    "port": "9901",
+    "port": 9901,
     "ip": "172.24.1.1",
     "encoding": "ASCII"
   },
