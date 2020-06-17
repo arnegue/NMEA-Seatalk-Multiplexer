@@ -10,7 +10,7 @@ from device_indicator.led_device_indicator import DeviceIndicator
 class Device(object, metaclass=ABCMeta):
     class RawDataLogger(logger.Logger):
         def __init__(self, device_name, terminator=""):
-            super().__init__(log_file_name=device_name + "_raw.log", log_format="%(asctime)s %(message)s", terminator=terminator, print_stdout=False)
+            super().__init__(log_file_name=device_name + "_raw.log", terminator=terminator, print_stdout=False)
 
         def write_raw(self, data):
             self.info(data)
@@ -59,8 +59,8 @@ class Device(object, metaclass=ABCMeta):
 class TaskDevice(Device, metaclass=ABCMeta):
     def __init__(self, name, io_device, max_queue_size=10):
         super().__init__(name, io_device)
-        self._write_queue = curio.Queue(maxsize=max_queue_size)
-        self._read_queue = curio.Queue(maxsize=max_queue_size)
+        self._write_queue = curio.Queue(maxsize=max_queue_size)  # only nmea-datagrams
+        self._read_queue = curio.Queue(maxsize=max_queue_size)  # only nmea-datagrams
         self._write_task_handle = None
         self._read_task_handle = None
 
@@ -92,7 +92,7 @@ class TaskDevice(Device, metaclass=ABCMeta):
                 sentence = sentence.get_nmea_sentence()
             await self._write_queue.put(sentence)
 
-    async def get_nmea_sentence(self):
+    async def get_nmea_sentence(self) -> NMEADatagram:
         return await self._read_queue.get()
 
     async def shutdown(self):
