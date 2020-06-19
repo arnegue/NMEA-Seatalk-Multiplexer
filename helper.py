@@ -62,3 +62,16 @@ class UnitConverter(object):
     @staticmethod
     def fahrenheit_to_celisus(fahrenheit):
         return (fahrenheit - 32) / 1.8000
+
+
+class PartPosition(object):
+    def __init__(self, degrees, minutes, direction):
+        self.degrees = degrees
+        self.minutes = minutes
+        self.direction = direction
+
+
+class Position(object):
+    def __init__(self, latitude: PartPosition, longitude: PartPosition):
+        self.latitude = latitude
+        self.longitude = longitude
