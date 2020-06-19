@@ -16,7 +16,7 @@ def bytes_to_str(bytes):
     """
     Returns string representation of given bytes [0x21, 0x2E] -> "0x21 0x2E"
 
-    :param bytes:
+    :param bytes: 
     :return:
     """
     byte_str = ""
