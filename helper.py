@@ -1,8 +1,6 @@
-<<<<<<< HEAD
-=======
 import enum
 
->>>>>>> Added Orientation-enum
+
 def byte_to_str(byte):
     """
     Returns string representation of given byte 0x2A -> "Ox2A "
@@ -111,5 +109,3 @@ class Position(object):
     def __init__(self, latitude: PartPosition, longitude: PartPosition):
         self.latitude = latitude
         self.longitude = longitude
-
-
