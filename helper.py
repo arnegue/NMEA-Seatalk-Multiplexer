@@ -1,4 +1,3 @@
-
 def byte_to_str(byte):
     """
     Returns string representation of given byte 0x2A -> "Ox2A "
@@ -87,3 +86,16 @@ class TwoWayDict(dict):
         Now raises KeyError if not available
         """
         return self[key]
+
+
+class PartPosition(object):
+    def __init__(self, degrees, minutes, direction):
+        self.degrees = degrees
+        self.minutes = minutes
+        self.direction = direction
+
+
+class Position(object):
+    def __init__(self, latitude: PartPosition, longitude: PartPosition):
+        self.latitude = latitude
+        self.longitude = longitude
