@@ -153,8 +153,7 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: db
         nmea_datagram.DepthBelowKeel.__init__(self)
 
     def process_datagram(self, first_half_byte, data):
-        if len(data) == 3:  # TODO ? 3
-            data = data[1:]
+        data = data[1:]  # TODO first_byte & 8 = anchor-alarm, first_byte & 4 = meter or fathom
         feet = self.get_value(data) / 10.0
         self.depth_m = feet / 3.2808  # TODO double-conversion
 
