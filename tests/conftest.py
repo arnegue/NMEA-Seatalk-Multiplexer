@@ -2,6 +2,8 @@ import pytest
 import inspect
 import curio
 
+test_kernel = curio.Kernel()
+
 @pytest.mark.tryfirst
 def pytest_pycollect_makeitem(collector, name, obj):
     """
@@ -23,9 +25,8 @@ def pytest_pyfunc_call(pyfuncitem):
     Stops at first non-None result, see firstresult: stop at first non-None result
     """
     if 'curio' in pyfuncitem.keywords:
-        kernel = curio.Kernel()
         funcargs = pyfuncitem.funcargs
         testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}
         fut = pyfuncitem.obj(**testargs)
-        kernel.run(fut)
+        test_kernel.run(fut)
         return True
