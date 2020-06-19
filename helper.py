@@ -26,3 +26,30 @@ def bytes_to_str(bytes):
 
 def get_numeric_byte_value(byte):
     return int.from_bytes(byte, "big")
+
+
+class UnitConverter(object):
+    @staticmethod
+    def meter_to_feet(meter):
+        return meter * 3.28084
+
+    @staticmethod
+    def feet_to_meter(feet):
+        return feet / 3.28084
+
+    @staticmethod
+    def meter_to_fathom(meter):
+        return meter * 0.54680665
+
+    @staticmethod
+    def fathom_to_meter(fathom):
+        return fathom / 0.54680665
+
+    @staticmethod
+    def meter_to_nm(meter):
+        return meter * 0.0005399568
+
+    @staticmethod
+    def nm_to_meter(nm):
+        return nm / 0.0005399568
+
