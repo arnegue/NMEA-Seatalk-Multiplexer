@@ -2,7 +2,7 @@ from abc import abstractmethod, ABCMeta
 import inspect
 import sys
 
-from helper import get_numeric_byte_value, byte_to_str, bytes_to_str
+from helper import get_numeric_byte_value, byte_to_str, bytes_to_str, UnitConverter
 import logger
 from device import TaskDevice
 import nmea_datagram
@@ -73,45 +73,53 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         return self.RawSeatalkLogger(self._name)
 
     async def _read_task(self):
+        while True:
+            try:
+                data_gram = await self.receive_data_gram()
+
+                # Now check if there is a corresponding NMEA-Datagram (e.g. SetLampIntensityDatagram does not have one)
+                if isinstance(data_gram, nmea_datagram.NMEADatagram):
+                    val = data_gram.get_nmea_sentence()
+                    await self._read_queue.put(val)
+                else:
+                    raise NoCorrespondingNMEASentence(data_gram)
+            except SeatalkException:
+                pass
+
+    async def receive_data_gram(self):
         """
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
-        while True:
-            cmd_byte = attribute = bytes()
-            data_bytes = bytearray()
-            try:
-                # Get Command-Byte
-                cmd_byte = await self._io_device.read(1)
-                if cmd_byte in self._seatalk_datagram_map:
-                    # Extract datagram
-                    data_gram = self._seatalk_datagram_map[cmd_byte]
+        cmd_byte = attribute = bytes()
+        data_bytes = bytearray()
+        try:
+            # Get Command-Byte
+            cmd_byte = await self._io_device.read(1)
+            if cmd_byte in self._seatalk_datagram_map:
+                # Extract datagram
+                data_gram = self._seatalk_datagram_map[cmd_byte]
 
-                    # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
-                    attribute = await self._io_device.read(1)
-                    attribute_nr = get_numeric_byte_value(attribute)
-                    data_length = attribute_nr & 0b00001111  # DataLength according to seatalk-datagram. length of 0 means 1 byte of data
-                    attr_data = (attribute_nr & 0b11110000) >> 4
-                    # Verifies length (will raise exception before actually receiving data which won't be needed
-                    data_gram.verify_data_length(data_length)
+                # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
+                attribute = await self._io_device.read(1)
+                attribute_nr = get_numeric_byte_value(attribute)
+                data_length = attribute_nr & 0b00001111  # DataLength according to seatalk-datagram. length of 0 means 1 byte of data
+                attr_data = (attribute_nr & 0b11110000) >> 4
+                # Verifies length (will raise exception before actually receiving data which won't be needed
+                data_gram.verify_data_length(data_length)
 
-                    # At this point data_length is okay, finally receive it and progress whole datagram
-                    data_bytes += await self._io_device.read(data_length + 1)
-                    data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
-                    # No need to verify checksum since it is generated the same way as it is checked
-
-                    # Now check if there is a corresponding NMEA-Datagram (e.g. SetLampIntensityDatagram does not have one)
-                    if isinstance(data_gram, nmea_datagram.NMEADatagram):
-                        val = data_gram.get_nmea_sentence()
-                        await self._read_queue.put(val)
-                    else:
-                        raise NoCorrespondingNMEASentence(data_gram)
-                else:
-                    raise DataNotRecognizedException(self.get_name(), cmd_byte)
-            except SeatalkException as e:
-                logger.error(repr(e) + " " + byte_to_str(cmd_byte) + byte_to_str(attribute) + bytes_to_str(data_bytes))
-                # TODO maybe flush afterwards?
-            finally:
-                self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes)
+                # At this point data_length is okay, finally receive it and progress whole datagram
+                data_bytes += await self._io_device.read(data_length + 1)
+                data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
+                # No need to verify checksum since it is generated the same way as it is checked
+                return data_gram
+            else:
+                raise DataNotRecognizedException(self.get_name(), cmd_byte)
+        except SeatalkException as e:
+            logger.error(repr(e) + " " + byte_to_str(cmd_byte) + byte_to_str(attribute) + bytes_to_str(data_bytes))
+            raise
+            # TODO maybe flush afterwards?
+        finally:
+            self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes)
 
 
 class SeatalkDatagram(object, metaclass=ABCMeta):
@@ -146,6 +154,20 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         """
         return data[1] << 8 | data[0]
 
+    @staticmethod
+    def set_value(data):
+        """
+        Returns the integer as two-byte value
+        """
+        return int(data).to_bytes(2, "little")
+
+    #@abstractmethod
+    def get_seatalk_datagram(self):
+        """
+        Creates byte-array to send back on seatalk-bus
+        """
+        raise NotImplementedError()
+
 
 class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
     def __init__(self):
@@ -157,6 +179,12 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: db
         feet = self.get_value(data) / 10.0
         self.depth_m = feet / 3.2808  # TODO double-conversion
 
+    def get_seatalk_datagram(self):
+        feet_value = UnitConverter.meter_to_feet(self.depth_m) * 10
+        default_byte_array = bytearray([self.data_length,
+                                        0x00])  # No sensor defectives
+        return self.id + default_byte_array + self.set_value(feet_value)
+
 
 class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
     def __init__(self):
@@ -165,6 +193,10 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: 
 
     def process_datagram(self, first_half_byte, data):
         self.speed_knots = self.get_value(data) / 10.0
+
+    def get_seatalk_datagram(self):
+        default_byte_array = bytearray([self.data_length])
+        return self.id + default_byte_array + self.set_value(self.speed_knots * 10)
 
 
 class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
