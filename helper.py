@@ -29,6 +29,7 @@ def get_numeric_byte_value(byte):
 
 
 class UnitConverter(object):
+    # Distances
     @staticmethod
     def meter_to_feet(meter):
         return meter * 3.28084
@@ -53,3 +54,11 @@ class UnitConverter(object):
     def nm_to_meter(nm):
         return nm / 0.0005399568
 
+    # Temperatures
+    @staticmethod
+    def celsius_to_fahrenheit(celsius):
+        return celsius * 1.8 + 32
+
+    @staticmethod
+    def fahrenheit_to_celisus(fahrenheit):
+        return (fahrenheit - 32) / 1.8000
