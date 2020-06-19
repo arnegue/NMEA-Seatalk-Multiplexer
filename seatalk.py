@@ -95,7 +95,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                     data_gram.verify_data_length(data_length)
 
                     # At this point data_length is okay, finally receive it and progress whole datagram
-                    data_bytes += await self._io_device.read(data_length)
+                    data_bytes += await self._io_device.read(data_length + 1)
                     data_gram.process_datagram(first_half_byte=attr_data, data=data_bytes)
                     # No need to verify checksum since it is generated the same way as it is checked
 
