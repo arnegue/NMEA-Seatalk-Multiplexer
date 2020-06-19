@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from functools import reduce
+from helper import UnitConverter
 import operator
 
 
@@ -71,8 +72,8 @@ class DepthBelowKeel(NMEADatagram):
         $--DBT,x.x,f,x.x,M,x.x,F*hh<CR><LF>
         $SDDBT,7.8,f,2.4,M,1.3,F*0D\r\n
         """
-        feet = self.depth_m * 3.28084
-        fathoms = self.depth_m * 0.54680665
+        feet = UnitConverter.meter_to_feet(self.depth_m)
+        fathoms = UnitConverter.meter_to_fathom(self.depth_m)
         return self._nmea_conversion((feet, 'f'),
                                      (self.depth_m, 'M'),
                                      (fathoms, 'F'),)
@@ -89,7 +90,7 @@ class SpeedThroughWater(NMEADatagram):
         """
         $--VHW,x.x,T,x.x,M,x.x,N,x.x,K*hh<CR><LF>
         """
-        kmh = self.speed_knots * 1.852
+        kmh = UnitConverter.nm_to_meter(self.speed_knots) * 1000
         return self._nmea_conversion((self.heading_degrees_true, 'T'),
                                      (self.heading_degrees_magnetic, 'M'),
                                      (self.speed_knots, 'N'),
