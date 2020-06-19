@@ -14,11 +14,14 @@ def byte_to_str(byte):
 
 def bytes_to_str(bytes):
     """
-    Retruns string representation of given bytes [0x21, 0x2E] -> "0x21 0x2E"
+    Returns string representation of given bytes [0x21, 0x2E] -> "0x21 0x2E"
     :param bytes:
     :return:
     """
-    return [byte_to_str(byte) for byte in bytes]
+    byte_str = ""
+    for byte in bytes:
+        byte_str += byte_to_str(byte)
+    return byte_str
 
 
 def get_numeric_byte_value(byte):
