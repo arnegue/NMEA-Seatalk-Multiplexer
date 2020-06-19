@@ -36,6 +36,9 @@ class IO(object):
         async with self._read_write_lock:
             return await self._write(data)
 
+    async def flush(self):
+        pass
+
     @abstractmethod
     async def _read(self, length=1):
         pass
@@ -220,6 +223,11 @@ class Serial(IO):
 
     async def _read(self, length=1):
         return await curio.run_in_thread(partial(self._serial.read, length))
+
+    async def flush(self):
+        self._serial.flush()
+        self._serial.reset_input_buffer()
+        self._serial.reset_output_buffer()
 
     async def cancel(self):
         self._serial.cancel_read()
