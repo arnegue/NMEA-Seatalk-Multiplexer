@@ -89,7 +89,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                     # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
                     attribute = await self._io_device.read(1)
                     attribute_nr = get_numeric_byte_value(attribute)
-                    data_length = (attribute_nr & 0b00001111) + 1
+                    data_length = attribute_nr & 0b00001111  # DataLength according to seatalk-datagram. length of 0 means 1 byte of data
                     attr_data = (attribute_nr & 0b11110000) >> 4
                     # Verifies length (will raise exception before actually receiving data which won't be needed
                     data_gram.verify_data_length(data_length)
@@ -149,7 +149,7 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
 
 class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x00, data_length=3)
+        SeatalkDatagram.__init__(self, id=0x00, data_length=2)
         nmea_datagram.DepthBelowKeel.__init__(self)
 
     def process_datagram(self, first_half_byte, data):
@@ -161,7 +161,7 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: db
 
 class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x20, data_length=2)
+        SeatalkDatagram.__init__(self, id=0x20, data_length=1)
         nmea_datagram.SpeedThroughWater.__init__(self)
 
     def process_datagram(self, first_half_byte, data):
@@ -170,7 +170,7 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: 
 
 class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x26, data_length=5)
+        SeatalkDatagram.__init__(self, id=0x26, data_length=4)
         nmea_datagram.SpeedThroughWater.__init__(self)
 
     def process_datagram(self, first_half_byte, data):
@@ -179,7 +179,7 @@ class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA:
 
 class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x23, data_length=2)
+        SeatalkDatagram.__init__(self, id=0x23, data_length=1)
         nmea_datagram.WaterTemperature.__init__(self)
 
     def process_datagram(self, first_half_byte, data):
@@ -189,7 +189,7 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
 
 class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x27, data_length=2)
+        SeatalkDatagram.__init__(self, id=0x27, data_length=1)
         nmea_datagram.WaterTemperature.__init__(self)
 
     def process_datagram(self, first_half_byte, data):
@@ -198,7 +198,7 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
 
 class SetLampIntensityDatagram(SeatalkDatagram):
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x30, data_length=1)
+        SeatalkDatagram.__init__(self, id=0x30, data_length=0)
         self._intensity = 0
 
     def get_set_intensity(self, intensity):
@@ -210,7 +210,7 @@ class SetLampIntensityDatagram(SeatalkDatagram):
             self._intensity = 8
         elif intensity == 3:
             self._intensity = 12  # That's weird. All the time it's a shifted bit but this is 0x1100
-        return [self.id, 0x40, self._intensity]
+        return [self.id, self.data_length, self._intensity]
 
     def process_datagram(self, first_half_byte, data):
         intensity = data[0]
