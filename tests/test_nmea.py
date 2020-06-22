@@ -47,7 +47,7 @@ def test_nmea_sentence_creation(nmea_instance, expected_string):
     assert expected_string == nmea_sentence
 
 
-def test_message_without_data():
+def test_message_without_data(): 
     depth = nmea_datagram.DepthBelowKeel()
     nmea_sentence = depth.get_nmea_sentence()
     a = nmea_datagram.NMEADatagram.parse_nmea_sentence(nmea_sentence)
