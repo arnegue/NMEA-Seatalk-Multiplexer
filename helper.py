@@ -1,3 +1,4 @@
+import enum
 
 def byte_to_str(byte):
     """
@@ -64,8 +65,15 @@ class UnitConverter(object):
         return (fahrenheit - 32) / 1.8000
 
 
+class Orientation(enum.Enum):
+    North = "N"
+    South = "S"
+    West = "W"
+    East = "E"
+
+
 class PartPosition(object):
-    def __init__(self, degrees, minutes, direction):
+    def __init__(self, degrees, minutes, direction: Orientation):
         self.degrees = degrees
         self.minutes = minutes
         self.direction = direction
@@ -75,3 +83,5 @@ class Position(object):
     def __init__(self, latitude: PartPosition, longitude: PartPosition):
         self.latitude = latitude
         self.longitude = longitude
+
+
