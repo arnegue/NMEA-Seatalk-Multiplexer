@@ -174,69 +174,6 @@ class RecommendedMinimumSentence(NMEADatagram):
             self.mode = nmea_value_list[11]
 
 
-class RecommendedMinimumSentence(NMEADatagram):
-    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode=None):
-        super().__init__("RMC")
-        self.date = date
-        self.valid_status = valid_status
-        self.position = position
-        self.speed_over_ground = speed_over_ground
-        self.track_made_good = track_made_good
-        self.magnetic_variation = magnetic_variation
-        self.variation_sense = variation_sense
-        self.mode = mode
-
-        self._date_format_date = "%d%m%y"
-        self._date_format_time = "%H%M%S.%f"  # TODO f = microseconds, not milliseconds?
-
-    def _convert_to_nmea(self):
-        """
-        $GPRMC,hhmmss.ss,a,ddmm.mmmm,n,dddmm.mmmm,w,z.z,y.y,ddmmyy,d.d,v*CC<CR><LF>
-        $GPRMC,144858,A,5235.3151,N,00207.6577,W,0.0,144.8,160610,3.6,W,A*12\r\n
-        """
-        return_string = ","
-        string_date, string_time = self.date.strftime(self._date_format_date + "|" + self._date_format_time).split("|")  # Use | only to make it splittable
-        return_string += string_time + ","
-        return_string += ("A" if self.valid_status else "V") + ","
-        return_string += f"{self.position.latitude.degrees:02}"  + str(self.position.latitude.minutes)  + "," + self.position.latitude.direction + ","
-        return_string += f"{self.position.longitude.degrees:02}" + str(self.position.longitude.minutes) + "," + self.position.longitude.direction + ","
-        return_string += str(self.speed_over_ground) + ","
-        return_string += str(self.track_made_good) + ","
-        return_string += string_date + ","
-        return_string += str(self.magnetic_variation) + ","
-        return_string += str(self.variation_sense) + ","
-        return_string += self.mode
-        return return_string
-
-    def _parse_nmea_sentence(self, nmea_string: str):
-        split = nmea_string.split(",")
-        gps_time = split[0]
-        if "." not in gps_time:  # Some dont send millseconds
-            gps_time += ".0"
-        gps_date = split[8]
-
-        self.date = datetime.datetime.strptime(gps_date + gps_time, self._date_format_date + self._date_format_time)
-        self.valid_status = split[1].upper() == "A"  # A = valid, V = invalid. Very intuitive...
-
-        latitude_degrees = int(split[2][0:2])  # TODO one line?
-        latitude_minutes = float(split[2][2:])  # Remove degrees
-        latitude_direction = split[3]
-        latitude = PartPosition(degrees=latitude_degrees, minutes=latitude_minutes, direction=latitude_direction)
-
-        longitude_degrees = int(split[4][0:2])
-        longitude_minutes = float(split[4][2:])  # Remove degrees
-        longitude_direction = split[5]
-        longitude = PartPosition(degrees=longitude_degrees, minutes=longitude_minutes, direction=longitude_direction)
-
-        self.position = Position(latitude, longitude)
-
-        self.speed_over_ground = float(split[6])
-        self.track_made_good = float(split[7])
-        self.magnetic_variation = float(split[9])
-        self.variation_sense = split[10]
-        self.mode = split[11]
-
-
 class DepthBelowKeel(NMEADatagram):
     def __init__(self, depth_m=None, *args, **kwargs):
         super().__init__(nmea_tag="DBT", *args, **kwargs)
