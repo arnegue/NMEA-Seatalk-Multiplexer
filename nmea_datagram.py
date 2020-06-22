@@ -5,7 +5,7 @@ import datetime
 import inspect
 import sys
 
-from helper import UnitConverter, Position, PartPosition
+from helper import UnitConverter, Position, PartPosition, byte_to_str
 
 
 class NMEAError(Exception):
@@ -22,8 +22,8 @@ class WrongFormatError(NMEAParseError):
 
 
 class ChecksumError(NMEAParseError):
-    def __init__(self, sentence, own_checksum):
-        super().__init__(f"ChecksumError: {sentence} checksum does not match own calculated checksum: {own_checksum}")
+    def __init__(self, sentence, actual_checksum, expected_checksum):
+        super().__init__(f"ChecksumError: {sentence} checksum {byte_to_str(actual_checksum)} does not match own calculated checksum: {byte_to_str(expected_checksum)}")
 
 
 class NMEADatagram(object, metaclass=ABCMeta):
@@ -51,7 +51,8 @@ class NMEADatagram(object, metaclass=ABCMeta):
             raise WrongFormatError(nmea_string)
         if not cls.nmea_tag_datagram_map:
             cls.create_map()
-        # TODO parity check
+
+        cls.verify_checksum(nmea_string)
 
         nmea_tag = nmea_string[3:6]  # Get Tag
         nmea_class = cls.nmea_tag_datagram_map[nmea_tag]  # Extract class from tag
@@ -79,12 +80,12 @@ class NMEADatagram(object, metaclass=ABCMeta):
     def verify_checksum(cls, nmea_str):
         try:
             nmea_str_checksum = int(nmea_str[-4:-2], 16)
-            own_checksum = cls.checksum(nmea_str[1:-5])  # Remove dollar, \r\n and checksum
+            expected = cls.checksum(nmea_str[1:-5])  # Remove dollar, \r\n and checksum
         except ValueError as e:
             raise NMEAParseError(f"Could not parse {nmea_str}") from e
 
-        if own_checksum != nmea_str_checksum:
-            raise ChecksumError(nmea_str, own_checksum)
+        if expected != nmea_str_checksum:
+            raise ChecksumError(nmea_str, nmea_str_checksum, expected)
 
     @staticmethod
     def _get_value(value, unit):
@@ -99,6 +100,10 @@ class NMEADatagram(object, metaclass=ABCMeta):
         for value, unit in value_tuple:
             sentence += cls._get_value(value, unit)
         return sentence
+
+    @classmethod
+    def check_validity(cls, validity):
+        return validity.upper() == "A"  # A = valid, V = invalid. Very intuitive...
 
 
 class RecommendedMinimumSentence(NMEADatagram):
@@ -135,32 +140,32 @@ class RecommendedMinimumSentence(NMEADatagram):
         return_string += self.mode
         return return_string
 
-    def _parse_nmea_sentence(self, nmea_string: list):
-        gps_time = nmea_string[0]
+    def _parse_nmea_sentence(self, nmea_value_list: list):
+        gps_time = nmea_value_list[0]
         if "." not in gps_time:  # Some dont send millseconds
             gps_time += ".0"
-        gps_date = nmea_string[8]
+        gps_date = nmea_value_list[8]
 
         self.date = datetime.datetime.strptime(gps_date + gps_time, self._date_format_date + self._date_format_time)
-        self.valid_status = nmea_string[1].upper() == "A"  # A = valid, V = invalid. Very intuitive...
+        self.valid_status = self.check_validity(nmea_value_list[1])
 
-        latitude_degrees = int(nmea_string[2][0:2])  # TODO one line?
-        latitude_minutes = float(nmea_string[2][2:])  # Remove degrees
-        latitude_direction = nmea_string[3]
+        latitude_degrees = int(nmea_value_list[2][0:2])  # TODO one line?
+        latitude_minutes = float(nmea_value_list[2][2:])  # Remove degrees
+        latitude_direction = nmea_value_list[3]
         latitude = PartPosition(degrees=latitude_degrees, minutes=latitude_minutes, direction=latitude_direction)
 
-        longitude_degrees = int(nmea_string[4][0:2])
-        longitude_minutes = float(nmea_string[4][2:])  # Remove degrees
-        longitude_direction = nmea_string[5]
+        longitude_degrees = int(nmea_value_list[4][0:2])
+        longitude_minutes = float(nmea_value_list[4][2:])  # Remove degrees
+        longitude_direction = nmea_value_list[5]
         longitude = PartPosition(degrees=longitude_degrees, minutes=longitude_minutes, direction=longitude_direction)
 
         self.position = Position(latitude, longitude)
 
-        self.speed_over_ground = float(nmea_string[6])
-        self.track_made_good = float(nmea_string[7])
-        self.magnetic_variation = float(nmea_string[9])
-        self.variation_sense = nmea_string[10]
-        self.mode = nmea_string[11]
+        self.speed_over_ground = float(nmea_value_list[6])
+        self.track_made_good = float(nmea_value_list[7])
+        self.magnetic_variation = float(nmea_value_list[9])
+        self.variation_sense = nmea_value_list[10]
+        self.mode = nmea_value_list[11]
 
 
 class DepthBelowKeel(NMEADatagram):
@@ -229,11 +234,12 @@ class WaterTemperature(NMEADatagram):
 
 
 class WindSpeedAndAngle(NMEADatagram):
-    def __init__(self, angle=None, reference_true=None, speed_knots=False):
+    def __init__(self, angle=None, reference_true=None, speed_knots=None, validity=None):
         super().__init__("MWV")
         self.angle = angle
         self.reference_true = reference_true
         self.speed_knots = speed_knots
+        self.validity = validity
 
     def _convert_to_nmea(self):
         """
@@ -241,7 +247,7 @@ class WindSpeedAndAngle(NMEADatagram):
         $WIMWV,214.8,R,0.1,K,A*28
         """
         return self._nmea_conversion((self.angle, "T" if self.reference_true else "R"),
-                                     (self.speed_knots, "N"))
+                                     (self.speed_knots, "N")) + "," + ("A" if self.validity else "V")
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         self.angle = float(nmea_value_list[0])
@@ -253,3 +259,5 @@ class WindSpeedAndAngle(NMEADatagram):
             self.speed_knots = UnitConverter.meter_to_nm(float(nmea_value_list[2]) * 1000)
         elif nmea_value_list[3] == "M":
             self.speed_knots = UnitConverter.meter_to_nm(float(nmea_value_list[2]) * 60 * 60)
+
+        self.validity = self.check_validity(nmea_value_list[4])
