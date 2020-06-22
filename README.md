@@ -39,7 +39,14 @@ Start the program like this:
 
 ### NMEA 0183
 
-Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. No parsing is happening here.
+Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. Usually no parsing (but checksum) is happening.
+
+But some parsing/creation of NMEA-Sentences are supported:
+* RMC (Recommended Minimum Sentence) 
+* VHW (Speed Through Water)
+* DBT (Depth Below Keel)
+* MTW (Water Temperature) 
+* MWV (Wind Speed and Angle)
 
 ### Seatalk 1
  
