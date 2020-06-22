@@ -131,7 +131,7 @@ class RecommendedMinimumSentence(NMEADatagram):
         self._date_format_time = "%H%M%S.%f"  # TODO f = microseconds, not milliseconds?
 
     def _convert_to_nmea(self):
-        """
+        """ 
         $GPRMC,hhmmss.ss,a,ddmm.mmmm,n,dddmm.mmmm,w,z.z,y.y,ddmmyy,d.d,v*CC<CR><LF>
         $GPRMC,144858,A,5235.3151,N,00207.6577,W,0.0,144.8,160610,3.6,W,A*12\r\n
         """
