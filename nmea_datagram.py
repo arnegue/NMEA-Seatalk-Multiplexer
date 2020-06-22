@@ -15,7 +15,7 @@ class NMEAValidity(enum.Enum):
     Invalid = "V"
 
 
-class NMEAError(Exception):
+class NMEAError(Exception): 
     pass
 
 
