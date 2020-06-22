@@ -208,7 +208,7 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: 
         nmea_datagram.SpeedThroughWater.__init__(self, *args, **kwargs)
 
     def process_datagram(self, first_half_byte, data):
-        self.speed_knots = self.get_value(data[:1]) / 10.0
+        self.speed_knots = self.get_value(data) / 10.0
 
     def get_seatalk_datagram(self):
         return self.id + bytes([self.data_length]) + self.set_value(self.speed_knots * 10)
