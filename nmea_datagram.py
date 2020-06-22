@@ -239,7 +239,7 @@ class WindSpeedAndAngle(NMEADatagram):
         self.angle = angle
         self.reference_true = reference_true
         self.speed_knots = speed_knots
-        self.validity = validity
+        self.valid_status = validity
 
     def _convert_to_nmea(self):
         """
@@ -247,7 +247,7 @@ class WindSpeedAndAngle(NMEADatagram):
         $WIMWV,214.8,R,0.1,K,A*28
         """
         return self._nmea_conversion((self.angle, "T" if self.reference_true else "R"),
-                                     (self.speed_knots, "N")) + "," + ("A" if self.validity else "V")
+                                     (self.speed_knots, "N")) + "," + ("A" if self.valid_status else "V")
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         self.angle = float(nmea_value_list[0])
@@ -260,4 +260,4 @@ class WindSpeedAndAngle(NMEADatagram):
         elif nmea_value_list[3] == "M":
             self.speed_knots = UnitConverter.meter_to_nm(float(nmea_value_list[2]) * 60 * 60)
 
-        self.validity = self.check_validity(nmea_value_list[4])
+        self.valid_status = self.check_validity(nmea_value_list[4])
