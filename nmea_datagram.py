@@ -2,7 +2,6 @@ from abc import abstractmethod, ABCMeta
 from functools import reduce
 import operator
 import datetime
-
 import inspect
 import sys
 import enum
@@ -110,6 +109,10 @@ class NMEADatagram(object, metaclass=ABCMeta):
         elif isinstance(value, enum.Enum):
             value = value.value
         return f",{value}" if value is not None else ","
+
+    @classmethod
+    def check_validity(cls, validity):
+        return validity.upper() == "A"  # A = valid, V = invalid. Very intuitive...
 
 
 class RecommendedMinimumSentence(NMEADatagram):
