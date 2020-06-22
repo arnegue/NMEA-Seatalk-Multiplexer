@@ -4,15 +4,26 @@ import operator
 import datetime
 import inspect
 import sys
+import enum
 
-from helper import UnitConverter, Position, PartPosition, byte_to_str
+from helper import UnitConverter, Position, PartPosition, byte_to_str, Orientation
+
+
+class NMEAValidity(enum.Enum):
+    # A = valid, V = invalid. Very intuitive...
+    Valid = "A"
+    Invalid = "V"
 
 
 class NMEAError(Exception):
     pass
 
 
-class NMEAParseError(Exception):
+class NMEAParseError(NMEAError):
+    pass
+
+
+class UnknownUnitError(NMEAParseError):
     pass
 
 
@@ -87,23 +98,17 @@ class NMEADatagram(object, metaclass=ABCMeta):
         if expected != nmea_str_checksum:
             raise ChecksumError(nmea_str, nmea_str_checksum, expected)
 
-    @staticmethod
-    def _get_value(value, unit):
-        """
-        Only fill in value if it is set
-        """
-        return f",{value:.1f},{unit}" if value is not None else f",,{unit}"
+    @classmethod
+    def _append_tuple(cls, value, unit):
+        return cls._append_value(value) + "," + unit
 
     @classmethod
-    def _nmea_conversion(cls, *value_tuple):
-        sentence = ""
-        for value, unit in value_tuple:
-            sentence += cls._get_value(value, unit)
-        return sentence
-
-    @classmethod
-    def check_validity(cls, validity):
-        return validity.upper() == "A"  # A = valid, V = invalid. Very intuitive...
+    def _append_value(cls, value):
+        if isinstance(value, float):
+            value = f"{value:.2f}"
+        elif isinstance(value, enum.Enum):
+            value = value.value
+        return f",{value}" if value is not None else ","
 
 
 class RecommendedMinimumSentence(NMEADatagram): # TODO speed_over_ground- unit? is there a unit at the end?
@@ -126,46 +131,46 @@ class RecommendedMinimumSentence(NMEADatagram): # TODO speed_over_ground- unit? 
         $GPRMC,hhmmss.ss,a,ddmm.mmmm,n,dddmm.mmmm,w,z.z,y.y,ddmmyy,d.d,v*CC<CR><LF>
         $GPRMC,144858,A,5235.3151,N,00207.6577,W,0.0,144.8,160610,3.6,W,A*12\r\n
         """
-        return_string = ","
+        return_string = ""
         string_date, string_time = self.date.strftime(self._date_format_date + "|" + self._date_format_time).split("|")  # Use | only to make it splittable
-        return_string += string_time + ","
-        return_string += ("A" if self.valid_status else "V") + ","
-        return_string += f"{self.position.latitude.degrees:02}"  + str(self.position.latitude.minutes)  + "," + self.position.latitude.direction + ","
-        return_string += f"{self.position.longitude.degrees:02}" + str(self.position.longitude.minutes) + "," + self.position.longitude.direction + ","
-        return_string += str(self.speed_over_ground) + ","
-        return_string += str(self.track_made_good) + ","
-        return_string += string_date + ","
-        return_string += str(self.magnetic_variation) + ","
-        return_string += str(self.variation_sense) + ","
-        return_string += self.mode
+        return_string += self._append_value(string_time)
+        return_string += self._append_value(self.valid_status)
+        return_string += f",{self.position.latitude.degrees:02}"  + str(self.position.latitude.minutes)  + self._append_value(self.position.latitude.direction)
+        return_string += f",{self.position.longitude.degrees:02}" + str(self.position.longitude.minutes) + self._append_value(self.position.longitude.direction)
+
+        return_string += self._append_value(self.speed_over_ground) +\
+                         self._append_value(self.track_made_good) +\
+                         self._append_value(string_date) +\
+                         self._append_value(self.magnetic_variation) +\
+                         self._append_value(self.variation_sense) +\
+                         self._append_value(self.mode)
         return return_string
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         gps_time = nmea_value_list[0]
-        if "." not in gps_time:  # Some dont send millseconds
-            gps_time += ".0"
+        if "." not in gps_time:  # Some dont send milliseconds
+            gps_time += ".0"  # TODO float-string-parse? {:.2}?
         gps_date = nmea_value_list[8]
 
         self.date = datetime.datetime.strptime(gps_date + gps_time, self._date_format_date + self._date_format_time)
-        self.valid_status = self.check_validity(nmea_value_list[1])
+        self.valid_status = NMEAValidity(nmea_value_list[1])
 
-        latitude_degrees = int(nmea_value_list[2][0:2])  # TODO one line?
+        latitude_degrees = int(nmea_value_list[2][0:2])
         latitude_minutes = float(nmea_value_list[2][2:])  # Remove degrees
-        latitude_direction = nmea_value_list[3]
-        latitude = PartPosition(degrees=latitude_degrees, minutes=latitude_minutes, direction=latitude_direction)
+        latitude = PartPosition(degrees=latitude_degrees, minutes=latitude_minutes, direction=Orientation(nmea_value_list[3]))
 
         longitude_degrees = int(nmea_value_list[4][0:2])
         longitude_minutes = float(nmea_value_list[4][2:])  # Remove degrees
-        longitude_direction = nmea_value_list[5]
-        longitude = PartPosition(degrees=longitude_degrees, minutes=longitude_minutes, direction=longitude_direction)
+        longitude = PartPosition(degrees=longitude_degrees, minutes=longitude_minutes, direction=Orientation(nmea_value_list[5]))
 
         self.position = Position(latitude, longitude)
 
         self.speed_over_ground = float(nmea_value_list[6])
         self.track_made_good = float(nmea_value_list[7])
         self.magnetic_variation = float(nmea_value_list[9])
-        self.variation_sense = nmea_value_list[10]
-        self.mode = nmea_value_list[11]
+        self.variation_sense = Orientation(nmea_value_list[10])
+        if len(nmea_value_list) == 12:  # Mode is not given every time
+            self.mode = nmea_value_list[11]
 
 
 class DepthBelowKeel(NMEADatagram):
@@ -180,19 +185,17 @@ class DepthBelowKeel(NMEADatagram):
         """
         feet = UnitConverter.meter_to_feet(self.depth_m)
         fathoms = UnitConverter.meter_to_fathom(self.depth_m)
-        return self._nmea_conversion((feet, 'f'),
-                                     (self.depth_m, 'M'),
-                                     (fathoms, 'F'),)
+        return self._append_tuple(feet, 'f') + self._append_tuple(self.depth_m, 'M') + self._append_tuple(fathoms, 'F')
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
-        if nmea_value_list[2]:
+        if nmea_value_list[2]:  # If meter is given
             self.depth_m = float(nmea_value_list[2])
-        elif nmea_value_list[0]:
+        elif nmea_value_list[0]:  # If feet is given
             self.depth_m = UnitConverter.feet_to_meter(float(nmea_value_list[0]))
-        elif nmea_value_list[4]:
+        elif nmea_value_list[4]:  # If fathom is given
             self.depth_m = UnitConverter.fathom_to_meter(float(nmea_value_list[4]))
         else:
-            pass  # TODO what now ? no value in values seems weird
+            pass  # Nothing is given?
 
 
 class SpeedThroughWater(NMEADatagram):
@@ -207,10 +210,10 @@ class SpeedThroughWater(NMEADatagram):
         $--VHW,x.x,T,x.x,M,x.x,N,x.x,K*hh<CR><LF>
         $IIVHW,245.1,T,245.1,M,000.01,N,000.01,K
         """
-        return self._nmea_conversion((self.heading_degrees_true, 'T'),
-                                     (self.heading_degrees_magnetic, 'M'),
-                                     (self.speed_knots, 'N'),
-                                     (UnitConverter.nm_to_meter(self.speed_knots) * 1000, 'K'))
+        return self._append_tuple(self.heading_degrees_true, 'T') +\
+               self._append_tuple(self.heading_degrees_magnetic, 'M') +\
+               self._append_tuple(self.speed_knots, 'N') +\
+               self._append_tuple(UnitConverter.nm_to_meter(self.speed_knots) * 1000, 'K')
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         self.heading_degrees_true = nmea_value_list[0]
@@ -227,14 +230,14 @@ class WaterTemperature(NMEADatagram):
         """
         $--MTW,x.x,C*hh<CR><LF>
         """
-        return self._nmea_conversion((self.temperature_c, "C"))
+        return self._append_tuple(self.temperature_c, "C")
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         self.temperature_c = float(nmea_value_list[0])
 
 
 class WindSpeedAndAngle(NMEADatagram):
-    def __init__(self, angle=None, reference_true=None, speed_knots=None, validity=None, *args, **kwargs):
+    def __init__(self, angle=None, reference_true=None, speed_knots=None, validity: NMEAValidity=None, *args, **kwargs):
         super().__init__("MWV", *args, **kwargs)
         self.angle = angle
         self.reference_true = reference_true
@@ -246,18 +249,25 @@ class WindSpeedAndAngle(NMEADatagram):
         $--MWV,x.x,a,x.x,a*hh<CR><LF>
         $WIMWV,214.8,R,0.1,K,A*28
         """
-        return self._nmea_conversion((self.angle, "T" if self.reference_true else "R"),
-                                     (self.speed_knots, "N")) + "," + ("A" if self.valid_status else "V")
+        nmea_str = self._append_tuple(self.angle, "T" if self.reference_true else "R") + \
+                   self._append_tuple(self.speed_knots, "N") +\
+                   self._append_value(self.valid_status)
+
+        return nmea_str
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         self.angle = float(nmea_value_list[0])
         self.reference_true = True if nmea_value_list[1] == "T" else False
 
-        if nmea_value_list[3] == "N":
-            self.speed_knots = float(nmea_value_list[2])
-        elif nmea_value_list[3] == "K":
-            self.speed_knots = UnitConverter.meter_to_nm(float(nmea_value_list[2]) * 1000)
-        elif nmea_value_list[3] == "M":
-            self.speed_knots = UnitConverter.meter_to_nm(float(nmea_value_list[2]) * 60 * 60)
+        value = float(nmea_value_list[2])
+        unit = nmea_value_list[3]
+        if unit == "N":
+            self.speed_knots = value
+        elif unit == "K":
+            self.speed_knots = UnitConverter.meter_to_nm(value * 1000)
+        elif unit == "M":
+            self.speed_knots = UnitConverter.meter_to_nm(value * 60 * 60)
+        else:
+            raise UnknownUnitError(f"Unknown unit: {unit}")
 
-        self.valid_status = self.check_validity(nmea_value_list[4])
+        self.valid_status = NMEAValidity(nmea_value_list[4])
