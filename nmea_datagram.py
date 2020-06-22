@@ -267,7 +267,7 @@ class WindSpeedAndAngle(NMEADatagram):
 
         value = float(nmea_value_list[2])
         unit = nmea_value_list[3]
-        if unit == "N":
+        if unit == "N": 
             self.speed_knots = value
         elif unit == "K":
             self.speed_knots = UnitConverter.meter_to_nm(value * 1000)
