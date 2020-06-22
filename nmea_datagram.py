@@ -110,10 +110,6 @@ class NMEADatagram(object, metaclass=ABCMeta):
             value = value.value
         return f",{value}" if value is not None else ","
 
-    @classmethod
-    def check_validity(cls, validity):
-        return validity.upper() == "A"  # A = valid, V = invalid. Very intuitive...
-
 
 class RecommendedMinimumSentence(NMEADatagram):
     def __init__(self, date=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode=None, *args, **kwargs):
@@ -267,7 +263,7 @@ class WindSpeedAndAngle(NMEADatagram):
 
         value = float(nmea_value_list[2])
         unit = nmea_value_list[3]
-        if unit == "N": 
+        if unit == "N":
             self.speed_knots = value
         elif unit == "K":
             self.speed_knots = UnitConverter.meter_to_nm(value * 1000)
