@@ -30,3 +30,8 @@ def pytest_pyfunc_call(pyfuncitem):
         fut = pyfuncitem.obj(**testargs)
         test_kernel.run(fut)
         return True
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """ whole test run finishes. """
+    test_kernel.run(shutdown=True)
