@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+import enum
+
+>>>>>>> Added Orientation-enum
 def byte_to_str(byte):
     """
     Returns string representation of given byte 0x2A -> "Ox2A "
@@ -88,8 +93,15 @@ class TwoWayDict(dict):
         return self[key]
 
 
+class Orientation(enum.Enum):
+    North = "N"
+    South = "S"
+    West = "W"
+    East = "E"
+
+
 class PartPosition(object):
-    def __init__(self, degrees, minutes, direction):
+    def __init__(self, degrees, minutes, direction: Orientation):
         self.degrees = degrees
         self.minutes = minutes
         self.direction = direction
@@ -99,3 +111,5 @@ class Position(object):
     def __init__(self, latitude: PartPosition, longitude: PartPosition):
         self.latitude = latitude
         self.longitude = longitude
+
+
