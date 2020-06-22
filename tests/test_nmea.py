@@ -29,7 +29,7 @@ def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
                                                                    position=helper.Position(
                                                                        latitude=helper.PartPosition(degrees=123, minutes=23.1, direction=helper.Orientation.North),
                                                                        longitude=helper.PartPosition(degrees=60, minutes=2.90, direction=helper.Orientation.West)),
-                                                                   speed_over_ground=19.3,
+                                                                   speed_over_ground_knots=19.3,
                                                                    track_made_good=12.9,
                                                                    magnetic_variation=1.2,
                                                                    variation_sense=helper.Orientation.East,
@@ -44,3 +44,9 @@ def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
 def test_nmea_sentence_creation(nmea_instance, expected_string):
     nmea_sentence = nmea_instance.get_nmea_sentence()
     assert expected_string == nmea_sentence
+
+
+def test_message_without_data():
+    depth = nmea_datagram.DepthBelowKeel()
+    nmea_sentence = depth.get_nmea_sentence()
+    a = nmea_datagram.NMEADatagram.parse_nmea_sentence(nmea_sentence)
