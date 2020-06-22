@@ -30,3 +30,10 @@ def pytest_pyfunc_call(pyfuncitem):
         fut = pyfuncitem.obj(**testargs)
         test_kernel.run(fut)
         return True
+
+
+def pytest_configure(config):
+    # register an additional marker
+    config.addinivalue_line(
+        "markers", "curio: Asynchronous test functions"
+    )
