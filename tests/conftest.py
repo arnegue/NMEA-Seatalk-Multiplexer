@@ -4,6 +4,7 @@ import curio
 
 test_kernel = None
 
+
 @pytest.mark.tryfirst
 def pytest_pycollect_makeitem(collector, name, obj):
     """
