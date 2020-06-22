@@ -29,9 +29,9 @@ class ChecksumError(NMEAParseError):
 class NMEADatagram(object, metaclass=ABCMeta):
     nmea_tag_datagram_map = None
 
-    def __init__(self, nmea_tag):
+    def __init__(self, nmea_tag, talker_id="--"):
         self.nmea_tag = nmea_tag
-        self._talker_id = "--"  # may be overridden
+        self._talker_id = talker_id
 
     @classmethod
     def create_map(cls):
@@ -106,9 +106,9 @@ class NMEADatagram(object, metaclass=ABCMeta):
         return validity.upper() == "A"  # A = valid, V = invalid. Very intuitive...
 
 
-class RecommendedMinimumSentence(NMEADatagram):
-    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode=None):
-        super().__init__("RMC")
+class RecommendedMinimumSentence(NMEADatagram): # TODO speed_over_ground- unit? is there a unit at the end?
+    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode=None, *args, **kwargs):
+        super().__init__("RMC", *args, **kwargs)
         self.date = date
         self.valid_status = valid_status
         self.position = position
@@ -169,8 +169,8 @@ class RecommendedMinimumSentence(NMEADatagram):
 
 
 class DepthBelowKeel(NMEADatagram):
-    def __init__(self, depth_m=None):
-        super().__init__(nmea_tag="DBT")
+    def __init__(self, depth_m=None, *args, **kwargs):
+        super().__init__(nmea_tag="DBT", *args, **kwargs)
         self.depth_m = depth_m
 
     def _convert_to_nmea(self):
@@ -196,8 +196,8 @@ class DepthBelowKeel(NMEADatagram):
 
 
 class SpeedThroughWater(NMEADatagram):
-    def __init__(self, speed_knots=None, heading_degrees_true=None, heading_degrees_magnetic=None):
-        super().__init__(nmea_tag="VHW")
+    def __init__(self, speed_knots=None, heading_degrees_true=None, heading_degrees_magnetic=None, *args, **kwargs):
+        super().__init__(nmea_tag="VHW", *args, **kwargs)
         self.speed_knots = speed_knots
         self.heading_degrees_true = heading_degrees_true
         self.heading_degrees_magnetic = heading_degrees_magnetic
@@ -219,8 +219,8 @@ class SpeedThroughWater(NMEADatagram):
 
 
 class WaterTemperature(NMEADatagram):
-    def __init__(self, temperature_c=None):
-        super().__init__(nmea_tag="MTW")
+    def __init__(self, temperature_c=None, *args, **kwargs):
+        super().__init__(nmea_tag="MTW", *args, **kwargs)
         self.temperature_c = temperature_c
 
     def _convert_to_nmea(self):
@@ -234,8 +234,8 @@ class WaterTemperature(NMEADatagram):
 
 
 class WindSpeedAndAngle(NMEADatagram):
-    def __init__(self, angle=None, reference_true=None, speed_knots=None, validity=None):
-        super().__init__("MWV")
+    def __init__(self, angle=None, reference_true=None, speed_knots=None, validity=None, *args, **kwargs):
+        super().__init__("MWV", *args, **kwargs)
         self.angle = angle
         self.reference_true = reference_true
         self.speed_knots = speed_knots
