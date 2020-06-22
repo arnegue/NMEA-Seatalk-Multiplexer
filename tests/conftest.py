@@ -40,3 +40,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "curio: Asynchronous test functions"
     )
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """ whole test run finishes. """
+    test_kernel.run(shutdown=True)
+
