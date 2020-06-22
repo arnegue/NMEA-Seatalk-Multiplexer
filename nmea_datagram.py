@@ -111,13 +111,13 @@ class NMEADatagram(object, metaclass=ABCMeta):
         return f",{value}" if value is not None else ","
 
 
-class RecommendedMinimumSentence(NMEADatagram): # TODO speed_over_ground- unit? is there a unit at the end?
-    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode=None, *args, **kwargs):
+class RecommendedMinimumSentence(NMEADatagram):
+    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode=None, *args, **kwargs):
         super().__init__("RMC", *args, **kwargs)
         self.date = date
         self.valid_status = valid_status
         self.position = position
-        self.speed_over_ground = speed_over_ground
+        self.speed_over_ground_knots = speed_over_ground_knots
         self.track_made_good = track_made_good
         self.magnetic_variation = magnetic_variation
         self.variation_sense = variation_sense
@@ -138,11 +138,11 @@ class RecommendedMinimumSentence(NMEADatagram): # TODO speed_over_ground- unit? 
         return_string += f",{self.position.latitude.degrees:02}"  + str(self.position.latitude.minutes)  + self._append_value(self.position.latitude.direction)
         return_string += f",{self.position.longitude.degrees:02}" + str(self.position.longitude.minutes) + self._append_value(self.position.longitude.direction)
 
-        return_string += self._append_value(self.speed_over_ground) +\
-                         self._append_value(self.track_made_good) +\
-                         self._append_value(string_date) +\
-                         self._append_value(self.magnetic_variation) +\
-                         self._append_value(self.variation_sense) +\
+        return_string += self._append_value(self.speed_over_ground_knots) + \
+                         self._append_value(self.track_made_good) + \
+                         self._append_value(string_date) + \
+                         self._append_value(self.magnetic_variation) + \
+                         self._append_value(self.variation_sense) + \
                          self._append_value(self.mode)
         return return_string
 
@@ -165,7 +165,7 @@ class RecommendedMinimumSentence(NMEADatagram): # TODO speed_over_ground- unit? 
 
         self.position = Position(latitude, longitude)
 
-        self.speed_over_ground = float(nmea_value_list[6])
+        self.speed_over_ground_knots = float(nmea_value_list[6])
         self.track_made_good = float(nmea_value_list[7])
         self.magnetic_variation = float(nmea_value_list[9])
         self.variation_sense = Orientation(nmea_value_list[10])
@@ -183,8 +183,10 @@ class DepthBelowKeel(NMEADatagram):
         $--DBT,x.x,f,x.x,M,x.x,F*hh<CR><LF>
         $SDDBT,7.8,f,2.4,M,1.3,F*0D\r\n
         """
-        feet = UnitConverter.meter_to_feet(self.depth_m)
-        fathoms = UnitConverter.meter_to_fathom(self.depth_m)
+        feet = fathoms = None
+        if self.depth_m:
+            feet = UnitConverter.meter_to_feet(self.depth_m)
+            fathoms = UnitConverter.meter_to_fathom(self.depth_m)
         return self._append_tuple(feet, 'f') + self._append_tuple(self.depth_m, 'M') + self._append_tuple(fathoms, 'F')
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
