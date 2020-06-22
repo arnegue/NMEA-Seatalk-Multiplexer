@@ -61,7 +61,7 @@ class UnitConverter(object):
         return celsius * 1.8 + 32
 
     @staticmethod
-    def fahrenheit_to_celisus(fahrenheit):
+    def fahrenheit_to_celsius(fahrenheit):
         return (fahrenheit - 32) / 1.8000
 
 
