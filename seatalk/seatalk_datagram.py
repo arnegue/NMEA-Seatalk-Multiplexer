@@ -5,7 +5,7 @@ import logger
 import nmea_datagram
 
 
-class SeatalkException(Exception):
+class SeatalkException(nmea_datagram.NMEAError):
     """
     Any Exception concerning Seatalk
     """
@@ -229,6 +229,6 @@ class SetLampIntensityDatagram(SeatalkDatagram):
             self._intensity = 2
         elif intensity == 12:
             self._intensity = 3  # That's weird. All the time it's a shifted bit but this is 0x1100
-        # else:
-        #   TODO what now? parse-exception?
+        else:
+            raise DataValidationException(f"{type(self).__name__}: Unexpected Intensity: {intensity}")
 
