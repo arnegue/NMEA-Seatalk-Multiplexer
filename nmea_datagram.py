@@ -10,34 +10,52 @@ from helper import UnitConverter, Position, PartPosition, byte_to_str, Orientati
 
 
 class NMEAValidity(enum.Enum):
+    """
+    Some NMEA-Datagrams have validity-characters
+    """
     # A = valid, V = invalid. Very intuitive...
     Valid = "A"
     Invalid = "V"
 
 
 class NMEAError(Exception):
-    pass
+    """
+    General Exceptions concerning NMEA
+    """
 
 
 class NMEAParseError(NMEAError):
-    pass
+    """
+    Exceptions occurring when parsing NMEA-Datagrams
+    """
 
 
 class UnknownUnitError(NMEAParseError):
-    pass
+    """
+    Error if given unit in datagram is unknown
+    """
 
 
 class WrongFormatError(NMEAParseError):
+    """
+    Error if given datagram does not apply to nmea-standard
+    """
     def __init__(self, sentence: str):
         super().__init__(f"Could not parse sentence. First (\"$\") or last characters (\"\\r\\n\") are wrong/missing: \"" + sentence + "\"")
 
 
 class ChecksumError(NMEAParseError):
+    """
+    Error if given datagram's checksum does not match the calculated one
+    """
     def __init__(self, sentence, actual_checksum, expected_checksum):
         super().__init__(f"ChecksumError: {sentence} checksum {byte_to_str(actual_checksum)} does not match own calculated checksum: {byte_to_str(expected_checksum)}")
 
 
 class NMEADatagram(object, metaclass=ABCMeta):
+    """
+    General NMEA-Datagram-Class
+    """
     nmea_tag_datagram_map = None
 
     def __init__(self, nmea_tag, talker_id="--"):
@@ -46,18 +64,20 @@ class NMEADatagram(object, metaclass=ABCMeta):
 
     @classmethod
     def create_map(cls):
+        """
+        Creates a map of all known NMEA-Tags to it's representing Classes
+        """
         cls.nmea_tag_datagram_map = dict()
         for name, obj in inspect.getmembers(sys.modules[__name__]):
             if inspect.isclass(obj) and issubclass(obj, NMEADatagram) and not inspect.isabstract(obj):
-                nmea_datagram = obj()
+                nmea_datagram = obj()  # TODO that's a little kinda bad to instantiate it just for the tag and then leave it unused
                 cls.nmea_tag_datagram_map[nmea_datagram.nmea_tag] = obj
-
-    @abstractmethod
-    def _convert_to_nmea(self):
-        pass
 
     @classmethod
     def parse_nmea_sentence(cls, nmea_string: str):
+        """
+        Parses given NMEA-Sentence and returns an instance of NMEADatagram
+        """
         if nmea_string[0] != '$' and nmea_string[-2:] != '\r\n':
             raise WrongFormatError(nmea_string)
         if not cls.nmea_tag_datagram_map:
@@ -75,23 +95,44 @@ class NMEADatagram(object, metaclass=ABCMeta):
 
     @abstractmethod
     def _parse_nmea_sentence(self, nmea_value_list: list):
+        """
+        Abstract method to be implemented by each Datagram. Parses content of NMEA-string and fills sets own members
+        """
         raise NotImplementedError()
 
-    def get_nmea_sentence(self):
+    def get_nmea_sentence(self) -> str:
+        """
+        Returns NMEA-String from instance
+        """
         prefix = f"{self._talker_id}{self.nmea_tag}"
-        data = prefix + self._convert_to_nmea()
-        checksum = self.checksum(data)
+        data = prefix + self._get_nmea_sentence()
+        checksum = self.create_checksum(data)
         return f"${data}*{checksum:02X}\r\n"
 
+    @abstractmethod
+    def _get_nmea_sentence(self) -> str:
+        """
+        Abstract method to be implemented by each Datagram. Creates content for NMEA-String (return string)
+        """
+        raise NotImplementedError()
+
     @staticmethod
-    def checksum(nmea_str):
+    def create_checksum(nmea_str: str):
+        """
+        Creates string checksum to given NMEA-String
+        """
         return reduce(operator.xor, map(ord, nmea_str), 0)
 
     @classmethod
-    def verify_checksum(cls, nmea_str):
+    def verify_checksum(cls, nmea_str: str):
+        """
+        Verifies checksum in given NMEA-String.
+        Raises NMEAParseError if string could not be parsed as expected
+        Raise ChecksumError if given checksum differs to calculated checksum
+        """
         try:
             nmea_str_checksum = int(nmea_str[-4:-2], 16)
-            expected = cls.checksum(nmea_str[1:-5])  # Remove dollar, \r\n and checksum
+            expected = cls.create_checksum(nmea_str[1:-5])  # Remove dollar, \r\n and checksum
         except ValueError as e:
             raise NMEAParseError(f"Could not parse {nmea_str}") from e
 
@@ -100,10 +141,16 @@ class NMEADatagram(object, metaclass=ABCMeta):
 
     @classmethod
     def _append_tuple(cls, value, unit):
+        """
+        Returns formatted string for given value and unit (used for NMEA-String generation)
+        """
         return cls._append_value(value) + "," + unit
 
     @classmethod
     def _append_value(cls, value):
+        """
+        Returns formatted string for given value (used for NMEA-String generation)
+        """
         if isinstance(value, float):
             value = f"{value:.2f}"
         elif isinstance(value, enum.Enum):
@@ -126,7 +173,7 @@ class RecommendedMinimumSentence(NMEADatagram):
         self._date_format_date = "%d%m%y"
         self._date_format_time = "%H%M%S.%f"  # TODO f = microseconds, not milliseconds?
 
-    def _convert_to_nmea(self):
+    def _get_nmea_sentence(self):
         """
         $GPRMC,hhmmss.ss,a,ddmm.mmmm,n,dddmm.mmmm,w,z.z,y.y,ddmmyy,d.d,v*CC<CR><LF>
         $GPRMC,144858,A,5235.3151,N,00207.6577,W,0.0,144.8,160610,3.6,W,A*12\r\n
@@ -178,7 +225,7 @@ class DepthBelowKeel(NMEADatagram):
         super().__init__(nmea_tag="DBT", *args, **kwargs)
         self.depth_m = depth_m
 
-    def _convert_to_nmea(self):
+    def _get_nmea_sentence(self):
         """
         $--DBT,x.x,f,x.x,M,x.x,F*hh<CR><LF>
         $SDDBT,7.8,f,2.4,M,1.3,F*0D\r\n
@@ -207,7 +254,7 @@ class SpeedThroughWater(NMEADatagram):
         self.heading_degrees_true = heading_degrees_true
         self.heading_degrees_magnetic = heading_degrees_magnetic
 
-    def _convert_to_nmea(self):
+    def _get_nmea_sentence(self):
         """
         $--VHW,x.x,T,x.x,M,x.x,N,x.x,K*hh<CR><LF>
         $IIVHW,245.1,T,245.1,M,000.01,N,000.01,K
@@ -228,7 +275,7 @@ class WaterTemperature(NMEADatagram):
         super().__init__(nmea_tag="MTW", *args, **kwargs)
         self.temperature_c = temperature_c
 
-    def _convert_to_nmea(self):
+    def _get_nmea_sentence(self):
         """
         $--MTW,x.x,C*hh<CR><LF>
         """
@@ -246,7 +293,7 @@ class WindSpeedAndAngle(NMEADatagram):
         self.speed_knots = speed_knots
         self.valid_status = validity
 
-    def _convert_to_nmea(self):
+    def _get_nmea_sentence(self):
         """
         $--MWV,x.x,a,x.x,a*hh<CR><LF>
         $WIMWV,214.8,R,0.1,K,A*28
