@@ -1,9 +1,7 @@
 import pytest
-import curio
 
 import device_io
-import helper
-import seatalk
+from seatalk import seatalk, seatalk_datagram
 
 
 class TestValueReceiver(device_io.IO):
@@ -22,12 +20,12 @@ class TestValueReceiver(device_io.IO):
 
 @pytest.mark.curio
 @pytest.mark.parametrize(("original", "data_gram_type"), (
-        (bytes([0x00, 0x02, 0x00, 0x00, 0x00]),             seatalk.DepthDatagram),
-        (bytes([0x20, 0x01, 0x00, 0x00]),                   seatalk.SpeedDatagram),
-        (bytes([0x26, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]), seatalk.SpeedDatagram2),
-        (bytes([0x23, 0x01, 0x00, 0x00]),                   seatalk.WaterTemperatureDatagram),
-        (bytes([0x27, 0x01, 0x00, 0x00]),                   seatalk.WaterTemperatureDatagram2),
-        (bytes([0x30, 0x00, 0x00]),                         seatalk.SetLampIntensityDatagram),
+        (bytes([0x00, 0x02, 0x00, 0x00, 0x00]),             seatalk_datagram.DepthDatagram),
+        (bytes([0x20, 0x01, 0x00, 0x00]),                   seatalk_datagram.SpeedDatagram),
+        (bytes([0x26, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]), seatalk_datagram.SpeedDatagram2),
+        (bytes([0x23, 0x01, 0x00, 0x00]),                   seatalk_datagram.WaterTemperatureDatagram),
+        (bytes([0x27, 0x01, 0x00, 0x00]),                   seatalk_datagram.WaterTemperatureDatagram2),
+        (bytes([0x30, 0x00, 0x00]),                         seatalk_datagram.SetLampIntensityDatagram),
 ))
 async def test_correct_recognition(original, data_gram_type):
     """
@@ -42,7 +40,7 @@ async def test_correct_recognition(original, data_gram_type):
 async def test_not_enough_data():
     original = bytes([0x00, 0x01, 0x00, 0x00])
     seatalk_device = seatalk.SeatalkDevice("TestDevice", io_device=TestValueReceiver(original))
-    with pytest.raises(seatalk.NotEnoughData):
+    with pytest.raises(seatalk_datagram.NotEnoughData):
         await seatalk_device.receive_data_gram()
 
 
@@ -50,7 +48,7 @@ async def test_not_enough_data():
 async def test_too_much_data():
     original = bytes([0x00, 0x03, 0x00, 0x00, 0x00, 0x00])
     seatalk_device = seatalk.SeatalkDevice("TestDevice", io_device=TestValueReceiver(original))
-    with pytest.raises(seatalk.TooMuchData):
+    with pytest.raises(seatalk_datagram.TooMuchData):
         await seatalk_device.receive_data_gram()
 
 
@@ -63,12 +61,12 @@ async def test_not_recognized():
 
 
 @pytest.mark.parametrize(("seatalk_datagram", "expected_bytes"), (
-        (seatalk.DepthDatagram(depth_m=22.3),      bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),               # 22.3m  -> 73.16f -> 731.6 -> 731  -> 0x02DB -> 0xDB02
-        (seatalk.SpeedDatagram(speed_knots=8.31),  bytes([0x20, 0x01, 0x53, 0x00])),                     # 8.3nm  ->        -> 83.1  ->  83  -> 0x0053 -> 0x5300
-        (seatalk.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),   # 5.19nm ->        -> 5190  ->      -> 0x0207 -> 0x0702
-        (seatalk.WaterTemperatureDatagram(17.2),   bytes([0x23, 0x01, 0x11, 0x3E])),                     # 17.2C  -> 17     ->       ->      -> 0x0011 -> 0x1100
-        (seatalk.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),                     # 19.2   ->        -> 119.2 -> 1192 -> 0x04A8 -> 0xA804
-        (seatalk.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C]))
+        (seatalk_datagram.DepthDatagram(depth_m=22.3),      bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),               # 22.3m  -> 73.16f -> 731.6 -> 731  -> 0x02DB -> 0xDB02
+        (seatalk_datagram.SpeedDatagram(speed_knots=8.31),  bytes([0x20, 0x01, 0x53, 0x00])),                     # 8.3nm  ->        -> 83.1  ->  83  -> 0x0053 -> 0x5300
+        (seatalk_datagram.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),   # 5.19nm ->        -> 5190  ->      -> 0x0207 -> 0x0702
+        (seatalk_datagram.WaterTemperatureDatagram(17.2),   bytes([0x23, 0x01, 0x11, 0x3E])),                     # 17.2C  -> 17     ->       ->      -> 0x0011 -> 0x1100
+        (seatalk_datagram.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),                     # 19.2   ->        -> 119.2 -> 1192 -> 0x04A8 -> 0xA804
+        (seatalk_datagram.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C]))
 ))
 def test_check_datagram_to_seatalk(seatalk_datagram, expected_bytes):
     actual_datagram = seatalk_datagram.get_seatalk_datagram()
@@ -80,7 +78,7 @@ async def test_raw_seatalk():
     reader = device_io.File(path="./test_data/seatalk_raw.hex", encoding=False)
     await reader.initialize()
     seatalk_device = seatalk.SeatalkDevice("RawSeatalkFileDevice", io_device=reader)
-    while 1:
+    for i in range(1000):
         try:
             result = await seatalk_device.receive_data_gram()
         except seatalk.SeatalkException as e:

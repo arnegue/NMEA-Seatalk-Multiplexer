@@ -8,7 +8,7 @@ import device
 import nmea
 import device_io
 import inspect
-import seatalk
+from seatalk import seatalk
 TCP_PIN_R = 14
 TCP_PIN_G = 7
 TCP_PIN_B = 6
