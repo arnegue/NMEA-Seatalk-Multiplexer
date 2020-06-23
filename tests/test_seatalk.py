@@ -75,37 +75,15 @@ def test_check_datagram_to_seatalk(seatalk_datagram, expected_bytes):
     assert expected_bytes == actual_datagram
 
 
-class LogFileReader(device_io.File):
-    def __init__(self, path, encoding):
-        super().__init__(path, encoding)
-        self._bytes = bytearray()
-
-    async def initialize(self):
-        await super().initialize()
-        async with curio.aopen(self._path_to_file, "r") as file:
-            lines = await file.readlines()
-
-        for line in lines:
-            byte_lines = line.split(" ")
-            byte_lines = byte_lines[2:-1] # No date, no line feed
-            for byte_ in byte_lines:
-                byte_value = int(byte_, 16)
-                self._bytes.append(byte_value)
-
-    async def _read(self, length=1):
-        ret_bytes = bytearray()
-        for i in range(length):
-            ret_bytes.append(self._bytes.pop(0))
-        return bytes(ret_bytes)
-
-
 @pytest.mark.curio
 async def test_raw_seatalk():
-    reader = LogFileReader(path="./test_data/Seatalk_raw.log", encoding=False)
+    reader = device_io.File(path="./test_data/seatalk_raw.hex", encoding=False)
     await reader.initialize()
-    seatalk_device = seatalk.SeatalkDevice("TestDevice", io_device=reader)
-    for i in range(1000):
+    seatalk_device = seatalk.SeatalkDevice("RawSeatalkFileDevice", io_device=reader)
+    while 1:
         try:
-            await seatalk_device.receive_data_gram()
+            result = await seatalk_device.receive_data_gram()
         except seatalk.SeatalkException as e:
             print(e)
+        else:
+            print(result.get_nmea_sentence())
