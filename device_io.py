@@ -180,7 +180,6 @@ class File(IO):
     async def _read(self, length=1):
         async with curio.aopen(self._path_to_file, "rb") as file:
             lines = await file.read()
-        # TODO no strings
         ret_val = lines[self._last_index:(self._last_index + length)]
         self._last_index += length
         if ret_val == "":
