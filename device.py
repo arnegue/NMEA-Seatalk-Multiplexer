@@ -83,6 +83,8 @@ class TaskDevice(Device, metaclass=ABCMeta):
                 await self._io_device.write(data)
             except NMEAParseError as e:  # TODO maybe already do it when write_to_device is called
                 logger.error(f"Will not write to {self.get_name()}: {repr(e)}")
+            finally:
+                await self._io_device.flush()
 
     async def write_to_device(self, sentence: NMEADatagram):
         if self._write_queue.full():
