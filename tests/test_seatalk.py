@@ -75,6 +75,15 @@ def test_check_datagram_to_seatalk(seatalk_datagram, expected_bytes):
     assert expected_bytes == actual_datagram
 
 
+@pytest.mark.parametrize("seatalk_datagram_instance", (
+    seatalk_datagram.EquipmentIDDatagram(9),
+    seatalk_datagram.SetLampIntensityDatagram(9)
+))
+def test_two_way_maps_validations(seatalk_datagram_instance):
+    with pytest.raises(seatalk_datagram.DataValidationException):
+        seatalk_datagram_instance.get_seatalk_datagram()
+
+
 @pytest.mark.curio
 async def test_raw_seatalk():
     reader = device_io.File(path="./test_data/seatalk_raw.hex", encoding=False)

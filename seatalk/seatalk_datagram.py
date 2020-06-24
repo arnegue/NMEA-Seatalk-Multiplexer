@@ -157,13 +157,17 @@ class EquipmentIDDatagram(SeatalkDatagram):
         })
 
     def process_datagram(self, first_half_byte, data):
-        self._equipment_id = self._equipment_dict[bytes(data)]
+        try:
+            self._equipment_id = self._equipment_dict[bytes(data)]
+        except KeyError as e:
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment to given equipment-bytes: {byte_to_str(data)}") from e
         print(self._equipment_id.name)
 
     def get_seatalk_datagram(self):
-        if self._equipment_id is None:
-            pass  # TODO exception
-        equipment_bytes = self._equipment_dict.get_reversed(self._equipment_id)
+        try:
+            equipment_bytes = self._equipment_dict.get_reversed(self._equipment_id)
+        except ValueError as e:
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given equipment-ID: {self._equipment_id}") from e
         return self.id + bytearray([self.data_length]) + equipment_bytes
 
 
@@ -262,10 +266,13 @@ class SetLampIntensityDatagram(SeatalkDatagram):
     def process_datagram(self, first_half_byte, data):
         try:
             self._intensity = self._intensity_map[data[0]]
-        except ValueError as e:
+        except KeyError as e:
             raise DataValidationException(f"{type(self).__name__}: Unexpected Intensity: {data[0]}") from e
 
     def get_seatalk_datagram(self):
-        intensity = self._intensity_map.get_reversed(self._intensity)
+        try:
+            intensity = self._intensity_map.get_reversed(self._intensity)
+        except ValueError as e:
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Intensity-byte to intensity: {self._intensity}") from e
         return self.id + bytearray([self.data_length, intensity])
 
