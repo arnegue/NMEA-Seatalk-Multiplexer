@@ -45,4 +45,5 @@ def pytest_configure(config):
 
 def pytest_sessionfinish(session, exitstatus):
     """ whole test run finishes. """
-    test_kernel.run(shutdown=True)
+    if test_kernel is not None:
+        test_kernel.run(shutdown=True)
