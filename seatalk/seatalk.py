@@ -6,6 +6,7 @@ from helper import get_numeric_byte_value, byte_to_str, bytes_to_str
 import logger
 from device import TaskDevice
 import nmea_datagram
+import seatalk.seatalk_datagram
 from seatalk.seatalk_datagram import SeatalkDatagram, SeatalkException, NoCorrespondingNMEASentence, DataNotRecognizedException
 
 
@@ -21,7 +22,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
     def __init__(self, name, io_device):
         super().__init__(name=name, io_device=io_device)
         self._seatalk_datagram_map = dict()
-        for name, obj in inspect.getmembers(sys.modules[__name__]):
+        for name, obj in inspect.getmembers(seatalk.seatalk_datagram):
             if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj):
                 instantiated_datagram = obj()
                 self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
