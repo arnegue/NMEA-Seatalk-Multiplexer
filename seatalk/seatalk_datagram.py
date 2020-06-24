@@ -1,8 +1,9 @@
 from abc import abstractmethod, ABCMeta
 
-from helper import byte_to_str, UnitConverter
+from helper import byte_to_str, UnitConverter, TwoWayDict
 import logger
 import nmea_datagram
+import enum
 
 
 class SeatalkException(nmea_datagram.NMEAError):
@@ -125,6 +126,47 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: db
         return self.id + default_byte_array + self.set_value(feet_value)
 
 
+class EquipmentIDDatagram(SeatalkDatagram):
+    """
+    01  05  XX XX XX XX XX XX  Equipment ID, sent at power on, reported examples:
+    01  05  00 00 00 60 01 00  Course Computer 400G
+    01  05  04 BA 20 28 01 00  ST60 Tridata
+    01  05  70 99 10 28 01 00  ST60 Log
+    01  05  F3 18 00 26 0F 06  ST80 Masterview
+    01  05  FA 03 00 30 07 03  ST80 Maxi Display
+    01  05  FF FF FF D0 00 00  Smart Controller Remote Control Handset
+    """
+    class Equipments(enum.IntEnum):
+        Course_Computer_400G = enum.auto()
+        ST60_Tridata = enum.auto()
+        ST60_Log = enum.auto()
+        ST80_Masterview = enum.auto()
+        ST80_Maxi_Display = enum.auto()
+        Smart_Controller_Remote_Control_Handset = enum.auto()
+
+    def __init__(self, equipment_id=None):
+        SeatalkDatagram.__init__(self, id=0x01, data_length=5)
+        self._equipment_id = equipment_id
+        self._equipment_dict = TwoWayDict({
+            bytes([0x00, 0x00, 0x00, 0x60, 0x01, 0x00]): self.Equipments.Course_Computer_400G,
+            bytes([0x04, 0xBA, 0x20, 0x28, 0x01, 0x00]): self.Equipments.ST60_Tridata,
+            bytes([0x70, 0x99, 0x10, 0x28, 0x01, 0x00]): self.Equipments.ST60_Log,
+            bytes([0xF3, 0x18, 0x00, 0x26, 0x0F, 0x06]): self.Equipments.ST80_Masterview,
+            bytes([0xFA, 0x03, 0x00, 0x30, 0x07, 0x03]): self.Equipments.ST80_Maxi_Display,
+            bytes([0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]): self.Equipments.ST60_Log,
+        })
+
+    def process_datagram(self, first_half_byte, data):
+        self._equipment_id = self._equipment_dict[bytes(data)]
+        print(self._equipment_id.name)
+
+    def get_seatalk_datagram(self):
+        if self._equipment_id is None:
+            pass  # TODO exception
+        equipment_bytes = self._equipment_dict.get_reversed(self._equipment_id)
+        return self.id + bytearray([self.data_length]) + equipment_bytes
+
+
 class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
     """
     20  01  XX  XX  Speed through water: XXXX/10 Knots
@@ -209,26 +251,21 @@ class SetLampIntensityDatagram(SeatalkDatagram):
         SeatalkDatagram.__init__(self, id=0x30, data_length=0)
         self._intensity = intensity
 
-    def get_seatalk_datagram(self):
-        intensity = 0  # if self._intensity == 0:
-        if self._intensity == 1:
-            intensity = 4
-        elif self._intensity == 2:
-            intensity = 8
-        elif self._intensity == 3:
-            intensity = 12  # That's weird. All the time it's a shifted bit but this is 0x1100
-        return self.id + bytearray([self.data_length, intensity])
+        # Left: byte-value, Right: intensity
+        self._intensity_map = TwoWayDict({
+            0:  0,
+            4:  1,
+            8:  2,
+            12: 3   # That's weird. All the time it's a shifted bit but this is 0x1100
+        })
 
     def process_datagram(self, first_half_byte, data):
-        intensity = data[0]
-        if intensity == 0:
-            self._intensity = 0
-        elif intensity == 4:
-            self._intensity = 1
-        elif intensity == 8:
-            self._intensity = 2
-        elif intensity == 12:
-            self._intensity = 3  # That's weird. All the time it's a shifted bit but this is 0x1100
-        else:
-            raise DataValidationException(f"{type(self).__name__}: Unexpected Intensity: {intensity}")
+        try:
+            self._intensity = self._intensity_map[data[0]]
+        except ValueError as e:
+            raise DataValidationException(f"{type(self).__name__}: Unexpected Intensity: {data[0]}") from e
+
+    def get_seatalk_datagram(self):
+        intensity = self._intensity_map.get_reversed(self._intensity)
+        return self.id + bytearray([self.data_length, intensity])
 

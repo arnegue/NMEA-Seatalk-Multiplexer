@@ -62,3 +62,12 @@ class UnitConverter(object):
     @staticmethod
     def fahrenheit_to_celisus(fahrenheit):
         return (fahrenheit - 32) / 1.8000
+
+
+class TwoWayDict(dict):
+    def get_reversed(self, value):
+        for key in self.keys():
+            if value == self[key]:
+                return key
+        else:
+            raise ValueError(f"Value not found {value}")
