@@ -26,7 +26,8 @@ class TestValueReceiver(device_io.IO):
         (bytes([0x23, 0x01, 0x00, 0x00]),                         seatalk_datagram.WaterTemperatureDatagram),
         (bytes([0x27, 0x01, 0x00, 0x00]),                         seatalk_datagram.WaterTemperatureDatagram2),
         (bytes([0x30, 0x00, 0x00]),                               seatalk_datagram.SetLampIntensityDatagram),
-        (bytes([0x01, 0x05, 0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]), seatalk_datagram.EquipmentIDDatagram)
+        (bytes([0x01, 0x05, 0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]), seatalk_datagram.EquipmentIDDatagram),
+        (bytes([0x36, 0x00, 0x01]),                               seatalk_datagram.CancelMOB),
 ))
 async def test_correct_recognition(original, data_gram_type):
     """
@@ -68,7 +69,8 @@ async def test_not_recognized():
         (seatalk_datagram.WaterTemperatureDatagram(17.2),   bytes([0x23, 0x01, 0x11, 0x3E])),                     # 17.2C  -> 17     ->       ->      -> 0x0011 -> 0x1100
         (seatalk_datagram.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),                     # 19.2   ->        -> 119.2 -> 1192 -> 0x04A8 -> 0xA804
         (seatalk_datagram.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C])),
-        (seatalk_datagram.EquipmentIDDatagram(seatalk_datagram.EquipmentIDDatagram.Equipments.ST60_Tridata),      bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00]))
+        (seatalk_datagram.EquipmentIDDatagram(seatalk_datagram.EquipmentIDDatagram.Equipments.ST60_Tridata),      bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
+        (seatalk_datagram.CancelMOB(),                      bytes([0x36, 0x00, 0x01]))
 ))
 def test_check_datagram_to_seatalk(seatalk_datagram, expected_bytes):
     actual_datagram = seatalk_datagram.get_seatalk_datagram()

@@ -247,6 +247,22 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
         return self.id + bytes([self.data_length]) + celsius_val
 
 
+class CancelMOB(SeatalkDatagram):
+    """
+    36  00  01      Cancel MOB (Man Over Board) condition
+    """
+    def __init__(self, *args, **kwargs):
+        SeatalkDatagram.__init__(self, id=0x36, data_length=0)
+        self._expected_byte = bytes([0x01])
+
+    def process_datagram(self, first_half_byte, data):
+        if data != self._expected_byte:
+            raise DataValidationException(f"{type(self).__name__}:Expected {self._expected_byte}, got {data} instead.")
+
+    def get_seatalk_datagram(self):
+        return self.id + bytes([self.data_length]) + self._expected_byte
+
+
 class SetLampIntensityDatagram(SeatalkDatagram):
     """
     80  00  0X      Set Lamp Intensity: X=0 off, X=4: 1, X=8: 2, X=C: 3
