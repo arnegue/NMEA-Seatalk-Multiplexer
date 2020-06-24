@@ -120,6 +120,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             # TODO maybe flush afterwards?
         finally:
             self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes)
+            await self._io_device.flush()
 
 
 class SeatalkDatagram(object, metaclass=ABCMeta):
