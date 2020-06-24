@@ -4,6 +4,7 @@ import curio
 
 test_kernel = None
 
+
 @pytest.mark.tryfirst
 def pytest_pycollect_makeitem(collector, name, obj):
     """
@@ -44,5 +45,6 @@ def pytest_configure(config):
 
 def pytest_sessionfinish(session, exitstatus):
     """ whole test run finishes. """
-    test_kernel.run(shutdown=True)
+    if test_kernel is not None:
+        test_kernel.run(shutdown=True)
 
