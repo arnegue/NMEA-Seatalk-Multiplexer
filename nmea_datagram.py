@@ -287,9 +287,9 @@ class WaterTemperature(NMEADatagram):
 
 
 class WindSpeedAndAngle(NMEADatagram):
-    def __init__(self, angle=None, reference_true=None, speed_knots=None, validity: NMEAValidity=None, *args, **kwargs):
+    def __init__(self, angle_degree=None, reference_true=None, speed_knots=None, validity: NMEAValidity=None, *args, **kwargs):
         super().__init__("MWV", *args, **kwargs)
-        self.angle = angle
+        self.angle_degree = angle_degree
         self.reference_true = reference_true
         self.speed_knots = speed_knots
         self.valid_status = validity
@@ -299,14 +299,14 @@ class WindSpeedAndAngle(NMEADatagram):
         $--MWV,x.x,a,x.x,a*hh<CR><LF>
         $WIMWV,214.8,R,0.1,K,A*28
         """
-        nmea_str = self._append_tuple(self.angle, "T" if self.reference_true else "R") + \
-                   self._append_tuple(self.speed_knots, "N") +\
+        nmea_str = self._append_tuple(self.angle_degree, "T" if self.reference_true else "R") + \
+                   self._append_tuple(self.speed_knots, "N") + \
                    self._append_value(self.valid_status)
 
         return nmea_str
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
-        self.angle = float(nmea_value_list[0])
+        self.angle_degree = float(nmea_value_list[0])
         self.reference_true = True if nmea_value_list[1] == "T" else False
 
         value = float(nmea_value_list[2])

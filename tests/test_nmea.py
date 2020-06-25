@@ -36,7 +36,7 @@ def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
                                                                    variation_sense=helper.Orientation.East,
                                                                    mode="D", talker_id="GP"),                                   "$GPRMC,160755.000590,A,12323.1,N,602.9,W,19.30,12.90,081220,1.20,E,D*28\r\n"),
 
-                         (nmea_datagram.WindSpeedAndAngle(angle=39.2, reference_true=True, speed_knots=29.93,
+                         (nmea_datagram.WindSpeedAndAngle(angle_degree=39.2, reference_true=True, speed_knots=29.93,
                                                           validity=nmea_datagram.NMEAValidity.Invalid, talker_id="WI"),         "$WIMWV,39.20,T,29.93,N,V*3B\r\n"),
 
                          (nmea_datagram.SpeedThroughWater(speed_knots=10.1, heading_degrees_true=29.01,
