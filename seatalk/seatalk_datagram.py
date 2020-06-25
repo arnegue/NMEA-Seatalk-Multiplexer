@@ -146,7 +146,7 @@ class EquipmentIDDatagram(SeatalkDatagram):
 
     def __init__(self, equipment_id=None):
         SeatalkDatagram.__init__(self, id=0x01, data_length=5)
-        self._equipment_id = equipment_id
+        self.equipment_id = equipment_id
         self._equipment_dict = TwoWayDict({
             bytes([0x00, 0x00, 0x00, 0x60, 0x01, 0x00]): self.Equipments.Course_Computer_400G,
             bytes([0x04, 0xBA, 0x20, 0x28, 0x01, 0x00]): self.Equipments.ST60_Tridata,
@@ -158,17 +158,62 @@ class EquipmentIDDatagram(SeatalkDatagram):
 
     def process_datagram(self, first_half_byte, data):
         try:
-            self._equipment_id = self._equipment_dict[bytes(data)]
+            self.equipment_id = self._equipment_dict[bytes(data)]
         except KeyError as e:
             raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment to given equipment-bytes: {byte_to_str(data)}") from e
-        print(self._equipment_id.name)
+        print(self.equipment_id.name)
 
     def get_seatalk_datagram(self):
         try:
-            equipment_bytes = self._equipment_dict.get_reversed(self._equipment_id)
+            equipment_bytes = self._equipment_dict.get_reversed(self.equipment_id)
         except ValueError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given equipment-ID: {self._equipment_id}") from e
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given equipment-ID: {self.equipment_id}") from e
         return self.id + bytearray([self.data_length]) + equipment_bytes
+
+
+class ApparentWindAngleDatagram(SeatalkDatagram):  # TODO nmea mwv with ApparentWindSpeed
+    """
+    10  01  XX  YY  Apparent Wind Angle: XXYY/2 degrees right of bow
+                Used for autopilots Vane Mode (WindTrim)
+                Corresponding NMEA sentence: MWV
+    """
+    def __init__(self, angle_degree=None):
+        super().__init__(id=0x10, data_length=1)
+        self.angle_degree = angle_degree
+
+    def process_datagram(self, first_half_byte, data):
+        self.angle_degree = self.get_value(data) / 2  # TODO maybe some validation for <0° or >360° ?
+
+    def get_seatalk_datagram(self):
+        return self.id + bytes([self.data_length]) + self.set_value(int(self.angle_degree * 2))
+
+
+class ApparentWindSpeedDatagram(SeatalkDatagram):  # TODO nmea mwv with ApparentWindAngle
+    """
+    11  01  XX  0Y  Apparent Wind Speed: (XX & 0x7F) + Y/10 Knots
+                Units flag: XX&0x80=0    => Display value in Knots
+                            XX&0x80=0x80 => Display value in Meter/Second
+                Corresponding NMEA sentence: MWV
+    """
+    def __init__(self, speed_knots=None):
+        super().__init__(id=0x11, data_length=1)
+        self.speed_knots = speed_knots
+
+    def process_datagram(self, first_half_byte, data):
+        if data[1] & 0xF0:  # 0Y <- the 0 is important
+            raise DataValidationException(f"{type(self).__name__}: Byte 1 is bigger than 0x0F {byte_to_str(data[1])}")
+
+        speed = (data[0] & 0x7F) + data[1] / 10
+
+        if data[0] & 0x80:  # Meter/Second
+            self.speed_knots = UnitConverter.meter_to_nm(speed * 60 * 60)
+        else:  # Knots
+            self.speed_knots = speed
+
+    def get_seatalk_datagram(self):
+        x_byte = int(self.speed_knots)
+        y_byte = int((round(self.speed_knots, 1) - x_byte) * 10)
+        return self.id + bytes([self.data_length, x_byte, y_byte])
 
 
 class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
@@ -181,7 +226,7 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: 
         nmea_datagram.SpeedThroughWater.__init__(self, *args, **kwargs)
 
     def process_datagram(self, first_half_byte, data):
-        self.speed_knots = self.get_value(data) / 10.0
+        self.speed_knots = self.get_value(data) / 10
 
     def get_seatalk_datagram(self):
         return self.id + bytes([self.data_length]) + self.set_value(self.speed_knots * 10)
@@ -193,7 +238,7 @@ class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA:
                      XXXX/100 Knots, sensor 1, current speed, valid if D&4=4
                      YYYY/100 Knots, average speed (trip/time) if D&8=0
                               or data from sensor 2 if D&8=8
-                     E&1=1: Average speed calulation stopped
+                     E&1=1: Average speed calculation stopped
                      E&2=2: Display value in MPH
                      Corresponding NMEA sentence: VHW
     """
@@ -269,7 +314,7 @@ class SetLampIntensityDatagram(SeatalkDatagram):
     """
     def __init__(self, intensity=0):
         SeatalkDatagram.__init__(self, id=0x30, data_length=0)
-        self._intensity = intensity
+        self.intensity = intensity
 
         # Left: byte-value, Right: intensity
         self._intensity_map = TwoWayDict({
@@ -281,14 +326,14 @@ class SetLampIntensityDatagram(SeatalkDatagram):
 
     def process_datagram(self, first_half_byte, data):
         try:
-            self._intensity = self._intensity_map[data[0]]
+            self.intensity = self._intensity_map[data[0]]
         except KeyError as e:
             raise DataValidationException(f"{type(self).__name__}: Unexpected Intensity: {data[0]}") from e
 
     def get_seatalk_datagram(self):
         try:
-            intensity = self._intensity_map.get_reversed(self._intensity)
+            intensity = self._intensity_map.get_reversed(self.intensity)
         except ValueError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding Intensity-byte to intensity: {self._intensity}") from e
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Intensity-byte to intensity: {self.intensity}") from e
         return self.id + bytearray([self.data_length, intensity])
 

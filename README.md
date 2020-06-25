@@ -45,14 +45,24 @@ Since this project only produces NMEA-Output every NMEA-Device is supported whic
  
 A big part of help for parsing Seatalk-Sentences and building hardware to be able to receive has come from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
 
-Supported (and tested on ST50 and ST60) Seatalk-IDs:
+As written above: Writing to bus is buggy right now because of missing bit-toggeling
+Some Seatalk-Messages do not have a corresponding NMEA-Sentence. 
+
+#### Supported (and tested on ST50 and ST60) Seatalk-IDs:
 
 * 0x00 - Depth
 * 0x20 - Speed through water
 * 0x23 - Water Temperature
 * 0x26 - Speed through water
 * 0x27 - Water Temperature
-* 0x30 - Set Lamp Intensity (No corresponding NMEA), only receiving possible
+* 0x30 - Set Lamp Intensity
+
+#### Implemented but untested (missing Equipment) Seatalk-IDs:
+
+* 0x01 - Equipment ID
+* 0x10 - Apparent Wind Angle
+* 0x11 - Apparent Wind Speed
+* 0x36 - Cancel MOB
 
 ### I2C
 

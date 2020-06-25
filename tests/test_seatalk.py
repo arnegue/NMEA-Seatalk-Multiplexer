@@ -21,17 +21,19 @@ class TestValueReceiver(device_io.IO):
 @pytest.mark.curio
 @pytest.mark.parametrize(("original", "data_gram_type"), (
         (bytes([0x00, 0x02, 0x00, 0x00, 0x00]),                   seatalk_datagram.DepthDatagram),
+        (bytes([0x01, 0x05, 0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]), seatalk_datagram.EquipmentIDDatagram),
+        (bytes([0x10, 0x01, 0x01, 0x02]),                         seatalk_datagram.ApparentWindAngleDatagram),
+        (bytes([0x11, 0x01, 0x12, 0x03]),                         seatalk_datagram.ApparentWindSpeedDatagram),
         (bytes([0x20, 0x01, 0x00, 0x00]),                         seatalk_datagram.SpeedDatagram),
-        (bytes([0x26, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]),       seatalk_datagram.SpeedDatagram2),
         (bytes([0x23, 0x01, 0x00, 0x00]),                         seatalk_datagram.WaterTemperatureDatagram),
         (bytes([0x27, 0x01, 0x00, 0x00]),                         seatalk_datagram.WaterTemperatureDatagram2),
+        (bytes([0x26, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]),       seatalk_datagram.SpeedDatagram2),
         (bytes([0x30, 0x00, 0x00]),                               seatalk_datagram.SetLampIntensityDatagram),
-        (bytes([0x01, 0x05, 0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]), seatalk_datagram.EquipmentIDDatagram),
         (bytes([0x36, 0x00, 0x01]),                               seatalk_datagram.CancelMOB),
 ))
 async def test_correct_recognition(original, data_gram_type):
     """
-    Tests if "received" bytes are correctly recognized
+    Tests if "received" bytes result in a correct Datagram-Recognition (no direct value check here)
     """
     seatalk_device = seatalk.SeatalkDevice("TestDevice", io_device=TestValueReceiver(original))
     recognized_datagram = await seatalk_device.receive_data_gram()
@@ -64,12 +66,14 @@ async def test_not_recognized():
 
 @pytest.mark.parametrize(("seatalk_datagram", "expected_bytes"), (
         (seatalk_datagram.DepthDatagram(depth_m=22.3),      bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),               # 22.3m  -> 73.16f -> 731.6 -> 731  -> 0x02DB -> 0xDB02
+        (seatalk_datagram.EquipmentIDDatagram(seatalk_datagram.EquipmentIDDatagram.Equipments.ST60_Tridata),      bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
+        (seatalk_datagram.ApparentWindAngleDatagram(256.5), bytes([0x10, 0x01, 0x01, 0x02])),                     # 256.5  ->        -> 513  ->       -> 0x0201 -> 0x0102
+        (seatalk_datagram.ApparentWindSpeedDatagram(18.3),  bytes([0x11, 0x01, 0x12, 0x03])),                     # 18.3   -> 18 + 3/10 -> 0x12 + 0x03->        -> 0x1203
         (seatalk_datagram.SpeedDatagram(speed_knots=8.31),  bytes([0x20, 0x01, 0x53, 0x00])),                     # 8.3nm  ->        -> 83.1  ->  83  -> 0x0053 -> 0x5300
-        (seatalk_datagram.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),   # 5.19nm ->        -> 5190  ->      -> 0x0207 -> 0x0702
         (seatalk_datagram.WaterTemperatureDatagram(17.2),   bytes([0x23, 0x01, 0x11, 0x3E])),                     # 17.2C  -> 17     ->       ->      -> 0x0011 -> 0x1100
+        (seatalk_datagram.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),   # 5.19nm ->        -> 5190  ->      -> 0x0207 -> 0x0702
         (seatalk_datagram.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),                     # 19.2   ->        -> 119.2 -> 1192 -> 0x04A8 -> 0xA804
         (seatalk_datagram.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C])),
-        (seatalk_datagram.EquipmentIDDatagram(seatalk_datagram.EquipmentIDDatagram.Equipments.ST60_Tridata),      bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
         (seatalk_datagram.CancelMOB(),                      bytes([0x36, 0x00, 0x01]))
 ))
 def test_check_datagram_to_seatalk(seatalk_datagram, expected_bytes):
