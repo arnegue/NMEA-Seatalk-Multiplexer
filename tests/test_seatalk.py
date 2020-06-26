@@ -25,6 +25,8 @@ def get_parameters():
         (seatalk_datagram.ApparentWindAngleDatagram(256.5), bytes([0x10, 0x01, 0x01, 0x02])),
         (seatalk_datagram.ApparentWindSpeedDatagram(18.3),  bytes([0x11, 0x01, 0x12, 0x03])),
         (seatalk_datagram.SpeedDatagram(speed_knots=8.31),  bytes([0x20, 0x01, 0x53, 0x00])),
+        (seatalk_datagram.TripMileage(6784.12),             bytes([0x21, 0x02, 0x0C, 0x5A, 0x0A])),
+        (seatalk_datagram.TotalMileage(6553),               bytes([0x22, 0x02, 0xFA, 0xFF, 0x00])),
         (seatalk_datagram.WaterTemperatureDatagram(17.2),   bytes([0x23, 0x01, 0x11, 0x3E])),
         (seatalk_datagram.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
         (seatalk_datagram.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),

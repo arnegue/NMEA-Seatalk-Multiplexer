@@ -114,7 +114,7 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: db
         nmea_datagram.DepthBelowKeel.__init__(self, *args, **kwargs)
 
     def process_datagram(self, first_half_byte, data):
-        # TODO X and Z flag
+        # TODO Y and Z flag
         data = data[1:]
         feet = self.get_value(data) / 10.0
         self.depth_m = feet / 3.2808
@@ -230,6 +230,39 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: 
 
     def get_seatalk_datagram(self):
         return self.id + bytes([self.data_length]) + self.set_value(self.speed_knots * 10)
+
+
+class TripMileage(SeatalkDatagram):
+    """
+    21  02  XX  XX  0X  Trip Mileage: XXXXX/100 nautical miles
+    """
+    def __init__(self, mileage_miles=None):
+        SeatalkDatagram.__init__(self, id=0x21, data_length=2)
+        self.mileage_miles = mileage_miles
+
+    def process_datagram(self, first_half_byte, data):
+        value = (data[2] & 0x0F) << 16 | data[1] << 8 | data[0]
+        self.mileage_miles = value / 100
+
+    def get_seatalk_datagram(self):
+        data = int(self.mileage_miles * 100).to_bytes(3, "little")
+        return self.id + bytes([self.data_length]) + data
+
+
+class TotalMileage(SeatalkDatagram):
+    """
+    22  02  XX  XX  00  Total Mileage: XXXX/10 nautical miles
+    """
+
+    def __init__(self, mileage_miles=None):
+        SeatalkDatagram.__init__(self, id=0x22, data_length=2)
+        self.mileage_miles = mileage_miles
+
+    def process_datagram(self, first_half_byte, data):
+        self.mileage_miles = self.get_value(data[:2]) / 10
+
+    def get_seatalk_datagram(self):
+        return self.id + bytes([self.data_length]) + self.set_value(self.mileage_miles * 10) + bytes([0x00])
 
 
 class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
