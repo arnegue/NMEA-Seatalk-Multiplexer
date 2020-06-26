@@ -30,6 +30,7 @@ class TestValueReceiver(device_io.IO):
         (bytes([0x26, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00]),       seatalk_datagram.SpeedDatagram2),
         (bytes([0x30, 0x00, 0x00]),                               seatalk_datagram.SetLampIntensityDatagram),
         (bytes([0x36, 0x00, 0x01]),                               seatalk_datagram.CancelMOB),
+        (bytes([0x90, 0x00, 0x02]),                               seatalk_datagram.DeviceIdentification),
 ))
 async def test_correct_recognition(original, data_gram_type):
     """
@@ -74,7 +75,8 @@ async def test_not_recognized():
         (seatalk_datagram.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),   # 5.19nm ->        -> 5190  ->      -> 0x0207 -> 0x0702
         (seatalk_datagram.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),                     # 19.2   ->        -> 119.2 -> 1192 -> 0x04A8 -> 0xA804
         (seatalk_datagram.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C])),
-        (seatalk_datagram.CancelMOB(),                      bytes([0x36, 0x00, 0x01]))
+        (seatalk_datagram.CancelMOB(),                      bytes([0x36, 0x00, 0x01])),
+        (seatalk_datagram.DeviceIdentification(seatalk_datagram.DeviceIdentification.DeviceID.ST600R),           bytes([0x90, 0x00, 0x02]))
 ))
 def test_check_datagram_to_seatalk(seatalk_datagram, expected_bytes):
     actual_datagram = seatalk_datagram.get_seatalk_datagram()

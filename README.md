@@ -63,6 +63,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x10 - Apparent Wind Angle
 * 0x11 - Apparent Wind Speed
 * 0x36 - Cancel MOB
+* 0x90 - Device Identification
 
 ### I2C
 

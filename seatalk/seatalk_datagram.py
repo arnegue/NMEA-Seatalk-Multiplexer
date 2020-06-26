@@ -144,10 +144,10 @@ class EquipmentIDDatagram(SeatalkDatagram):
         ST80_Maxi_Display = enum.auto()
         Smart_Controller_Remote_Control_Handset = enum.auto()
 
-    def __init__(self, equipment_id=None):
+    def __init__(self, equipment_id: Equipments=None):
         SeatalkDatagram.__init__(self, id=0x01, data_length=5)
         self.equipment_id = equipment_id
-        self._equipment_dict = TwoWayDict({
+        self._equipment_map = TwoWayDict({
             bytes([0x00, 0x00, 0x00, 0x60, 0x01, 0x00]): self.Equipments.Course_Computer_400G,
             bytes([0x04, 0xBA, 0x20, 0x28, 0x01, 0x00]): self.Equipments.ST60_Tridata,
             bytes([0x70, 0x99, 0x10, 0x28, 0x01, 0x00]): self.Equipments.ST60_Log,
@@ -158,14 +158,14 @@ class EquipmentIDDatagram(SeatalkDatagram):
 
     def process_datagram(self, first_half_byte, data):
         try:
-            self.equipment_id = self._equipment_dict[bytes(data)]
+            self.equipment_id = self._equipment_map[bytes(data)]
         except KeyError as e:
             raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment to given equipment-bytes: {byte_to_str(data)}") from e
         print(self.equipment_id.name)
 
     def get_seatalk_datagram(self):
         try:
-            equipment_bytes = self._equipment_dict.get_reversed(self.equipment_id)
+            equipment_bytes = self._equipment_map.get_reversed(self.equipment_id)
         except ValueError as e:
             raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given equipment-ID: {self.equipment_id}") from e
         return self.id + bytearray([self.data_length]) + equipment_bytes
@@ -337,3 +337,37 @@ class SetLampIntensityDatagram(SeatalkDatagram):
             raise DataValidationException(f"{type(self).__name__}: No corresponding Intensity-byte to intensity: {self.intensity}") from e
         return self.id + bytearray([self.data_length, intensity])
 
+
+class DeviceIdentification(SeatalkDatagram):
+    """
+    90  00  XX    Device Identification
+                  XX=02  sent by ST600R ~every 2 secs
+                  XX=05  sent by type 150, 150G and 400G course computer
+                  XX=A3  sent by NMEA <-> SeaTalk bridge ~every 10 secs
+    """
+    class DeviceID(enum.IntEnum):
+        ST600R = enum.auto()
+        Type_150_150G_400G = enum.auto()
+        NMEASeatalkBridge = enum.auto()
+
+    def __init__(self, device_id: DeviceID=None):
+        SeatalkDatagram.__init__(self, id=0x90, data_length=0)
+        self.device_id = device_id
+        self._device_id_map = TwoWayDict({
+            0x02: self.DeviceID.ST600R,
+            0x05: self.DeviceID.Type_150_150G_400G,
+            0xA3: self.DeviceID.NMEASeatalkBridge
+        })
+
+    def process_datagram(self, first_half_byte, data):
+        try:
+            self.device_id = self._device_id_map[data[0]]
+        except KeyError as e:
+            raise DataValidationException(f"{type(self).__name__}: Unexpected DeviceID: {data[0]}") from e
+
+    def get_seatalk_datagram(self):
+        try:
+            intensity = self._device_id_map.get_reversed(self.device_id)
+        except ValueError as e:
+            raise DataValidationException(f"{type(self).__name__}: No corresponding DeviceID-byte to intensity: {self.device_id}") from e
+        return self.id + bytearray([self.data_length, intensity])
