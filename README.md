@@ -64,6 +64,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x11 - Apparent Wind Speed
 * 0x36 - Cancel MOB
 * 0x90 - Device Identification
+* 0x91 - Set Rudder Gain
 
 ### I2C
 

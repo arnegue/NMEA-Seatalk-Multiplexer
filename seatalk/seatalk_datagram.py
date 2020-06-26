@@ -371,3 +371,18 @@ class DeviceIdentification(SeatalkDatagram):
         except ValueError as e:
             raise DataValidationException(f"{type(self).__name__}: No corresponding DeviceID-byte to intensity: {self.device_id}") from e
         return self.id + bytearray([self.data_length, intensity])
+
+
+class SetRudderGain(SeatalkDatagram):
+    """
+    91  00  0X        Set Rudder gain to X
+    """
+    def __init__(self, rudder_gain=None):
+        SeatalkDatagram.__init__(self, id=0x91, data_length=0)
+        self.rudder_gain = rudder_gain
+
+    def process_datagram(self, first_half_byte, data):
+        self.rudder_gain = data[0]
+
+    def get_seatalk_datagram(self):
+        return self.id + bytearray([self.data_length, self.rudder_gain])
