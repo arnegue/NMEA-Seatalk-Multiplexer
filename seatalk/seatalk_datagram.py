@@ -178,7 +178,7 @@ class ApparentWindAngleDatagram(SeatalkDatagram):  # TODO nmea mwv with Apparent
                 Corresponding NMEA sentence: MWV
     """
     def __init__(self, angle_degree=None):
-        super().__init__(id=0x10, data_length=1)
+        SeatalkDatagram.__init__(self, id=0x10, data_length=1)
         self.angle_degree = angle_degree
 
     def process_datagram(self, first_half_byte, data):
@@ -196,7 +196,7 @@ class ApparentWindSpeedDatagram(SeatalkDatagram):  # TODO nmea mwv with Apparent
                 Corresponding NMEA sentence: MWV
     """
     def __init__(self, speed_knots=None):
-        super().__init__(id=0x11, data_length=1)
+        SeatalkDatagram.__init__(self, id=0x11, data_length=1)
         self.speed_knots = speed_knots
 
     def process_datagram(self, first_half_byte, data):
