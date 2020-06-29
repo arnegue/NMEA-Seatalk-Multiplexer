@@ -114,15 +114,17 @@ You can create either a TCP-Server or a -Client
 This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-Encoding. This device's type is NMEADevice. So it only transmits/receives NMEA-Strings.
 
 ```json
-"MyTCPServer": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "TCPServer",
-    "port": 9900,
-    "encoding": "ASCII"
-  },
-  "observers": [
-  ]
+{
+  "MyTCPServer": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "TCPServer",
+      "port": 9900,
+      "encoding": "ASCII"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
  
@@ -131,16 +133,18 @@ This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-E
 This example creates a client which will try to connect to ``172.24.1.1:9901``. Setting ``ip`` to a hostname does also work.
 
 ```json
-"MyTCPClient": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "TCPClient",
-    "port": 9901,
-    "ip": "172.24.1.1",
-    "encoding": "ASCII"
-  },
-  "observers": [
-  ]
+{
+  "MyTCPClient": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "TCPClient",
+      "port": 9901,
+      "ip": "172.24.1.1",
+      "encoding": "ASCII"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
  
@@ -149,15 +153,17 @@ This example creates a client which will try to connect to ``172.24.1.1:9901``. 
 This example reads/writes from/to file located at ``/tmp/my_nmea_file.txt``.
 
 ```json
-"MyFileReadWriter": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "File",
-    "path": "/tmp/my_nmea_file.txt",
-    "encoding": "ASCII"
-  },
-  "observers": [
-  ]
+{
+  "MyFileReadWriter": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "File",
+      "path": "/tmp/my_nmea_file.txt",
+      "encoding": "ASCII"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
 
@@ -175,16 +181,18 @@ Given example shows a Seatalk-Device on port ``/dev/ttyUSB3/`` with parity set t
 Additionally the observer "MyTCPServer" is listening to this device. 
 
 ```json
-"Seatalk": {
-  "type": "SeatalkDevice",
-  "device_io": {
-    "type": "Serial",
-    "port": "/dev/ttyUSB3",
-    "parity": "Mark"
-  },
-  "observers": [
-    "MyTCPServer"
-  ]
+{ 
+  "Seatalk": {
+   "type": "SeatalkDevice",
+   "device_io": {
+     "type": "Serial",
+     "port": "/dev/ttyUSB3",
+     "parity": "Mark"
+   },
+   "observers": [
+     "MyTCPServer"
+   ]
+  }
 }
 ```
 
@@ -194,14 +202,16 @@ Additionally the observer "MyTCPServer" is listening to this device.
 This devices just prints out to StdOut (StdIn currently not supported):
 
 ```json
-"MyConsoleSpammer": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "StdOutPrinter",
-    "encoding": "UTF-8"
-  },
-  "observers": [
-  ]
+{
+  "MyConsoleSpammer": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "StdOutPrinter",
+      "encoding": "UTF-8"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
 
