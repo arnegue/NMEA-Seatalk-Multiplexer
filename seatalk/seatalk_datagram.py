@@ -366,6 +366,10 @@ class Date(SeatalkDatagram):  # TODO RMC?
 
 
 class SatInfo(SeatalkDatagram):
+    """
+    57  S0  DD      Sat Info: S number of sats, DD horiz. dilution of position, if S=1 -> DD=0x94
+                    Corresponding NMEA sentences: GGA, GSA
+    """
     def __init__(self, amount_satellites=None, horizontal_dilution=None):
         SeatalkDatagram.__init__(self, id=0x57, data_length=0)
         self.amount_satellites = amount_satellites
