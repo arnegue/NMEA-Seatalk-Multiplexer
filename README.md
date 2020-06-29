@@ -66,6 +66,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x22 - Total Mileage
 * 0x36 - Cancel MOB
 * 0x56 - Date
+* 0x57 - Satellite Info
 * 0x90 - Device Identification
 * 0x91 - Set Rudder Gain
 

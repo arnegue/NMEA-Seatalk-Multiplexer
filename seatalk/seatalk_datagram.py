@@ -365,6 +365,21 @@ class Date(SeatalkDatagram):  # TODO RMC?
         return self.id + bytes([first_byte, self.date.day, self.date.year - self._year_offset])
 
 
+class SatInfo(SeatalkDatagram):
+    def __init__(self, amount_satellites=None, horizontal_dilution=None):
+        SeatalkDatagram.__init__(self, id=0x57, data_length=0)
+        self.amount_satellites = amount_satellites
+        self.horizontal_dilution = horizontal_dilution
+
+    def process_datagram(self, first_half_byte, data):
+        self.amount_satellites = first_half_byte
+        self.horizontal_dilution = data[0]
+
+    def get_seatalk_datagram(self):
+        first_byte = (self.amount_satellites << 4) | self.data_length
+        return self.id + bytes([first_byte, self.horizontal_dilution])
+
+
 class SetLampIntensityDatagram(SeatalkDatagram):
     """
     80  00  0X      Set Lamp Intensity: X=0 off, X=4: 1, X=8: 2, X=C: 3

@@ -34,6 +34,7 @@ def get_parameters():
         (seatalk_datagram.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C])),
         (seatalk_datagram.CancelMOB(),                      bytes([0x36, 0x00, 0x01])),
         (seatalk_datagram.Date(date=datetime.date(year=2019, month=10, day=31)), bytes([0x56, 0xA1, 0x1F, 0x13])),
+        (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),
         (seatalk_datagram.DeviceIdentification(seatalk_datagram.DeviceIdentification.DeviceID.ST600R), bytes([0x90, 0x00, 0x02])),
         (seatalk_datagram.SetRudderGain(3),                 bytes([0x91, 0x00, 0x03])),
     )
