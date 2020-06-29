@@ -1,6 +1,5 @@
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta
 import inspect
-import sys
 
 from helper import get_numeric_byte_value, byte_to_str, bytes_to_str
 import logger
