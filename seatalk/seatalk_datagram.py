@@ -1,9 +1,10 @@
 from abc import abstractmethod, ABCMeta
+import enum
+import datetime
 
 from helper import byte_to_str, UnitConverter, TwoWayDict
 import logger
 import nmea_datagram
-import enum
 
 
 class SeatalkException(nmea_datagram.NMEAError):
@@ -339,6 +340,29 @@ class CancelMOB(SeatalkDatagram):
 
     def get_seatalk_datagram(self):
         return self.id + bytes([self.data_length]) + self._expected_byte
+
+
+class Date(SeatalkDatagram):  # TODO RMC?
+    """
+    56  M1  DD  YY  Date: YY year, M month, DD day in month
+                    Corresponding NMEA sentence: RMC
+    """
+    def __init__(self, date=None):
+        SeatalkDatagram.__init__(self, id=0x56, data_length=1)
+        self.date = date
+        self._year_offset = 2000  # TODO correct?
+
+    def process_datagram(self, first_half_byte, data):
+        month = first_half_byte
+        day = data[0]
+        year = self._year_offset + data[1]
+        self.date = datetime.date(year=year, month=month, day=day)
+
+    def get_seatalk_datagram(self):
+        if self.date is None:
+            pass  # TODO Exception
+        first_byte = (self.date.month << 4) | self.data_length
+        return self.id + bytes([first_byte, self.date.day, self.date.year - self._year_offset])
 
 
 class SetLampIntensityDatagram(SeatalkDatagram):
