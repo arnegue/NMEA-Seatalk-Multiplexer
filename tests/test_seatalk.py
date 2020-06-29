@@ -32,6 +32,7 @@ def get_parameters():
         (seatalk_datagram.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
         (seatalk_datagram.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),
         (seatalk_datagram.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C])),
+        (seatalk_datagram.CodeLockData(x=15, y=248, z=1),   bytes([0x38, 0xF1, 0xF8, 0x01])),
         (seatalk_datagram.CancelMOB(),                      bytes([0x36, 0x00, 0x01])),
         (seatalk_datagram.Date(date=datetime.date(year=2019, month=10, day=31)), bytes([0x56, 0xA1, 0x1F, 0x13])),
         (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),

@@ -342,6 +342,26 @@ class CancelMOB(SeatalkDatagram):
         return self.id + bytes([self.data_length]) + self._expected_byte
 
 
+class CodeLockData(SeatalkDatagram):
+    """
+    38  X1  YY  yy  CodeLock data
+    """
+    def __init__(self, x=None, y=None, z=None):
+        SeatalkDatagram.__init__(self, id=0x38, data_length=1)
+        self.x = x  # X
+        self.y = y  # YY
+        self.z = z  # yy
+
+    def process_datagram(self, first_half_byte, data):
+        self.x = first_half_byte
+        self.y = data[0]
+        self.z = data[1]
+
+    def get_seatalk_datagram(self):
+        first_byte = (self.x << 4) | self.data_length
+        return self.id + bytes([first_byte, self.y, self.z])
+
+
 class Date(SeatalkDatagram):  # TODO RMC?
     """
     56  M1  DD  YY  Date: YY year, M month, DD day in month
