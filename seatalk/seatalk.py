@@ -22,7 +22,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         super().__init__(name=name, io_device=io_device)
         self._seatalk_datagram_map = dict()
         for name, obj in inspect.getmembers(seatalk.seatalk_datagram):
-            if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj):
+            # Abstract, non-private SeatalkDatagrams
+            if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
                 instantiated_datagram = obj()
                 self._seatalk_datagram_map[instantiated_datagram.id] = obj
 
