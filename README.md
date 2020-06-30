@@ -70,6 +70,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x57 - Satellite Info
 * 0x90 - Device Identification
 * 0x91 - Set Rudder Gain
+* 0xA4 - DeviceIdentification (BroadCast, Termination, Answer)
 
 ### I2C
 

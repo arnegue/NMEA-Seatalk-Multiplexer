@@ -2,7 +2,7 @@ from abc import abstractmethod, ABCMeta
 import enum
 import datetime
 
-from helper import byte_to_str, UnitConverter, TwoWayDict
+from helper import byte_to_str, bytes_to_str, UnitConverter, TwoWayDict
 import logger
 import nmea_datagram
 
@@ -96,6 +96,20 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         raise NotImplementedError()
 
 
+class _ZeroContentClass(SeatalkDatagram, metaclass=ABCMeta):
+    """
+    Class which only checks/fills every first_half_byte and data-bytes with 0x00
+    """
+    def process_datagram(self, first_half_byte, data):
+        all_bytes = bytes([first_half_byte]) + data
+        for value in all_bytes:
+            if value != 0:
+                raise DataValidationException(f"{type(self).__name__}: Not all bytes are 0x00: {bytes_to_str(all_bytes)}")
+
+    def get_seatalk_datagram(self):
+        return self.id + bytearray([self.data_length] + [0x00 for _ in range(self.data_length + 1)]) # + 1 for very first byte
+
+
 class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
     """
     00  02  YZ  XX XX  Depth below transducer: XXXX/10 feet
@@ -159,14 +173,13 @@ class EquipmentIDDatagram(SeatalkDatagram):
         try:
             self.equipment_id = self._equipment_map[bytes(data)]
         except KeyError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment to given equipment-bytes: {byte_to_str(data)}") from e
-        print(self.equipment_id.name)
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-ID to given Equipment-bytes: {bytes_to_str(data)}") from e
 
     def get_seatalk_datagram(self):
         try:
             equipment_bytes = self._equipment_map.get_reversed(self.equipment_id)
         except ValueError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given equipment-ID: {self.equipment_id}") from e
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given Equipment-ID: {self.equipment_id}") from e
         return self.id + bytearray([self.data_length]) + equipment_bytes
 
 
@@ -480,3 +493,119 @@ class SetRudderGain(SeatalkDatagram):
 
     def get_seatalk_datagram(self):
         return self.id + bytearray([self.data_length, self.rudder_gain])
+
+
+class DeviceIdentification2(SeatalkDatagram):
+    """
+    Base-Class for lower 3 DeviceIdentification-Classes
+    """
+    id = 0xA4
+
+    def __init__(self, real_datagram=None):
+        SeatalkDatagram.__init__(self, id=self.id, data_length=-1)  # TODO -1?
+
+        self._real_datagram = real_datagram
+
+    def verify_data_length(self, data_len):
+        valid_values = [data_gram.data_length for data_gram in (self.BroadCast, self.Answer, self.Termination)]
+        if data_len not in valid_values:
+            raise DataLengthException(f"{type(self).__name__}: Length not valid. Expected values: {valid_values}, Actual: {data_len}")
+        self.data_length = data_len
+
+    def process_datagram(self, first_half_byte, data):
+        if self.data_length == 2:
+            if first_half_byte == 1:
+                data_gram = self.Answer
+            else:
+                data_gram = self.BroadCast
+        else:
+            data_gram = self.Termination
+        self._real_datagram = data_gram()
+        self._real_datagram.process_datagram(first_half_byte, data)
+
+    def get_seatalk_datagram(self):
+        return self._real_datagram.get_seatalk_datagram
+
+    class BroadCast(_ZeroContentClass):
+        """
+        A4  02  00  00 00 Broadcast query to identify all devices on the bus, issued e.g. by C70 plotter
+        """
+        data_length = 2
+
+        def __init__(self):
+            _ZeroContentClass.__init__(self, id=DeviceIdentification2.id, data_length=self.data_length)
+
+    class Termination(_ZeroContentClass):
+        """
+        A4  06  00  00 00 00 00 Termination of request for device identification, sent e.g. by C70 plotter
+        """
+        data_length = 6
+
+        def __init__(self):
+            _ZeroContentClass.__init__(self, id=DeviceIdentification2.id, data_length=self.data_length)  # TODO 6? Example shows only 4?
+
+    class Answer(SeatalkDatagram):
+        """
+        A4  12  II  VV WW Device answers identification request
+                              II: Unit ID (01=Depth, 02=Speed, 03=Multi, 04=Tridata, 05=Tridata repeater,
+                                           06=Wind, 07=WMG, 08=Navdata GPS, 09=Maxview, 0A=Steering compas,
+                                           0B=Wind Trim, 0C=Speed trim, 0D=Seatalk GPS, 0E=Seatalk radar ST50,
+                                           0F=Rudder angle indicator, 10=ST30 wind, 11=ST30 bidata, 12=ST30 speed,
+                                           13=ST30 depth, 14=LCD navcenter, 15=Apelco LCD chartplotter,
+                                           16=Analog speedtrim, 17=Analog depth, 18=ST30 compas,
+                                           19=ST50 NMEA bridge, A8=ST80 Masterview)
+                              VV: Main Software Version
+                              WW: Minor Software Version
+        """
+        data_length = 2
+
+        class DeviceID(enum.IntEnum):
+            Depth = 0x01
+            Speed = 0x02
+            Multi = 0x03
+            TriData = 0x04
+            TriDataRepeater = 0x05
+            Wind = 0x06
+            WMG = 0x07
+            NavdataGPS = 0x08
+            Maxview = 0x09
+            SteeringCompass = 0x0A
+            WindTrim = 0x0B
+            SpeedTrim = 0x0C
+            SeatalkGPS = 0x0D
+            SeatalkRadarST50 = 0x0E
+            RudderAngleIndicator = 0x0F
+            ST30Wind = 0x10
+            ST30BiData = 0x11
+            ST30Speed = 0x12
+            ST30Depth = 0x13
+            LCDNavCenter = 0x14
+            ApelcoLCDChartPlotter = 0x15
+            AnalogSpeedTrim = 0x16
+            AnalogDepth = 0x17
+            ST30Compass = 0x18
+            ST50NMEABridge = 0x19
+            ST80MasterView = 0xA8
+
+        def __init__(self, device_id: DeviceID = None, main_sw_version=None, minor_sw_version=None):
+            SeatalkDatagram.__init__(self, id=DeviceIdentification2.id, data_length=self.data_length)
+            self.device_id = device_id
+            self.main_sw_version = main_sw_version
+            self.minor_sw_version = minor_sw_version
+
+        def process_datagram(self, first_half_byte, data):
+            if first_half_byte != 0x01:
+                raise DataValidationException(f"{type(self).__name__}: First half byte is not 0x01, but {byte_to_str(first_half_byte)}")
+
+            try:
+                self.device_id = self.DeviceID(data[0])
+            except KeyError as e:
+                raise DataValidationException(f"{type(self).__name__}: No corresponding Device to given device-id: {byte_to_str(data[0])}") from e
+
+            self.main_sw_version = data[1]
+            self.minor_sw_version = data[2]
+
+        def get_seatalk_datagram(self):
+            first_byte = (0x01 << 4) | self.data_length
+            # TODO None-values
+            return self.id + bytearray([first_byte, self.device_id.value, self.main_sw_version, self.minor_sw_version])
