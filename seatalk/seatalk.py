@@ -75,7 +75,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         except SeatalkException as e:
             logger.error(repr(e) + " " + byte_to_str(cmd_byte) + byte_to_str(attribute) + bytes_to_str(data_bytes))
             raise
-            # TODO maybe flush afterwards?
         finally:
             self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes)
+            await self._io_device.flush()
 

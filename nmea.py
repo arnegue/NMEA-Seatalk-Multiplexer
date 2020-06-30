@@ -31,3 +31,5 @@ class NMEADevice(TaskDevice):
                 logger.error(f"{self.get_name()}: Error when reading. Wrong encoding?\n{repr(e)}")
                 self._logger.error(received)
                 return ""
+            finally:
+                await self._io_device.flush()

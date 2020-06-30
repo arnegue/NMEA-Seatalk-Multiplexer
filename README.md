@@ -15,7 +15,7 @@ It was a little too much just for testing to set up a remote-debugger and cross 
 ## Features
 
 * Runs on Windows and Linux (Tested Windows 10, Armbian 4.19, Raspbian)
-* Python 3 (Tested Python 3.6 and 3.7)
+* Python >=3.6
 * Easy logging for raw-data and "normal" logging
 * Supported interfaces:
   * NMEA
@@ -232,3 +232,23 @@ These logger are using RotatingFileHandler.
 * Mode: append
 * MaxSize per file (bytes): 5 * 1024 * 1024
 * Amount of BackupFiles: 2
+
+
+
+## Installation
+
+To install this project you need a python-interpreter which support asynchronous programming. This should be working with Python >= 3.6.
+Right now there is no wheel package available. Usually you could install it with `python3.<version> -m pip install nmea_seatalk_multiplexer.<package_version>.whl`
+
+Right now though you need to copy theses project files to your target-machine and install the packages in [Dependencies](#Dependencies). Then start it as mentioned in [Invocation](#Invocation).
+
+
+## Dependencies
+
+Also mentioned in `setup.py`:
+
+* curio >=1.0
+* contextvars (site-dependency in curio)
+* pyserial
+
+To install these packages: h `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
