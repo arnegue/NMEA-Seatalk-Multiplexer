@@ -55,8 +55,6 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
     def __init__(self, id, data_length):
         self.id = bytes([id])
         self.data_length = data_length  # "Attribute" = length + 3 in datagram
-        if data_length > 18 + 3:
-            raise TypeError(f"{type(self).__name__}: Length > 18 not allowed. Given length: {data_length + 3}")
 
     def verify_data_length(self, data_len):
         """
