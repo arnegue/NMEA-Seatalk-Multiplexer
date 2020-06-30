@@ -123,6 +123,6 @@ async def test_correct_recognition_device_identification_2(seatalk_datagram, byt
     assert isinstance(recognized_datagram._real_datagram, type(seatalk_datagram))
 
 
-@pytest.mark.parametrize(*get_parameters())
+@pytest.mark.parametrize(*get_device_identification_2_parameters())
 def test_check_datagram_to_seatalk_device_identification_2(seatalk_datagram, byte_representation):
     test_check_datagram_to_seatalk(seatalk_datagram, byte_representation)
