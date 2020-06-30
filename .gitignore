@@ -1,6 +1,7 @@
 .idea/
 venv/
 *.log
+*.log.*
 *.json
 __pycache__/
 sandbox.py
