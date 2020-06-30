@@ -24,7 +24,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         for name, obj in inspect.getmembers(seatalk.seatalk_datagram):
             if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj):
                 instantiated_datagram = obj()
-                self._seatalk_datagram_map[instantiated_datagram.id] = instantiated_datagram
+                self._seatalk_datagram_map[instantiated_datagram.id] = obj
 
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
@@ -53,8 +53,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             # Get Command-Byte
             cmd_byte = await self._io_device.read(1)
             if cmd_byte in self._seatalk_datagram_map:
-                # Extract datagram
-                data_gram = self._seatalk_datagram_map[cmd_byte]
+                # Extract datagram and instantiate it
+                data_gram = self._seatalk_datagram_map[cmd_byte]()
 
                 # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
                 attribute = await self._io_device.read(1)
