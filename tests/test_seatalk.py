@@ -32,12 +32,13 @@ def get_parameters():
        (seatalk_datagram.WaterTemperatureDatagram(17.2),   bytes([0x23, 0x01, 0x11, 0x3E])),
        (seatalk_datagram.SpeedDatagram2(speed_knots=5.19), bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
        (seatalk_datagram.WaterTemperatureDatagram2(19.2),  bytes([0x27, 0x01, 0xA8, 0x04])),
-       (seatalk_datagram.SetLampIntensityDatagram(3),      bytes([0x30, 0x00, 0x0C])),
+       (seatalk_datagram.SetLampIntensity1(3),             bytes([0x30, 0x00, 0x0C])),
        (seatalk_datagram.CodeLockData(x=15, y=248, z=1),   bytes([0x38, 0xF1, 0xF8, 0x01])),
        (seatalk_datagram.CancelMOB(),                      bytes([0x36, 0x00, 0x01])),
        (seatalk_datagram.Date(date=datetime.date(year=2019, month=10, day=31)), bytes([0x56, 0xA1, 0x1F, 0x13])),
        (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),
        (seatalk_datagram.WindAlarm(seatalk_datagram.WindAlarm.Alarm.AngleLow, seatalk_datagram.WindAlarm.Alarm.SpeedHigh), bytes([0x66, 0x00, 0x81])),
+       (seatalk_datagram.SetLampIntensity2(1),             bytes([0x80, 0x00, 0x04])),
        (seatalk_datagram.DeviceIdentification(seatalk_datagram.DeviceIdentification.DeviceID.ST600R), bytes([0x90, 0x00, 0x02])),
        (seatalk_datagram.SetRudderGain(3),                 bytes([0x91, 0x00, 0x03])),
     )
@@ -87,7 +88,7 @@ def test_check_datagram_to_seatalk(seatalk_datagram, byte_representation):
 
 @pytest.mark.parametrize("seatalk_datagram_instance", (
     seatalk_datagram.EquipmentIDDatagram(9),
-    seatalk_datagram.SetLampIntensityDatagram(9)
+    seatalk_datagram.SetLampIntensity1(9)
 ))
 def test_two_way_maps_validations(seatalk_datagram_instance):
     with pytest.raises(seatalk_datagram.DataValidationException):

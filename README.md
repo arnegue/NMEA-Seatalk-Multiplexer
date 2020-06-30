@@ -55,7 +55,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x23 - Water Temperature
 * 0x26 - Speed through water
 * 0x27 - Water Temperature
-* 0x30 - Set Lamp Intensity
+* 0x30 - Set Lamp Intensity (1)
 
 #### Implemented but untested (missing Equipment) Seatalk-IDs:
 
@@ -68,9 +68,11 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x38 - CodeLock Data
 * 0x56 - Date
 * 0x57 - Satellite Info
+* 0x66 - Wind Alarm
+* 0x80 - Set Lamp Intensity (2)
 * 0x90 - Device Identification
 * 0x91 - Set Rudder Gain
-* 0xA4 - DeviceIdentification (BroadCast, Termination, Answer)
+* 0xA4 - Device Identification (BroadCast, Termination, Answer)
 
 ### I2C
 

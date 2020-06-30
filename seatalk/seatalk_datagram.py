@@ -337,6 +337,45 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
         return self.id + bytes([self.data_length]) + celsius_val
 
 
+class _SetLampIntensityDatagram(SeatalkDatagram, metaclass=ABCMeta):
+    """
+    Set Lamp Intensity: X=0 off, X=4: 1, X=8: 2, X=C: 3
+    """
+    def __init__(self, id, intensity=0):
+        SeatalkDatagram.__init__(self, id=id, data_length=0)
+        self.intensity = intensity
+
+        # Left: byte-value, Right: intensity
+        self._intensity_map = TwoWayDict({
+            0:  0,
+            4:  1,
+            8:  2,
+            12: 3   # That's weird. All the time it's a shifted bit but this is 0x1100
+        })
+
+    def process_datagram(self, first_half_byte, data):
+        try:
+            self.intensity = self._intensity_map[data[0]]
+        except KeyError as e:
+            raise DataValidationException(f"{type(self).__name__}: Unexpected Intensity: {data[0]}") from e
+
+    def get_seatalk_datagram(self):
+        try:
+            intensity = self._intensity_map.get_reversed(self.intensity)
+        except ValueError as e:
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Intensity-byte to intensity: {self.intensity}") from e
+        return self.id + bytearray([self.data_length, intensity])
+
+
+class SetLampIntensity1(_SetLampIntensityDatagram):
+    """
+    30  00  0X      Set lamp Intensity; X=0: L0, X=4: L1, X=8: L2, X=C: L3
+                    (only sent once when setting the lamp intensity)
+    """
+    def __init__(self, intensity=0):
+        _SetLampIntensityDatagram.__init__(self, id=0x30, intensity=intensity)
+
+
 class CancelMOB(SeatalkDatagram):
     """
     36  00  01      Cancel MOB (Man Over Board) condition
@@ -453,34 +492,12 @@ class WindAlarm(SeatalkDatagram):
         return self.id + bytearray([self.data_length, (x_nibble | y_nibble)])
 
 
-class SetLampIntensityDatagram(SeatalkDatagram):
+class SetLampIntensity2(_SetLampIntensityDatagram):
     """
-    80  00  0X      Set Lamp Intensity: X=0 off, X=4: 1, X=8: 2, X=C: 3
+    80  00  0X      Set Lamp Intensity: X=0 off, X=4:  1, X=8:  2, X=C: 3
     """
     def __init__(self, intensity=0):
-        SeatalkDatagram.__init__(self, id=0x30, data_length=0)
-        self.intensity = intensity
-
-        # Left: byte-value, Right: intensity
-        self._intensity_map = TwoWayDict({
-            0:  0,
-            4:  1,
-            8:  2,
-            12: 3   # That's weird. All the time it's a shifted bit but this is 0x1100
-        })
-
-    def process_datagram(self, first_half_byte, data):
-        try:
-            self.intensity = self._intensity_map[data[0]]
-        except KeyError as e:
-            raise DataValidationException(f"{type(self).__name__}: Unexpected Intensity: {data[0]}") from e
-
-    def get_seatalk_datagram(self):
-        try:
-            intensity = self._intensity_map.get_reversed(self.intensity)
-        except ValueError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding Intensity-byte to intensity: {self.intensity}") from e
-        return self.id + bytearray([self.data_length, intensity])
+        _SetLampIntensityDatagram.__init__(self, id=0x80, intensity=intensity)
 
 
 class DeviceIdentification(SeatalkDatagram):
