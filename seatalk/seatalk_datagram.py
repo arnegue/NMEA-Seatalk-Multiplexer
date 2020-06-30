@@ -497,13 +497,12 @@ class SetRudderGain(SeatalkDatagram):
 
 class DeviceIdentification2(SeatalkDatagram):
     """
-    Base-Class for lower 3 DeviceIdentification-Classes
+    Special class, which basically holds 3 other classes (depending on length and first half byte)
     """
     id = 0xA4
 
     def __init__(self, real_datagram=None):
         SeatalkDatagram.__init__(self, id=self.id, data_length=-1)  # TODO -1?
-
         self._real_datagram = real_datagram
 
     def verify_data_length(self, data_len):
