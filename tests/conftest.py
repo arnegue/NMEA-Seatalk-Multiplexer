@@ -47,4 +47,3 @@ def pytest_sessionfinish(session, exitstatus):
     """ whole test run finishes. """
     if test_kernel is not None:
         test_kernel.run(shutdown=True)
-
