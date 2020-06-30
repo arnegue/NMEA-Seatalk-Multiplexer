@@ -80,7 +80,7 @@ async def test_not_recognized():
 @pytest.mark.parametrize(*get_parameters())
 def test_check_datagram_to_seatalk(seatalk_datagram, byte_representation):
     actual_datagram = seatalk_datagram.get_seatalk_datagram()
-    assert bytes_to_str(byte_representation), bytes_to_str(seatalk_datagram)
+    assert bytes_to_str(byte_representation) == bytes_to_str(actual_datagram)
     assert byte_representation == actual_datagram
 
 
