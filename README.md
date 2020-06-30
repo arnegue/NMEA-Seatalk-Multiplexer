@@ -15,7 +15,7 @@ It was a little too much just for testing to set up a remote-debugger and cross 
 ## Features
 
 * Runs on Windows and Linux (Tested Windows 10, Armbian 4.19, Raspbian)
-* Python 3 (Tested Python 3.6 and 3.7)
+* Python >=3.6
 * Easy logging for raw-data and "normal" logging
 * Supported interfaces:
   * NMEA
