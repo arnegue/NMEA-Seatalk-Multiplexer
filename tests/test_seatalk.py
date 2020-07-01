@@ -23,7 +23,7 @@ class TestValueReceiver(device_io.IO):
 def get_parameters():
     return ("seatalk_datagram", "byte_representation"), (
        (seatalk_datagram.DepthDatagram(depth_m=22.3),      bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),
-       (seatalk_datagram.EquipmentIDDatagram(seatalk_datagram.EquipmentIDDatagram.Equipments.ST60_Tridata), bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
+       (seatalk_datagram.EquipmentIDDatagram1(seatalk_datagram.EquipmentIDDatagram1.Equipments.ST60_Tridata), bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
        (seatalk_datagram.ApparentWindAngleDatagram(256.5), bytes([0x10, 0x01, 0x01, 0x02])),
        (seatalk_datagram.ApparentWindSpeedDatagram(18.3),  bytes([0x11, 0x01, 0x12, 0x03])),
        (seatalk_datagram.SpeedDatagram(speed_knots=8.31),  bytes([0x20, 0x01, 0x53, 0x00])),
@@ -40,6 +40,7 @@ def get_parameters():
        (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),
        (seatalk_datagram.WindAlarm(seatalk_datagram.WindAlarm.Alarm.AngleLow, seatalk_datagram.WindAlarm.Alarm.SpeedHigh), bytes([0x66, 0x00, 0x81])),
        (seatalk_datagram.AlarmAcknowledgement(seatalk_datagram.AlarmAcknowledgement.AcknowledgementAlarms.DeepWaterAlarm), bytes([0x68, 0x21, 0x01, 0x00])),
+       (seatalk_datagram.EquipmentIDDatagram2(seatalk_datagram.EquipmentIDDatagram2.Equipments.ST60_Log), bytes([0x6C, 0x05, 0x05, 0x70, 0x99, 0x10, 0x28, 0x2D])),
        (seatalk_datagram.ManOverBoard(),                   bytes([0x6E, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])),
        (seatalk_datagram.SetLampIntensity2(1),             bytes([0x80, 0x00, 0x04])),
        (seatalk_datagram.DeviceIdentification(seatalk_datagram.DeviceIdentification.DeviceID.ST600R), bytes([0x90, 0x00, 0x02])),
@@ -91,7 +92,7 @@ def test_check_datagram_to_seatalk(seatalk_datagram, byte_representation):
 
 
 @pytest.mark.parametrize("seatalk_datagram_instance", (
-    seatalk_datagram.EquipmentIDDatagram(9),
+    seatalk_datagram.EquipmentIDDatagram1(9),
     seatalk_datagram.SetLampIntensity1(9)
 ))
 def test_two_way_maps_validations(seatalk_datagram_instance):

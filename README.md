@@ -59,7 +59,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 
 #### Implemented but untested (missing Equipment) Seatalk-IDs:
 
-* 0x01 - Equipment ID
+* 0x01 - Equipment ID (1)
 * 0x10 - Apparent Wind Angle
 * 0x11 - Apparent Wind Speed
 * 0x21 - Trip Mileage
@@ -71,9 +71,10 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x57 - Satellite Info
 * 0x66 - Wind Alarm
 * 0x68 - Alarm Acknowledgment Keystroke
+* 0x6C - Equipment ID (2)
 * 0x6E - Man Over Board
 * 0x80 - Set Lamp Intensity (2)
-* 0x90 - Device Identification
+* 0x90 - Device Identification (2)
 * 0x91 - Set Rudder Gain
 * 0x93 - Enter AP-Setup
 * 0xA4 - Device Identification (BroadCast, Termination, Answer)

@@ -139,7 +139,30 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: db
         return self.id + default_byte_array + self.set_value(feet_value)
 
 
-class EquipmentIDDatagram(SeatalkDatagram):
+class _EquipmentIDDatagram(SeatalkDatagram, metaclass=ABCMeta):
+    """
+    BaseClass for EquipmentID Datagrams
+    """
+    def __init__(self, equipment_map: TwoWayDict, id, data_length, equipment_id=None):
+        SeatalkDatagram.__init__(self, id=id, data_length=data_length)
+        self._equipment_map = equipment_map
+        self.equipment_id = equipment_id
+
+    def process_datagram(self, first_half_byte, data):
+        try:
+            self.equipment_id = self._equipment_map[bytes(data)]
+        except KeyError as e:
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-ID to given Equipment-bytes: {bytes_to_str(data)}") from e
+
+    def get_seatalk_datagram(self):
+        try:
+            equipment_bytes = self._equipment_map.get_reversed(self.equipment_id)
+        except ValueError as e:
+            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given Equipment-ID: {self.equipment_id}") from e
+        return self.id + bytearray([self.data_length]) + equipment_bytes
+
+
+class EquipmentIDDatagram1(_EquipmentIDDatagram):
     """
     01  05  XX XX XX XX XX XX  Equipment ID, sent at power on, reported examples:
     01  05  00 00 00 60 01 00  Course Computer 400G
@@ -158,9 +181,7 @@ class EquipmentIDDatagram(SeatalkDatagram):
         Smart_Controller_Remote_Control_Handset = enum.auto()
 
     def __init__(self, equipment_id: Equipments=None):
-        SeatalkDatagram.__init__(self, id=0x01, data_length=5)
-        self.equipment_id = equipment_id
-        self._equipment_map = TwoWayDict({
+        equipment_map = TwoWayDict({
             bytes([0x00, 0x00, 0x00, 0x60, 0x01, 0x00]): self.Equipments.Course_Computer_400G,
             bytes([0x04, 0xBA, 0x20, 0x28, 0x01, 0x00]): self.Equipments.ST60_Tridata,
             bytes([0x70, 0x99, 0x10, 0x28, 0x01, 0x00]): self.Equipments.ST60_Log,
@@ -168,19 +189,7 @@ class EquipmentIDDatagram(SeatalkDatagram):
             bytes([0xFA, 0x03, 0x00, 0x30, 0x07, 0x03]): self.Equipments.ST80_Maxi_Display,
             bytes([0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]): self.Equipments.Smart_Controller_Remote_Control_Handset,
         })
-
-    def process_datagram(self, first_half_byte, data):
-        try:
-            self.equipment_id = self._equipment_map[bytes(data)]
-        except KeyError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-ID to given Equipment-bytes: {bytes_to_str(data)}") from e
-
-    def get_seatalk_datagram(self):
-        try:
-            equipment_bytes = self._equipment_map.get_reversed(self.equipment_id)
-        except ValueError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding Equipment-bytes to given Equipment-ID: {self.equipment_id}") from e
-        return self.id + bytearray([self.data_length]) + equipment_bytes
+        _EquipmentIDDatagram.__init__(self, equipment_map=equipment_map, id=0x01, data_length=5, equipment_id=equipment_id)
 
 
 class ApparentWindAngleDatagram(SeatalkDatagram):  # TODO nmea mwv with ApparentWindSpeed
@@ -339,7 +348,7 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
 
 class _SetLampIntensityDatagram(SeatalkDatagram, metaclass=ABCMeta):
     """
-    Set Lamp Intensity: X=0 off, X=4: 1, X=8: 2, X=C: 3
+    BaseClass for Set Lamp Intensity: X=0 off, X=4: 1, X=8: 2, X=C: 3
     """
     def __init__(self, id, intensity=0):
         SeatalkDatagram.__init__(self, id=id, data_length=0)
@@ -541,6 +550,27 @@ class AlarmAcknowledgement(SeatalkDatagram):
         first_half_byte = self.acknowledged_alarm.value << 4   # TODO enum exception
         acknowledging_device = bytes([0x01, 0x00])  # TODO see description of class
         return self.id + bytearray([first_half_byte | self.data_length]) + acknowledging_device
+
+
+class EquipmentIDDatagram2(_EquipmentIDDatagram):
+    """
+     6C  05  XX XX XX XX XX XX Second equipment-ID datagram (follows 01...), reported examples:
+             04 BA 20 28 2D 2D ST60 Tridata
+             05 70 99 10 28 2D ST60 Log
+             F3 18 00 26 2D 2D ST80 Masterview
+    """
+    class Equipments(enum.IntEnum):
+        ST60_Tridata = enum.auto()
+        ST60_Log = enum.auto()
+        ST80_Masterview = enum.auto()
+
+    def __init__(self, equipment_id: Equipments=None):
+        equipment_map = TwoWayDict({
+            bytes([0x04, 0xBA, 0x20, 0x28, 0x2D, 0x2D]): self.Equipments.ST60_Tridata,
+            bytes([0x05, 0x70, 0x99, 0x10, 0x28, 0x2D]): self.Equipments.ST60_Log,
+            bytes([0xF3, 0x18, 0x00, 0x26, 0x2D, 0x2D]): self.Equipments.ST80_Masterview,
+        })
+        _EquipmentIDDatagram.__init__(self, equipment_map=equipment_map, id=0x6C, data_length=5, equipment_id=equipment_id)
 
 
 class ManOverBoard(_ZeroContentClass):
