@@ -277,6 +277,27 @@ class TotalMileage(SeatalkDatagram):
         return self.id + bytes([self.data_length]) + self.set_value(self.mileage_miles * 10) + bytes([0x00])
 
 
+class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
+    """
+    23  Z1  XX  YY  Water temperature (ST50): XX deg Celsius, YY deg Fahrenheit
+                 Flag Z&4: Sensor defective or not connected (Z=4)
+                 Corresponding NMEA sentence: MTW
+    """
+    def __init__(self, *args, **kwargs):
+        SeatalkDatagram.__init__(self, id=0x23, data_length=1)
+        nmea_datagram.WaterTemperature.__init__(self, *args, **kwargs)
+
+    def process_datagram(self, first_half_byte, data):
+        # TODO Y and Z Flag
+        #  Z = first_half_byte
+        #  Y = data[1]
+        self.temperature_c = data[0]
+
+    def get_seatalk_datagram(self):
+        fahrenheit = UnitConverter.celsius_to_fahrenheit(self.temperature_c)
+        return self.id + bytes([self.data_length, int(self.temperature_c), int(fahrenheit)])
+
+
 class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
     """
     26  04  XX  XX  YY  YY DE  Speed through water:
@@ -297,27 +318,6 @@ class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA:
 
     def get_seatalk_datagram(self):
         return self.id + bytes([self.data_length]) + self.set_value(self.speed_knots * 100) + bytes([0x00, 0x00, 0x00])
-
-
-class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
-    """
-    23  Z1  XX  YY  Water temperature (ST50): XX deg Celsius, YY deg Fahrenheit
-                 Flag Z&4: Sensor defective or not connected (Z=4)
-                 Corresponding NMEA sentence: MTW
-    """
-    def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self, id=0x23, data_length=1)
-        nmea_datagram.WaterTemperature.__init__(self, *args, **kwargs)
-
-    def process_datagram(self, first_half_byte, data):
-        # TODO Y and Z Flag
-        #  Z = first_half_byte
-        #  Y = data[1]
-        self.temperature_c = data[0]
-
-    def get_seatalk_datagram(self):
-        fahrenheit = UnitConverter.celsius_to_fahrenheit(self.temperature_c)
-        return self.id + bytes([self.data_length, int(self.temperature_c), int(fahrenheit)])
 
 
 class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
