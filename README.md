@@ -50,11 +50,11 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 
 #### Supported (and tested on ST50 and ST60) Seatalk-IDs:
 
-* 0x00 - Depth
-* 0x20 - Speed through water
-* 0x23 - Water Temperature
-* 0x26 - Speed through water
-* 0x27 - Water Temperature
+* 0x00 - Depth below transducer
+* 0x20 - Speed through water (1)
+* 0x23 - Water Temperature (1)
+* 0x26 - Speed through water (2)
+* 0x27 - Water Temperature (2)
 * 0x30 - Set Lamp Intensity (1)
 
 #### Implemented but untested (missing Equipment) Seatalk-IDs:
@@ -66,6 +66,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x22 - Total Mileage
 * 0x36 - Cancel MOB
 * 0x38 - CodeLock Data
+* 0x52 - Speed Over Ground
 * 0x56 - Date
 * 0x57 - Satellite Info
 * 0x66 - Wind Alarm

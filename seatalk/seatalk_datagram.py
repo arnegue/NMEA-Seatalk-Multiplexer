@@ -412,6 +412,22 @@ class CodeLockData(SeatalkDatagram):
         return self.id + bytes([first_byte, self.y, self.z])
 
 
+class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
+    """
+    52  01  XX  XX  Speed over Ground: XXXX/10 Knots
+                 Corresponding NMEA sentences: RMC, VT
+    """
+    def __init__(self, speed_knots=None):
+        SeatalkDatagram.__init__(self, id=0x52, data_length=1)
+        self.speed_knots = speed_knots
+
+    def process_datagram(self, first_half_byte, data):
+        self.speed_knots = self.get_value(data) / 10
+
+    def get_seatalk_datagram(self):
+        return self.id + bytes([self.data_length]) + self.set_value(int(self.speed_knots * 10))
+
+
 class Date(SeatalkDatagram):  # TODO RMC?
     """
     56  M1  DD  YY  Date: YY year, M month, DD day in month
