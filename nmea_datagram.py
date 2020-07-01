@@ -100,7 +100,7 @@ class NMEADatagram(object, metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def get_nmea_sentence(self)-> str:
+    def get_nmea_sentence(self) -> str:
         """
         Returns NMEA-String from instance
         """
@@ -293,7 +293,6 @@ class WindSpeedAndAngle(NMEADatagram):
         self.reference_true = reference_true
         self.speed_knots = speed_knots
         self.valid_status = validity
-
 
     def _get_nmea_sentence(self):
         """
