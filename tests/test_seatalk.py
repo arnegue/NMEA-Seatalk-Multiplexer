@@ -38,6 +38,7 @@ def get_parameters():
        (seatalk_datagram.Date(date=datetime.date(year=2019, month=10, day=31)), bytes([0x56, 0xA1, 0x1F, 0x13])),
        (seatalk_datagram.SpeedOverGround(26.9),            bytes([0x52, 0x01, 0x0D, 0x01])),
        (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),
+       (seatalk_datagram.E80Initialization(),              bytes([0x61, 0x03, 0x03, 0x00, 0x00, 0x00])),
        (seatalk_datagram.WindAlarm(seatalk_datagram.WindAlarm.Alarm.AngleLow, seatalk_datagram.WindAlarm.Alarm.SpeedHigh), bytes([0x66, 0x00, 0x81])),
        (seatalk_datagram.AlarmAcknowledgement(seatalk_datagram.AlarmAcknowledgement.AcknowledgementAlarms.DeepWaterAlarm), bytes([0x68, 0x21, 0x01, 0x00])),
        (seatalk_datagram.EquipmentIDDatagram2(seatalk_datagram.EquipmentIDDatagram2.Equipments.ST60_Log), bytes([0x6C, 0x05, 0x05, 0x70, 0x99, 0x10, 0x28, 0x2D])),

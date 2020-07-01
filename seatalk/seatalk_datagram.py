@@ -479,6 +479,21 @@ class SatInfo(SeatalkDatagram):
         return self.id + bytes([first_byte, self.horizontal_dilution])
 
 
+class E80Initialization(SeatalkDatagram):
+    """
+    61  03  03 00 00 00  Issued by E-80 multifunction display at initialization
+    """
+    def __init__(self):
+        SeatalkDatagram.__init__(self, id=0x61, data_length=3)
+
+    def process_datagram(self, first_half_byte, data):
+        if not (first_half_byte == 0 and data[0] == 0x03 and data[1] == data[2] == data[3] == 0x00):
+            raise DataValidationException(f"Cannot recognize given data: {byte_to_str(self.id)}{byte_to_str(first_half_byte << 4 | self.data_length)}{bytes_to_str(data)}")
+
+    def get_seatalk_datagram(self):
+        return self.id + bytes([self.data_length, 0x03, 0x00, 0x00, 0x00])
+
+
 class WindAlarm(SeatalkDatagram):
     """
     66  00  XY     Wind alarm as indicated by flags in XY:
