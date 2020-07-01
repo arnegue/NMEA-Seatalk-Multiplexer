@@ -166,7 +166,7 @@ class EquipmentIDDatagram(SeatalkDatagram):
             bytes([0x70, 0x99, 0x10, 0x28, 0x01, 0x00]): self.Equipments.ST60_Log,
             bytes([0xF3, 0x18, 0x00, 0x26, 0x0F, 0x06]): self.Equipments.ST80_Masterview,
             bytes([0xFA, 0x03, 0x00, 0x30, 0x07, 0x03]): self.Equipments.ST80_Maxi_Display,
-            bytes([0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]): self.Equipments.ST60_Log,
+            bytes([0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]): self.Equipments.Smart_Controller_Remote_Control_Handset,
         })
 
     def process_datagram(self, first_half_byte, data):
