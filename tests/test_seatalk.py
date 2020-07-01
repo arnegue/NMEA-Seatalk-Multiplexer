@@ -40,6 +40,7 @@ def get_parameters():
        (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),
        (seatalk_datagram.WindAlarm(seatalk_datagram.WindAlarm.Alarm.AngleLow, seatalk_datagram.WindAlarm.Alarm.SpeedHigh), bytes([0x66, 0x00, 0x81])),
        (seatalk_datagram.AlarmAcknowledgement(seatalk_datagram.AlarmAcknowledgement.AcknowledgementAlarms.DeepWaterAlarm), bytes([0x68, 0x21, 0x01, 0x00])),
+       (seatalk_datagram.ManOverBoard(),                   bytes([0x6E, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])),
        (seatalk_datagram.SetLampIntensity2(1),             bytes([0x80, 0x00, 0x04])),
        (seatalk_datagram.DeviceIdentification(seatalk_datagram.DeviceIdentification.DeviceID.ST600R), bytes([0x90, 0x00, 0x02])),
        (seatalk_datagram.SetRudderGain(3),                 bytes([0x91, 0x00, 0x03])),

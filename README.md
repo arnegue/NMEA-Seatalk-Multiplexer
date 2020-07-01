@@ -71,6 +71,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x57 - Satellite Info
 * 0x66 - Wind Alarm
 * 0x68 - Alarm Acknowledgment Keystroke
+* 0x6E - Man Over Board
 * 0x80 - Set Lamp Intensity (2)
 * 0x90 - Device Identification
 * 0x91 - Set Rudder Gain

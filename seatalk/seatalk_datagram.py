@@ -543,6 +543,15 @@ class AlarmAcknowledgement(SeatalkDatagram):
         return self.id + bytearray([first_half_byte | self.data_length]) + acknowledging_device
 
 
+class ManOverBoard(_ZeroContentClass):
+    """
+    6E  07  00  00 00 00 00 00 00 00 MOB (Man Over Board), (ST80), preceded
+                 by a Waypoint 999 command: 82 A5 40 BF 92 6D 24 DB
+    """
+    def __init__(self):
+        _ZeroContentClass.__init__(self, id=0x6E, data_length=7)
+
+
 class SetLampIntensity2(_SetLampIntensityDatagram):
     """
     80  00  0X      Set Lamp Intensity: X=0 off, X=4:  1, X=8:  2, X=C: 3
