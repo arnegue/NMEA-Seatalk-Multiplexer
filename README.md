@@ -73,6 +73,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x80 - Set Lamp Intensity (2)
 * 0x90 - Device Identification
 * 0x91 - Set Rudder Gain
+* 0x93 - Enter AP-Setup
 * 0xA4 - Device Identification (BroadCast, Termination, Answer)
 
 ### I2C

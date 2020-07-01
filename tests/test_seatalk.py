@@ -42,6 +42,7 @@ def get_parameters():
        (seatalk_datagram.SetLampIntensity2(1),             bytes([0x80, 0x00, 0x04])),
        (seatalk_datagram.DeviceIdentification(seatalk_datagram.DeviceIdentification.DeviceID.ST600R), bytes([0x90, 0x00, 0x02])),
        (seatalk_datagram.SetRudderGain(3),                 bytes([0x91, 0x00, 0x03])),
+       (seatalk_datagram.EnterAPSetup(),                   bytes([0x93, 0x00, 0x00])),
     )
 
 
