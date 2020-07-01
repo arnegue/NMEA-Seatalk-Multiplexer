@@ -45,7 +45,7 @@ Since this project only produces NMEA-Output every NMEA-Device is supported whic
  
 A big part of help for parsing Seatalk-Sentences and building hardware to be able to receive has come from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
 
-As written above: Writing to bus is buggy right now because of missing bit-toggeling
+As written above: Writing to bus is buggy right now because of missing bit-toggling
 Some Seatalk-Messages do not have a corresponding NMEA-Sentence. 
 
 #### Supported (and tested on ST50 and ST60) Seatalk-IDs:
