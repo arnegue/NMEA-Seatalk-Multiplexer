@@ -4,7 +4,7 @@ import datetime
 
 from helper import byte_to_str, bytes_to_str, UnitConverter, TwoWayDict
 import logger
-import nmea_datagram
+from nmea import nmea_datagram
 
 
 class SeatalkException(nmea_datagram.NMEAError):

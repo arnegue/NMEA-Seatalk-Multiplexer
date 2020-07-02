@@ -4,7 +4,7 @@ import inspect
 from helper import get_numeric_byte_value, byte_to_str, bytes_to_str
 import logger
 from device import TaskDevice
-import nmea_datagram
+from nmea import nmea_datagram
 import seatalk.seatalk_datagram
 from seatalk.seatalk_datagram import SeatalkDatagram, SeatalkException, NoCorrespondingNMEASentence, DataNotRecognizedException
 

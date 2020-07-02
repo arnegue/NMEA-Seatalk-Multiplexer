@@ -3,7 +3,7 @@ from abc import abstractmethod, ABCMeta
 import logger
 import device_io
 import curio_wrapper
-from nmea_datagram import NMEADatagram, NMEAParseError
+from nmea.nmea_datagram import NMEADatagram, NMEAParseError
 from device_indicator.led_device_indicator import DeviceIndicator
 
 

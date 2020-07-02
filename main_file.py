@@ -5,7 +5,7 @@ import argparse
 
 import curio_wrapper
 import device
-import nmea
+from nmea import nmea
 import device_io
 import inspect
 from seatalk import seatalk
