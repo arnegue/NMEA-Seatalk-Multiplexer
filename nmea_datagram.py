@@ -18,6 +18,25 @@ class NMEAValidity(enum.Enum):
     Invalid = "V"
 
 
+class GPSModes(enum.Enum):
+    Automatic = "A"
+    Manual = "M"
+
+
+class GPSFixType(enum.IntEnum):
+    NotAvailable = 1
+    TwoD = 2
+    ThreeD = 3
+
+
+class FAAModeIndicator(enum.Enum):
+    Autonomous = "A"
+    Differential = "D"
+    Estimated = "E"
+    Simulator = "S"
+    NotValid = "N"
+
+
 class NMEAError(Exception):
     """
     General Exceptions concerning NMEA
@@ -167,7 +186,7 @@ class NMEADatagram(object, metaclass=ABCMeta):
 
 
 class RecommendedMinimumSentence(NMEADatagram):
-    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode=None, *args, **kwargs):
+    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode:FAAModeIndicator=None, *args, **kwargs):
         super().__init__("RMC", *args, **kwargs)
         self.date = date
         self.valid_status = valid_status
@@ -226,7 +245,62 @@ class RecommendedMinimumSentence(NMEADatagram):
         self.magnetic_variation = cast_if_at_position(nmea_value_list, 9, float)
         self.variation_sense = cast_if_at_position(nmea_value_list, 10, float)
         if len(nmea_value_list) == 12:  # Mode is not given every time
-            self.mode = nmea_value_list[11]
+            self.mode = FAAModeIndicator(nmea_value_list[11]) if nmea_value_list[11] else nmea_value_list[11]
+
+
+class TrackMadeGoodGroundSpeed(NMEADatagram):
+    def __init__(self, course_over_ground_degree_true=None, course_over_ground_degree_magnetic=None, speed_over_ground_knots=None, mode:GPSModes=None, *args, **kwargs):
+        super().__init__(nmea_tag="VTG", *args, **kwargs)
+        self.course_over_ground_degree_true = course_over_ground_degree_true
+        self.course_over_ground_degree_magnetic = course_over_ground_degree_magnetic
+        self.speed_over_ground_knots = speed_over_ground_knots
+        self.mode = mode
+
+    def _get_nmea_sentence(self):
+        value = self._append_tuple(self.course_over_ground_degree_true, 'T') + \
+                self._append_tuple(self.course_over_ground_degree_magnetic, 'M') + \
+                self._append_tuple(self.speed_over_ground_knots, 'N') + \
+                self._append_tuple(UnitConverter.nm_to_meter(self.speed_over_ground_knots) * 1000, 'K')
+        if self.mode is not None:
+            value += self._append_value(self.mode)
+        return value
+
+    def _parse_nmea_sentence(self, nmea_value_list: list):
+        self.course_over_ground_degree_true = cast_if_at_position(nmea_value_list, 0, float)
+        self.course_over_ground_degree_magnetic = cast_if_at_position(nmea_value_list, 2, float)
+
+        self.speed_over_ground_knots = cast_if_at_position(nmea_value_list, 4, float)
+        if self.speed_over_ground_knots is None:
+            # Maybe kmh is given
+            kmh = cast_if_at_position(nmea_value_list, 6, float)
+            if kmh is not None:
+                self.speed_over_ground_knots = UnitConverter.meter_to_nm(kmh / 1000)
+
+        if len(nmea_value_list) == 9:  # Mode is not given every time
+            self.mode = GPSModes(nmea_value_list[8]) if nmea_value_list[8] else nmea_value_list[8]
+
+
+class GPSDOPActiveSatellites(NMEADatagram):
+    def __init__(self, mode_1: GPSModes=None, mode_2: GPSFixType=None, list_satellite_ids=None, pdop=None, hdop=None, vdop=None,  *args, **kwargs):
+        super().__init__(nmea_tag="GSA", *args, **kwargs)
+        self.mode_1 = mode_1
+        self.mode_2 = mode_2
+        self.list_satellite_ids = list_satellite_ids
+        self.pdop = pdop
+        self.hdop = hdop
+        self.vdop = vdop
+
+    def _get_nmea_sentence(self):
+        nmea_str = ""
+        for value in [self.mode_1, self.mode_2] + self.list_satellite_ids + [self.pdop, self.hdop, self.vdop]:
+            nmea_str += self._append_value(value)
+        return nmea_str
+
+    def _parse_nmea_sentence(self, nmea_value_list: list):
+        self.mode_1 = GPSModes(nmea_value_list[0])
+        self.mode_2 = GPSFixType(int(nmea_value_list[1]))
+        self.list_satellite_ids = nmea_value_list[2:-3]
+        self.pdop, self.hdop, self.vdop = [float(value) for value in nmea_value_list[-3:]]
 
 
 class DepthBelowKeel(NMEADatagram):
