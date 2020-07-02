@@ -1,5 +1,5 @@
 from device import TaskDevice
-from nmea_datagram import NMEADatagram, NMEAParseError, UnknownNMEATag
+from nmea.nmea_datagram import NMEADatagram, NMEAParseError, UnknownNMEATag
 import logger
 
 

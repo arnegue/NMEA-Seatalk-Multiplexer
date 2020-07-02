@@ -1,5 +1,5 @@
 import pytest
-from nmea_datagram import *
+from nmea.nmea_datagram import *
 from helper import Orientation
 
 

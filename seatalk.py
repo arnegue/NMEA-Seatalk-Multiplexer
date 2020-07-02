@@ -5,7 +5,7 @@ import sys
 from helper import get_numeric_byte_value, byte_to_str, bytes_to_str, UnitConverter
 import logger
 from device import TaskDevice
-import nmea_datagram
+from nmea import nmea_datagram
 
 
 class SeatalkException(Exception):
