@@ -109,3 +109,11 @@ class Position(object):
     def __init__(self, latitude: PartPosition, longitude: PartPosition):
         self.latitude = latitude
         self.longitude = longitude
+
+
+def cast_if_at_position(values, index, cast):
+    try:
+        return cast(values[index])
+    except (TypeError, ValueError):
+        return None
+
