@@ -1,7 +1,6 @@
 import pytest
-import datetime
 from nmea_datagram import *
-import helper
+from helper import Orientation
 
 
 @pytest.mark.parametrize(("nmea_str", "expected_type", "value_name", "expected_value"), (
@@ -30,13 +29,13 @@ def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
                          (RecommendedMinimumSentence(date=datetime.datetime(year=2020, month=12, day=8,
                                                                             hour=16, minute=7, second=55, microsecond=590),
                                                      valid_status=NMEAValidity.Valid,
-                                                     position=helper.Position(
-                                                         latitude=helper.PartPosition(degrees=123, minutes=23.1, direction=helper.Orientation.North),
-                                                         longitude=helper.PartPosition(degrees=60, minutes=2.90, direction=helper.Orientation.West)),
+                                                     position=Position(
+                                                         latitude=PartPosition(degrees=123, minutes=23.1, direction=Orientation.North),
+                                                         longitude=PartPosition(degrees=60, minutes=2.90, direction=Orientation.West)),
                                                      speed_over_ground_knots=19.3,
                                                      track_made_good=12.9,
                                                      magnetic_variation=1.2,
-                                                     variation_sense=helper.Orientation.East,
+                                                     variation_sense=Orientation.East,
                                                      mode=FAAModeIndicator.Differential,
                                                      talker_id="GP"),                                   "$GPRMC,160755.000590,A,12323.1,N,602.9,W,19.30,12.90,081220,1.20,E,D*28\r\n"),
 
