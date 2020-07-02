@@ -59,12 +59,13 @@ class StdOutPrinter(IO):
     IO-Class for StdOut
     """
     async def _read(self, length=1):
-        await curio.sleep(1)
+        await curio.sleep(0)
         return bytes([0])
 
     async def _write(self, data):
         data = data.decode(self._encoding)
         logger.info(data)
+        await curio.sleep(0)
 
 
 class TCP(IO, ABC):
@@ -79,7 +80,7 @@ class TCP(IO, ABC):
 
         self._write_task_handle = None
 
-        self._read_write_size = 10
+        self._read_write_size = 1000
         self._read_queue = curio.Queue(self._read_write_size)
         self._write_queue = curio.Queue(self._read_write_size)
 
