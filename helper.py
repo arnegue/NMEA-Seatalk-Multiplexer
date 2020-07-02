@@ -85,3 +85,8 @@ class Position(object):
         self.longitude = longitude
 
 
+def cast_if_at_position(values, index, cast):
+    try:
+        return cast(values[index])
+    except (TypeError, ValueError):
+        return None

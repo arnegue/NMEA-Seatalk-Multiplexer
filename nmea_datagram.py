@@ -6,7 +6,7 @@ import inspect
 import sys
 import enum
 
-from helper import UnitConverter, Position, PartPosition, byte_to_str, Orientation
+from helper import UnitConverter, Position, PartPosition, byte_to_str, Orientation, cast_if_at_position
 
 
 class NMEAValidity(enum.Enum):
@@ -52,6 +52,11 @@ class ChecksumError(NMEAParseError):
         super().__init__(f"ChecksumError: {sentence} checksum {byte_to_str(actual_checksum)} does not match own calculated checksum: {byte_to_str(expected_checksum)}")
 
 
+class UnknownNMEATag(NMEAParseError):
+    def __init__(self, nmea_tag: str):
+        super().__init__(f"Could not parse sentence. Unknown NMEA-Tag: {nmea_tag}")
+
+
 class NMEADatagram(object, metaclass=ABCMeta):
     """
     General NMEA-Datagram-Class
@@ -83,10 +88,13 @@ class NMEADatagram(object, metaclass=ABCMeta):
         if not cls.nmea_tag_datagram_map:
             cls.create_map()
 
-        cls.verify_checksum(nmea_string)
+        cls.verify_checksum(nmea_string)  # TODO not necessary, gets checked before anyway
 
         nmea_tag = nmea_string[3:6]  # Get Tag
-        nmea_class = cls.nmea_tag_datagram_map[nmea_tag]  # Extract class from tag
+        try:
+            nmea_class = cls.nmea_tag_datagram_map[nmea_tag]  # Extract class from tag
+        except KeyError as e:
+            raise UnknownNMEATag(nmea_tag) from e
         nmea_datagram_instance = nmea_class()  # Create instance
         nmea_datagram_instance._talker_id = nmea_string[1:3]  # Set Talker ID
 
@@ -206,16 +214,16 @@ class RecommendedMinimumSentence(NMEADatagram):
         latitude_minutes = float(nmea_value_list[2][2:])  # Remove degrees
         latitude = PartPosition(degrees=latitude_degrees, minutes=latitude_minutes, direction=Orientation(nmea_value_list[3]))
 
-        longitude_degrees = int(nmea_value_list[4][0:2])
+        longitude_degrees = int(nmea_value_list[4][0:3])
         longitude_minutes = float(nmea_value_list[4][2:])  # Remove degrees
         longitude = PartPosition(degrees=longitude_degrees, minutes=longitude_minutes, direction=Orientation(nmea_value_list[5]))
 
         self.position = Position(latitude, longitude)
 
-        self.speed_over_ground_knots = float(nmea_value_list[6])
-        self.track_made_good = float(nmea_value_list[7])
-        self.magnetic_variation = float(nmea_value_list[9])
-        self.variation_sense = Orientation(nmea_value_list[10])
+        self.speed_over_ground_knots = cast_if_at_position(nmea_value_list, 6, float)
+        self.track_made_good = cast_if_at_position(nmea_value_list, 7, float)
+        self.magnetic_variation = cast_if_at_position(nmea_value_list, 9, float)
+        self.variation_sense = cast_if_at_position(nmea_value_list, 10, float)
         if len(nmea_value_list) == 12:  # Mode is not given every time
             self.mode = nmea_value_list[11]
 
