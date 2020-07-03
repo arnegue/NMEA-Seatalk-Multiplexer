@@ -10,6 +10,8 @@ from seatalk.seatalk_datagram import SeatalkDatagram, SeatalkException, NoCorres
 
 
 class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
+    _seatalk_datagram_map = dict()
+
     class RawSeatalkLogger(TaskDevice.RawDataLogger):
         def __init__(self, device_name):
             super().__init__(device_name=device_name, terminator="\n")
@@ -20,12 +22,12 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
 
     def __init__(self, name, io_device):
         super().__init__(name=name, io_device=io_device)
-        self._seatalk_datagram_map = dict()
-        for name, obj in inspect.getmembers(seatalk.seatalk_datagram):
-            # Abstract, non-private SeatalkDatagrams
-            if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
-                instantiated_datagram = obj()
-                self._seatalk_datagram_map[instantiated_datagram.id] = obj
+        if len(self.__class__._seatalk_datagram_map) == 0:
+            for name, obj in inspect.getmembers(seatalk.seatalk_datagram):
+                # Abstract, non-private SeatalkDatagrams
+                if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
+                    instantiated_datagram = obj()
+                    self.__class__._seatalk_datagram_map[instantiated_datagram.id] = obj
 
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
@@ -53,9 +55,9 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         try:
             # Get Command-Byte
             cmd_byte = await self._io_device.read(1)
-            if cmd_byte in self._seatalk_datagram_map:
+            if cmd_byte in self.__class__._seatalk_datagram_map:
                 # Extract datagram and instantiate it
-                data_gram = self._seatalk_datagram_map[cmd_byte]()
+                data_gram = self.__class__._seatalk_datagram_map[cmd_byte]()
 
                 # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
                 attribute = await self._io_device.read(1)
