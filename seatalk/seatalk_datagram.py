@@ -154,12 +154,13 @@ class _TwoWayDictDatagram(SeatalkDatagram, metaclass=ABCMeta):
         except KeyError as e:
             raise DataValidationException(f"{type(self).__name__}: No corresponding value to given bytes: {bytes_to_str(data)}") from e
 
-    def get_seatalk_datagram(self):
+    def get_seatalk_datagram(self, first_half_byte=0):
         try:
             map_bytes = self._map.get_reversed(self.set_key)
         except ValueError as e:
             raise DataValidationException(f"{type(self).__name__}: No corresponding bytes to given value: {self.set_key}") from e
-        return self.id + bytearray([self.data_length]) + map_bytes
+        first_byte = first_half_byte << 4 | self.data_length
+        return self.id + bytearray([first_byte]) + map_bytes
 
 
 class EquipmentIDDatagram1(_TwoWayDictDatagram):
@@ -422,6 +423,197 @@ class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
         return self.id + bytes([self.data_length]) + self.set_value(int(self.speed_knots * 10))
 
 
+class _KeyStroke(_TwoWayDictDatagram):
+    """
+    Base-Class for KeyStrokes
+    ID   X1  YY  yy  Keystroke
+                 X=1: Sent by Z101 remote control to increment/decrement
+                      course of autopilot
+         11  05  FA     -1
+         11  06  F9    -10
+         11  07  F8     +1
+         11  08  F7    +10
+         11  20  DF     +1 &  -1
+         11  21  DE     -1 & -10
+         11  22  DD     +1 & +10
+         11  28  D7    +10 & -10
+         11  45  BA     -1        pressed longer than 1 second
+         11  46  B9    -10        pressed longer than 1 second
+         11  47  B8     +1        pressed longer than 1 second
+         11  48  B7    +10        pressed longer than 1 second
+         11  60  DF     +1 &  -1  pressed longer than 1 second
+         11  61  9E     -1 & -10  pressed longer than 1 second
+         11  62  9D     +1 & +10  pressed longer than 1 second
+         11  64  9B    +10 & -10  pressed longer than 1 second (why not 11 68 97 ?)
+
+                     Sent by autopilot (X=0: ST 1000+,  X=2: ST4000+ or ST600R)
+         X1  01  FE    Auto
+         X1  02  FD    Standby
+         X1  03  FC    Track
+         X1  04  FB    disp (in display mode or page in auto chapter = advance)
+         X1  05  FA     -1 (in auto mode)
+         X1  06  F9    -10 (in auto mode)
+         X1  07  F8     +1 (in auto mode)
+         X1  08  F7    +10 (in auto mode)
+         X1  09  F6     -1 (in resp or rudder gain mode)
+         X1  0A  F5     +1 (in resp or rudder gain mode)
+         X1  21  DE     -1 & -10 (port tack, doesn´t work on ST600R?)
+         X1  22  DD     +1 & +10 (stb tack)
+         X1  23  DC    Standby & Auto (wind mode)
+         X1  28  D7    +10 & -10 (in auto mode)
+         X1  2E  D1     +1 & -1 (Response Display)
+         X1  41  BE    Auto pressed longer
+         X1  42  BD    Standby pressed longer
+         X1  43  BC    Track pressed longer
+         X1  44  BB    Disp pressed longer
+         X1  45  BA     -1 pressed longer (in auto mode)
+         X1  46  B9    -10 pressed longer (in auto mode)
+         X1  47  B8     +1 pressed longer (in auto mode)
+         X1  48  B7    +10 pressed longer (in auto mode)
+         X1  63  9C    Standby & Auto pressed longer (previous wind angle)
+         X1  68  97    +10 & -10 pressed longer (in auto mode)
+         X1  6E  91     +1 & -1 pressed longer (Rudder Gain Display)
+         X1  80  7F     -1 pressed (repeated 1x per second)
+         X1  81  7E     +1 pressed (repeated 1x per second)
+         X1  82  7D    -10 pressed (repeated 1x per second)
+         X1  83  7C    +10 pressed (repeated 1x per second)
+         X1  84  7B     +1, -1, +10 or -10 released
+    """
+    class Key(enum.Enum):
+        M1 = enum.auto()
+        M10 = enum.auto()
+        P1 = enum.auto()
+        P10 = enum.auto()
+        P1M1 = enum.auto()
+        M1M10 = enum.auto()
+        P1P10 = enum.auto()
+        P10M10 = enum.auto()
+
+        # Longer than 1 sec
+        M1GT1S = enum.auto()
+        M10GT1S = enum.auto()
+        P1GT1S = enum.auto()
+        P10GT1S = enum.auto()
+        P1M1GT1S = enum.auto()
+        M1M10GT1S = enum.auto()
+        P1P10GT1S = enum.auto()
+        P10M10GT1S = enum.auto()
+
+        # AutoPilot
+        Auto = enum.auto()
+        Standby = enum.auto()
+        Track = enum.auto()
+        Display = enum.auto()
+        StandbyAuto = enum.auto()
+
+        AutoGT1S = enum.auto()
+        StandbyGT1S = enum.auto()
+        TrackGT1S = enum.auto()
+        DisplayGT1S = enum.auto()
+        StandbyAutoGT1S = enum.auto()
+
+        M1Auto = enum.auto()
+        M10Auto = enum.auto()
+        P1Auto = enum.auto()
+        P10Auto = enum.auto()
+        P10M10Auto = enum.auto()
+
+        M1AutoGT1S = enum.auto()
+        M10AutoGT1S = enum.auto()
+        P1AutoGT1S = enum.auto()
+        P10AutoGT1S = enum.auto()
+        P10M10AutoGTS1 = enum.auto()
+
+        M1Resp = enum.auto()
+        P1Resp = enum.auto()
+        P1M1Resp = enum.auto()
+
+        P1M1RudderGain = enum.auto()
+
+        M1Repeat = enum.auto()
+        P1Repeat = enum.auto()
+        M10Repeat = enum.auto()
+        P10Repeat = enum.auto()
+
+        M1M10PortTack = enum.auto()
+        P1P10StbTack = enum.auto()
+
+        P1M1_P10M10Released = enum.auto()
+
+    def __init__(self, id, increment_decrement, key: Key):
+        key_map = TwoWayDict({
+            bytes([0x05, 0xFA]): self.Key.M1,
+            bytes([0x06, 0xF9]): self.Key.M10,
+            bytes([0x07, 0xF8]): self.Key.P1,
+            bytes([0x08, 0xF7]): self.Key.P10,
+            bytes([0x20, 0xDF]): self.Key.P1M1,
+            bytes([0x21, 0xDE]): self.Key.M1M10,
+            bytes([0x22, 0xDD]): self.Key.P1P10,
+            bytes([0x28, 0xD7]): self.Key.P10M10,
+            bytes([0x45, 0xBA]): self.Key.M1GT1S,
+            bytes([0x46, 0xB9]): self.Key.M10GT1S,
+            bytes([0x47, 0xB8]): self.Key.P1GT1S,
+            bytes([0x48, 0xB7]): self.Key.P10GT1S,
+            bytes([0x60, 0xDF]): self.Key.P1M1GT1S,
+            bytes([0x61, 0x9E]): self.Key.M1M10GT1S,
+            bytes([0x62, 0x9D]): self.Key.P1P10GT1S,
+            bytes([0x64, 0x9B]): self.Key.P1P10GT1S,
+
+            bytes([0x01, 0xFE]): self.Key.Auto,
+            bytes([0x02, 0xFD]): self.Key.Standby,
+            bytes([0x03, 0xFC]): self.Key.Track,
+            bytes([0x04, 0xFB]): self.Key.Display,
+
+            bytes([0x05, 0xFA]): self.Key.M1Auto,
+            bytes([0x06, 0xF9]): self.Key.M10Auto,
+            bytes([0x07, 0xF8]): self.Key.P1Auto,
+            bytes([0x08, 0xF7]): self.Key.P10Auto,
+
+            bytes([0x09, 0xF6]): self.Key.M1Resp,
+            bytes([0x0A, 0xF5]): self.Key.P1Resp,
+            bytes([0x21, 0xDE]): self.Key.M1M10PortTack,
+            bytes([0x22, 0xDD]): self.Key.P1P10StbTack,
+
+            bytes([0x23, 0xDC]): self.Key.StandbyAuto,
+            bytes([0x28, 0xD7]): self.Key.P10M10Auto,
+            bytes([0x2E, 0xD1]): self.Key.P1M1Resp,
+            bytes([0x41, 0xBE]): self.Key.AutoGT1S,
+            bytes([0x42, 0xBD]): self.Key.StandbyGT1S,
+            bytes([0x43, 0xBC]): self.Key.TrackGT1S,
+            bytes([0x44, 0xBB]): self.Key.DisplayGT1S,
+
+            bytes([0x45, 0xBA]): self.Key.M1AutoGT1S,
+            bytes([0x46, 0xB9]): self.Key.M10AutoGT1S,
+            bytes([0x47, 0xB8]): self.Key.P1AutoGT1S,
+            bytes([0x48, 0xB7]): self.Key.P10M10AutoGTS1,
+            bytes([0x63, 0x9C]): self.Key.StandbyAutoGT1S,
+            bytes([0x68, 0x97]): self.Key.P10M10AutoGTS1,
+            bytes([0x6E, 0x91]): self.Key.P1M1RudderGain,
+            bytes([0x80, 0x7F]): self.Key.M1Repeat,
+            bytes([0x81, 0x7E]): self.Key.P1Repeat,
+            bytes([0x82, 0x7D]): self.Key.M10Repeat,
+            bytes([0x83, 0x7C]): self.Key.P10Repeat,
+            bytes([0x84, 0x7B]): self.Key.P1M1_P10M10Released,
+        })
+        _TwoWayDictDatagram.__init__(self, map=key_map, id=id, data_length=1, set_key=key)
+        self.increment_decrement = increment_decrement
+
+    def process_datagram(self, first_half_byte, data):
+        super().process_datagram(first_half_byte, data)
+        self.increment_decrement = first_half_byte
+
+    def get_seatalk_datagram(self):
+        return super().get_seatalk_datagram(first_half_byte=self.increment_decrement)
+
+
+class KeyStroke1(_KeyStroke):
+    """
+    55  X1  YY  yy  TRACK keystroke on GPS unit
+    """
+    def __init__(self, increment_decrement=0, key=None):
+        _KeyStroke.__init__(self, id=0x55, increment_decrement=increment_decrement, key=key)
+
+
 class Date(SeatalkDatagram):  # TODO RMC?
     """
     56  M1  DD  YY  Date: YY year, M month, DD day in month
@@ -590,7 +782,15 @@ class SetLampIntensity2(_SetLampIntensityDatagram):
         _SetLampIntensityDatagram.__init__(self, id=0x80, intensity=intensity)
 
 
-class DeviceIdentification(SeatalkDatagram):
+class KeyStroke2(_KeyStroke):
+    """
+    86  X1  YY  yy  Keystroke
+    """
+    def __init__(self, increment_decrement=0, key=None):
+        _KeyStroke.__init__(self, id=0x86, increment_decrement=increment_decrement, key=key)
+
+
+class DeviceIdentification(SeatalkDatagram):  # TODO twowaydict
     """
     90  00  XX    Device Identification
                   XX=02  sent by ST600R ~every 2 secs
