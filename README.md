@@ -155,7 +155,7 @@ This may be the most important section.
 * stopbites - default 1
 * parity - default None
 
-Given example shows a Seatalk-Device on port ``/dev/ttyUSB3/`` with parity set to ``Mark`` without(!) encoding.
+Given example shows a Seatalk-Device on port ``/dev/ttyUSB3`` with parity set to ``Mark`` without(!) encoding.
 Additionally the observer "MyTCPServer" is listening to this device. 
 
 ```json
