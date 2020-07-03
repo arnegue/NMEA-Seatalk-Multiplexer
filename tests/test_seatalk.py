@@ -31,6 +31,7 @@ def get_parameters():
        (TripMileage(6784.12),                                                                       bytes([0x21, 0x02, 0x0C, 0x5A, 0x0A])),
        (TotalMileage(6553),                                                                         bytes([0x22, 0x02, 0xFA, 0xFF, 0x00])),
        (WaterTemperatureDatagram(17.2),                                                             bytes([0x23, 0x01, 0x11, 0x3E])),
+       (DisplayUnitsMileageSpeed(DisplayUnitsMileageSpeed.Unit.Kph),                                bytes([0x24, 0x02, 0x00, 0x00, 0x86])),
        (SpeedDatagram2(speed_knots=5.19),                                                           bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
        (WaterTemperatureDatagram2(19.2),                                                            bytes([0x27, 0x01, 0xA8, 0x04])),
        (SetLampIntensity1(3),                                                                       bytes([0x30, 0x00, 0x0C])),
@@ -118,7 +119,9 @@ async def test_raw_seatalk():
         except seatalk.SeatalkException as e:
             print(e)
         else:
-            print(result.get_nmea_sentence())
+            if isinstance(result, nmea_datagram.NMEADatagram):
+                print(result.get_nmea_sentence())
+            print(bytes_to_str(result.get_seatalk_datagram()))
 
 
 def get_device_identification_2_parameters():

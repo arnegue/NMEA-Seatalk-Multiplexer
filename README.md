@@ -53,6 +53,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x00 - Depth below transducer
 * 0x20 - Speed through water (1)
 * 0x23 - Water Temperature (1)
+* 0x24 - Set Display Unit for Mileage and Speed
 * 0x26 - Speed through water (2)
 * 0x27 - Water Temperature (2)
 * 0x30 - Set Lamp Intensity (1)
