@@ -522,7 +522,7 @@ class _KeyStroke(_TwoWayDictDatagram):
         M10AutoGT1S = enum.auto()
         P1AutoGT1S = enum.auto()
         P10AutoGT1S = enum.auto()
-        P10M10AutoGTS1 = enum.auto()
+        P10M10AutoGT1S = enum.auto()
 
         M1Resp = enum.auto()
         P1Resp = enum.auto()
@@ -557,7 +557,7 @@ class _KeyStroke(_TwoWayDictDatagram):
             bytes([0x60, 0xDF]): self.Key.P1M1GT1S,
             bytes([0x61, 0x9E]): self.Key.M1M10GT1S,
             bytes([0x62, 0x9D]): self.Key.P1P10GT1S,
-            bytes([0x64, 0x9B]): self.Key.P1P10GT1S,
+            bytes([0x64, 0x9B]): self.Key.P10M10GT1S,
 
             bytes([0x01, 0xFE]): self.Key.Auto,
             bytes([0x02, 0xFD]): self.Key.Standby,
@@ -585,9 +585,9 @@ class _KeyStroke(_TwoWayDictDatagram):
             bytes([0x45, 0xBA]): self.Key.M1AutoGT1S,
             bytes([0x46, 0xB9]): self.Key.M10AutoGT1S,
             bytes([0x47, 0xB8]): self.Key.P1AutoGT1S,
-            bytes([0x48, 0xB7]): self.Key.P10M10AutoGTS1,
+            bytes([0x48, 0xB7]): self.Key.P10AutoGT1S,
             bytes([0x63, 0x9C]): self.Key.StandbyAutoGT1S,
-            bytes([0x68, 0x97]): self.Key.P10M10AutoGTS1,
+            bytes([0x68, 0x97]): self.Key.P10M10AutoGT1S,
             bytes([0x6E, 0x91]): self.Key.P1M1RudderGain,
             bytes([0x80, 0x7F]): self.Key.M1Repeat,
             bytes([0x81, 0x7E]): self.Key.P1Repeat,
