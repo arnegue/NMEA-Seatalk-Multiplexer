@@ -107,7 +107,7 @@ class _ZeroContentClass(SeatalkDatagram, metaclass=ABCMeta):
                 raise DataValidationException(f"{type(self).__name__}: Not all bytes are 0x00: {bytes_to_str(all_bytes)}")
 
     def get_seatalk_datagram(self):
-        return self.id + bytearray([self.data_length] + [0x00 for _ in range(self.data_length + 1)]) # + 1 for very first byte
+        return self.id + bytearray([self.data_length] + [0x00 for _ in range(self.data_length + 1)])  # + 1 for very first byte
 
 
 class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
@@ -293,19 +293,19 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
                  Flag Z&4: Sensor defective or not connected (Z=4)
                  Corresponding NMEA sentence: MTW
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, sensor_defective=None, *args, **kwargs):
         SeatalkDatagram.__init__(self, id=0x23, data_length=1)
         nmea_datagram.WaterTemperature.__init__(self, *args, **kwargs)
+        self.sensor_defective = sensor_defective
 
     def process_datagram(self, first_half_byte, data):
-        # TODO Y and Z Flag
-        #  Z = first_half_byte
-        #  Y = data[1]
+        self.sensor_defective = first_half_byte & 4 == 1
         self.temperature_c = data[0]
 
     def get_seatalk_datagram(self):
         fahrenheit = UnitConverter.celsius_to_fahrenheit(self.temperature_c)
-        return self.id + bytes([self.data_length, int(self.temperature_c), int(fahrenheit)])
+        first_half_byte = (self.sensor_defective << 6) | self.data_length
+        return self.id + bytes([first_half_byte, int(self.temperature_c), int(fahrenheit)])
 
 
 class DisplayUnitsMileageSpeed(_TwoWayDictDatagram):

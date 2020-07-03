@@ -1,10 +1,19 @@
 import pytest
-import datetime
+import curio
 
 import device_io
 from seatalk import seatalk
 from seatalk.seatalk_datagram import *
 from helper import bytes_to_str
+
+
+class NoneReadWriter(device_io.IO):
+    async def _write(self, data):
+        await curio.sleep(0)
+
+    async def _read(self, length=1):
+        await curio.sleep(0)
+        return bytes(length)
 
 
 class TestValueReceiver(device_io.IO):
@@ -30,7 +39,7 @@ def get_parameters():
        (SpeedDatagram(speed_knots=8.31),                                                            bytes([0x20, 0x01, 0x53, 0x00])),
        (TripMileage(6784.12),                                                                       bytes([0x21, 0x02, 0x0C, 0x5A, 0x0A])),
        (TotalMileage(6553),                                                                         bytes([0x22, 0x02, 0xFA, 0xFF, 0x00])),
-       (WaterTemperatureDatagram(17.2),                                                             bytes([0x23, 0x01, 0x11, 0x3E])),
+       (WaterTemperatureDatagram(temperature_c=17.2, sensor_defective=True),                        bytes([0x23, 0x41, 0x11, 0x3E])),
        (DisplayUnitsMileageSpeed(DisplayUnitsMileageSpeed.Unit.Kph),                                bytes([0x24, 0x02, 0x00, 0x00, 0x86])),
        (SpeedDatagram2(speed_knots=5.19),                                                           bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
        (WaterTemperatureDatagram2(19.2),                                                            bytes([0x27, 0x01, 0xA8, 0x04])),
@@ -145,4 +154,14 @@ def test_check_datagram_to_seatalk_device_identification_2(seatalk_datagram, byt
     test_check_datagram_to_seatalk(seatalk_datagram, byte_representation)
 
 
-# TODO test instantiate seatalk-datagrams with None values. test get-seatalk-datagram
+def get_all_seatalk_datagrams():
+    seatalk_device = seatalk.SeatalkDevice("TestDevice", io_device=NoneReadWriter())
+    return "datagram", (seatalk_device._seatalk_datagram_map.values())
+
+
+# @pytest.mark.parametrize(*get_all_seatalk_datagrams())
+# def test_get_none_seatalk_messages(datagram):
+#     """
+#     instantiate seatalk-datagrams with None values. test get-seatalk-datagram
+#     """
+#     datagram().get_seatalk_datagram()
