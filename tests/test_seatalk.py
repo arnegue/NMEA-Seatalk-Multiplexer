@@ -39,6 +39,7 @@ def get_parameters():
        (seatalk_datagram.SpeedOverGround(26.9),            bytes([0x52, 0x01, 0x0D, 0x01])),
        (seatalk_datagram.KeyStroke1(key=seatalk_datagram.KeyStroke1.Key.M1M10PortTack, increment_decrement=1), bytes([0x55, 0x11, 0x21, 0xDE])),
        (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),
+       (seatalk_datagram.CountDownTimer(hours=9, minutes=59, seconds=59, mode=seatalk_datagram.CountDownTimer.CounterMode.CountDown), bytes([0x59, 0x22, 0x3B, 0x3B, 0x49])),
        (seatalk_datagram.E80Initialization(),              bytes([0x61, 0x03, 0x03, 0x00, 0x00, 0x00])),
        (seatalk_datagram.SelectFathom(),                   bytes([0x65, 0x00, 0x02])),
        (seatalk_datagram.WindAlarm(seatalk_datagram.WindAlarm.Alarm.AngleLow, seatalk_datagram.WindAlarm.Alarm.SpeedHigh), bytes([0x66, 0x00, 0x81])),
@@ -138,3 +139,6 @@ async def test_correct_recognition_device_identification_2(seatalk_datagram, byt
 @pytest.mark.parametrize(*get_device_identification_2_parameters())
 def test_check_datagram_to_seatalk_device_identification_2(seatalk_datagram, byte_representation):
     test_check_datagram_to_seatalk(seatalk_datagram, byte_representation)
+
+
+# TODO test instantiate seatalk-datagrams with None values. test get-seatalk-datagram
