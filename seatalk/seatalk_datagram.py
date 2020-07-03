@@ -790,7 +790,7 @@ class KeyStroke2(_KeyStroke):
         _KeyStroke.__init__(self, id=0x86, increment_decrement=increment_decrement, key=key)
 
 
-class DeviceIdentification(SeatalkDatagram):  # TODO twowaydict
+class DeviceIdentification1(_TwoWayDictDatagram):
     """
     90  00  XX    Device Identification
                   XX=02  sent by ST600R ~every 2 secs
@@ -803,26 +803,12 @@ class DeviceIdentification(SeatalkDatagram):  # TODO twowaydict
         NMEASeatalkBridge = enum.auto()
 
     def __init__(self, device_id: DeviceID=None):
-        SeatalkDatagram.__init__(self, id=0x90, data_length=0)
-        self.device_id = device_id
-        self._device_id_map = TwoWayDict({
-            0x02: self.DeviceID.ST600R,
-            0x05: self.DeviceID.Type_150_150G_400G,
-            0xA3: self.DeviceID.NMEASeatalkBridge
+        device_id_map = TwoWayDict({
+            bytes([0x02]): self.DeviceID.ST600R,
+            bytes([0x05]): self.DeviceID.Type_150_150G_400G,
+            bytes([0xA3]): self.DeviceID.NMEASeatalkBridge
         })
-
-    def process_datagram(self, first_half_byte, data):
-        try:
-            self.device_id = self._device_id_map[data[0]]
-        except KeyError as e:
-            raise DataValidationException(f"{type(self).__name__}: Unexpected DeviceID: {data[0]}") from e
-
-    def get_seatalk_datagram(self):
-        try:
-            intensity = self._device_id_map.get_reversed(self.device_id)
-        except ValueError as e:
-            raise DataValidationException(f"{type(self).__name__}: No corresponding DeviceID-byte to intensity: {self.device_id}") from e
-        return self.id + bytearray([self.data_length, intensity])
+        _TwoWayDictDatagram.__init__(self, id=0x90, data_length=0, map=device_id_map, set_key=device_id)
 
 
 class SetRudderGain(SeatalkDatagram):
