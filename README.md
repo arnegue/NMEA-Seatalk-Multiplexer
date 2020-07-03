@@ -67,6 +67,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x36 - Cancel MOB
 * 0x38 - CodeLock Data
 * 0x52 - Speed Over Ground
+* 0x55 - KeyStroke (1)
 * 0x56 - Date
 * 0x57 - Satellite Info
 * 0x61 - E80-Initialization
@@ -75,10 +76,14 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x6C - Equipment ID (2)
 * 0x6E - Man Over Board
 * 0x80 - Set Lamp Intensity (2)
+* 0x86 - KeyStroke (2)
+* 0x87 - Set Response Level
 * 0x90 - Device Identification (2)
 * 0x91 - Set Rudder Gain
 * 0x93 - Enter AP-Setup
 * 0xA4 - Device Identification (BroadCast, Termination, Answer)
+
+(n) means there are multiple Datagrams with same/similar meaning.
 
 ### I2C
 
