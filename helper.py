@@ -1,7 +1,8 @@
 
 def byte_to_str(byte):
     """
-    Returns string representation of given byte 0x2A -> "Ox2A"
+    Returns string representation of given byte 0x2A -> "Ox2A "
+
     :param byte:
     :return:
     """
@@ -15,6 +16,7 @@ def byte_to_str(byte):
 def bytes_to_str(bytes):
     """
     Returns string representation of given bytes [0x21, 0x2E] -> "0x21 0x2E"
+
     :param bytes:
     :return:
     """
@@ -65,9 +67,23 @@ class UnitConverter(object):
 
 
 class TwoWayDict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        own_values = self.values()
+        if len(own_values) != len(set(own_values)):
+            raise ValueError("Values are not unique")
+
     def get_reversed(self, value):
         for key in self.keys():
             if value == self[key]:
                 return key
         else:
             raise ValueError(f"Value not found {value}")
+
+    def get(self, key):
+        """
+        Overrides the default get of dictionary (would return None if not available)
+        Now raises KeyError if not available
+        """
+        return self[key]
