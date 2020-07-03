@@ -671,6 +671,22 @@ class E80Initialization(SeatalkDatagram):
         return self.id + bytes([self.data_length, 0x03, 0x00, 0x00, 0x00])
 
 
+class SelectFathom(SeatalkDatagram):
+    """
+    65  00  02      Select Fathom (feet/3.33) display units for depth display (see command 00)
+    """
+    def __init__(self):
+        SeatalkDatagram.__init__(self, id=0x65, data_length=0)
+        self.byte_value = 0x02
+
+    def process_datagram(self, first_half_byte, data):
+        if data[0] != self.byte_value:
+            raise DataValidationException(f"Expected byte {self.byte_value}, got {byte_to_str(data[0])}instead")
+
+    def get_seatalk_datagram(self):
+        return self.id + bytes([self.data_length, self.byte_value])
+
+
 class WindAlarm(SeatalkDatagram):
     """
     66  00  XY     Wind alarm as indicated by flags in XY:

@@ -40,6 +40,7 @@ def get_parameters():
        (seatalk_datagram.KeyStroke1(key=seatalk_datagram.KeyStroke1.Key.M1M10PortTack, increment_decrement=1), bytes([0x55, 0x11, 0x21, 0xDE])),
        (seatalk_datagram.SatInfo(0x1, 0x94),               bytes([0x57, 0x10, 0x94])),
        (seatalk_datagram.E80Initialization(),              bytes([0x61, 0x03, 0x03, 0x00, 0x00, 0x00])),
+       (seatalk_datagram.SelectFathom(),                   bytes([0x65, 0x00, 0x02])),
        (seatalk_datagram.WindAlarm(seatalk_datagram.WindAlarm.Alarm.AngleLow, seatalk_datagram.WindAlarm.Alarm.SpeedHigh), bytes([0x66, 0x00, 0x81])),
        (seatalk_datagram.AlarmAcknowledgement(seatalk_datagram.AlarmAcknowledgement.AcknowledgementAlarms.DeepWaterAlarm), bytes([0x68, 0x21, 0x01, 0x00])),
        (seatalk_datagram.EquipmentIDDatagram2(seatalk_datagram.EquipmentIDDatagram2.Equipments.ST60_Log), bytes([0x6C, 0x05, 0x05, 0x70, 0x99, 0x10, 0x28, 0x2D])),

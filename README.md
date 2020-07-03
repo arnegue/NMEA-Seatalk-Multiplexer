@@ -71,6 +71,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x56 - Date
 * 0x57 - Satellite Info
 * 0x61 - E80-Initialization
+* 0x65 - Select Fathom
 * 0x66 - Wind Alarm
 * 0x68 - Alarm Acknowledgment Keystroke
 * 0x6C - Equipment ID (2)
