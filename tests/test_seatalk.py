@@ -62,7 +62,7 @@ def get_parameters():
        (SetResponseLevel(response_level=SetResponseLevel.Deadband.Minimum),                                        bytes([0x87, 0x00, 0x02])),
        (DeviceIdentification1(DeviceIdentification1.DeviceID.ST600R),                                              bytes([0x90, 0x00, 0x02])),
        (SetRudderGain(3),                                                                                          bytes([0x91, 0x00, 0x03])),
-       (EnterAPSetup(),                                                                                           bytes([0x93, 0x00, 0x00])),
+       (EnterAPSetup(),                                                                                            bytes([0x93, 0x00, 0x00])),
     )
 
 
