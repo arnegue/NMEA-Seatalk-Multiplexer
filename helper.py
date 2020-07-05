@@ -95,3 +95,14 @@ class TwoWayDict(dict):
 
         for key in self.keys():
             self.reversed_dict[self[key]] = key
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        self._update_reversed_dict()
+
+    def __setitem__(self, key, value):
+        """
+        overrides []
+        """
+        super().__setitem__(key, value)
+        self._update_reversed_dict()
