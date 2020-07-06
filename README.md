@@ -74,9 +74,11 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x22 - Total Mileage
 * 0x36 - Cancel MOB
 * 0x38 - CodeLock Data
+* 0x50 - Latitude
+* 0x51 - Longitude
 * 0x52 - Speed Over Ground
-* 0x55 - KeyStroke (1)
 * 0x54 - GMT-Time
+* 0x55 - KeyStroke (1)
 * 0x56 - Date
 * 0x57 - Satellite Info
 * 0x59 - Set Count Down Timer

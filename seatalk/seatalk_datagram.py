@@ -2,7 +2,7 @@ from abc import abstractmethod, ABCMeta
 import enum
 import datetime
 
-from helper import byte_to_str, bytes_to_str, UnitConverter, TwoWayDict
+from helper import byte_to_str, bytes_to_str, UnitConverter, TwoWayDict, Orientation, PartPosition
 import logger
 from nmea import nmea_datagram
 
@@ -440,6 +440,78 @@ class CodeLockData(SeatalkDatagram):
         return self.seatalk_id + bytes([first_byte, self.y, self.z])
 
 
+class _SeatalkPosition(SeatalkDatagram, metaclass=ABCMeta):
+    """
+    BaseClass for PartPositions (Latitude and Longitude)
+    ID  Z2  XX  YY  YY  position: XX degrees, (YYYY & 0x7FFF)/100 minutes
+                     MSB of Y = YYYY & 0x8000 = x if set, y if cleared
+                     Z= 0xA or 0x0 (reported for Raystar 120 GPS), meaning unknown
+                     Stable filtered position, for raw data use command 58
+                     Corresponding NMEA sentences: RMC, GAA, GLL
+    """
+    def __init__(self, position: PartPosition, seatalk_id):
+        SeatalkDatagram.__init__(self, seatalk_id=seatalk_id, data_length=2)
+        self.position = position
+
+    @abstractmethod
+    def _get_orientation(self, value_set: bool) -> Orientation:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_value_orientation(self, orientation: Orientation) -> bool:
+        raise NotImplementedError()
+
+    def process_datagram(self, first_half_byte, data):
+        degrees = data[0]
+        yyyy = self.get_value(data[1:])
+        minutes = (yyyy & 0x7FFF) / 100
+        orientation = self._get_orientation(yyyy & 0x8000 > 0)
+        self.position = PartPosition(degrees=degrees, minutes=minutes, direction=orientation)
+
+    def get_seatalk_datagram(self):
+        degrees = self.position.degrees
+        yyyy = int(self.position.minutes * 100)
+        orientation = self._get_value_orientation(self.position.direction)
+        yyyy |= (orientation << 15)
+        return self.seatalk_id + bytes([self.data_length, degrees]) + self.set_value(yyyy)
+
+
+class LatitudePosition(_SeatalkPosition):
+    """
+    50  Z2  XX  YY  YY  LAT position: XX degrees, (YYYY & 0x7FFF)/100 minutes
+                     MSB of Y = YYYY & 0x8000 = South if set, North if cleared
+                     Z= 0xA or 0x0 (reported for Raystar 120 GPS), meaning unknown
+                     Stable filtered position, for raw data use command 58
+                     Corresponding NMEA sentences: RMC, GAA, GLL
+    """
+    def __init__(self, position: PartPosition=None):
+        super().__init__(position=position, seatalk_id=0x50)
+
+    def _get_orientation(self, value_set: bool) -> Orientation:
+        return Orientation.South if value_set else Orientation.North
+
+    def _get_value_orientation(self, orientation: Orientation) -> bool:
+        return True if orientation == Orientation.South else False
+
+
+class LongitudePosition(_SeatalkPosition):
+    """
+    51  Z2  XX  YY  YY  LON position: XX degrees, (YYYY & 0x7FFF)/100 minutes
+                                           MSB of Y = YYYY & 0x8000 = East if set, West if cleared
+                                           Z= 0xA or 0x0 (reported for Raystar 120 GPS), meaning unknown
+                     Stable filtered position, for raw data use command 58
+                     Corresponding NMEA sentences: RMC, GAA, GLL
+    """
+    def __init__(self, position: PartPosition=None):
+        super().__init__(position=position, seatalk_id=0x51)
+
+    def _get_orientation(self, value_set: bool) -> Orientation:
+        return Orientation.East if value_set else Orientation.West
+
+    def _get_value_orientation(self, orientation: Orientation) -> bool:
+        return True if orientation == Orientation.East else False
+
+
 class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
     """
     52  01  XX  XX  Speed over Ground: XXXX/10 Knots
@@ -672,7 +744,7 @@ class GMTTime(SeatalkDatagram):
         rs_byte = ((self.minutes * 4) & 0xFC) + ((self.seconds >> 4) & 0x03)
 
         first_byte = t_nibble << 4 | self.data_length
-        return self.id + bytes([first_byte, rs_byte, hh_byte])
+        return self.seatalk_id + bytes([first_byte, rs_byte, hh_byte])
 
 
 class Date(SeatalkDatagram):  # TODO RMC?
