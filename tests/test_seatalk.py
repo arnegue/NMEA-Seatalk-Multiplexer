@@ -77,6 +77,10 @@ async def test_correct_recognition(seatalk_datagram, byte_representation):
     recognized_datagram = await seatalk_device.receive_data_gram()
     assert isinstance(recognized_datagram, type(seatalk_datagram))
 
+    actual_datagram = recognized_datagram.get_seatalk_datagram()
+    assert bytes_to_str(byte_representation) == bytes_to_str(actual_datagram)
+    assert byte_representation == actual_datagram
+
 
 @pytest.mark.curio
 async def test_not_enough_data():
