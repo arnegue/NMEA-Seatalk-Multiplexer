@@ -299,7 +299,7 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
         self.sensor_defective = sensor_defective
 
     def process_datagram(self, first_half_byte, data):
-        self.sensor_defective = first_half_byte & 4 == 1
+        self.sensor_defective = first_half_byte & 4 == 4
         self.temperature_c = data[0]
 
     def get_seatalk_datagram(self):
