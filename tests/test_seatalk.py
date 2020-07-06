@@ -53,6 +53,9 @@ def get_parameters():
        (KeyStroke1(key=KeyStroke1.Key.M1M10PortTack, increment_decrement=1),                            bytes([0x55, 0x11, 0x21, 0xDE])),
        (Date(date=datetime.date(year=2019, month=10, day=31)),                                          bytes([0x56, 0xA1, 0x1F, 0x13])),
        (SatInfo(0x1, 0x94),                                                                             bytes([0x57, 0x10, 0x94])),
+       (PositionDatagram(Position(
+           PartPosition(degrees=53, minutes=57, direction=Orientation.North),
+           PartPosition(degrees=8, minutes=28.21, direction=Orientation.East))),                        bytes([0x58, 0x25, 0x35, 0xDE, 0xA8, 0x08, 0x6E, 0x32])),
        (CountDownTimer(hours=9, minutes=59, seconds=59, mode=CountDownTimer.CounterMode.CountDown),     bytes([0x59, 0x22, 0x3B, 0x3B, 0x49])),
        (E80Initialization(),                                                                            bytes([0x61, 0x03, 0x03, 0x00, 0x00, 0x00])),
        (SelectFathom(),                                                                                 bytes([0x65, 0x00, 0x02])),

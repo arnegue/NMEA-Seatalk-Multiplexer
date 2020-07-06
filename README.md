@@ -81,6 +81,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x55 - KeyStroke (1)
 * 0x56 - Date
 * 0x57 - Satellite Info
+* 0x58 - Position
 * 0x59 - Set Count Down Timer
 * 0x61 - E80-Initialization
 * 0x65 - Select Fathom
