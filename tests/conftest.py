@@ -32,7 +32,10 @@ def pytest_pyfunc_call(pyfuncitem):
         funcargs = pyfuncitem.funcargs
         testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}
         fut = pyfuncitem.obj(**testargs)
-        test_kernel.run(fut)
+        try:
+            test_kernel.run(fut)
+        except curio.TaskError as e:
+            raise e.__cause__ from e
         return True
 
 
