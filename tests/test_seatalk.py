@@ -42,7 +42,7 @@ def get_parameters():
        (WaterTemperatureDatagram(temperature_c=17.2, sensor_defective=True),                        bytes([0x23, 0x41, 0x11, 0x3E])),
        (DisplayUnitsMileageSpeed(DisplayUnitsMileageSpeed.Unit.Kph),                                bytes([0x24, 0x02, 0x00, 0x00, 0x86])),
        (SpeedDatagram2(speed_knots=5.19),                                                           bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
-       (WaterTemperatureDatagram2(19.2),                                                            bytes([0x27, 0x01, 0xA8, 0x04])),
+       (WaterTemperatureDatagram2(10.2),                                                            bytes([0x27, 0x01, 0xCA, 0x00])),
        (SetLampIntensity1(3),                                                                       bytes([0x30, 0x00, 0x0C])),
        (CodeLockData(x=15, y=248, z=1),                                                             bytes([0x38, 0xF1, 0xF8, 0x01])),
        (CancelMOB(),                                                                                bytes([0x36, 0x00, 0x01])),
