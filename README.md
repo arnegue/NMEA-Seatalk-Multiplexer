@@ -274,4 +274,4 @@ Also mentioned in `setup.py`:
 * contextvars (site-dependency of curio)
 * pyserial
 
-To install these packages: h `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
+To install these packages: `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
