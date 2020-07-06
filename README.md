@@ -202,7 +202,7 @@ This may be the most important section.
 * stopbites - default 1
 * parity - default None
 
-Given example shows a Seatalk-Device on port ``/dev/ttyUSB3/`` with parity set to ``Mark`` without(!) encoding.
+Given example shows a Seatalk-Device on port ``/dev/ttyUSB3`` with parity set to ``Mark`` without(!) encoding.
 Additionally the observer "MyTCPServer" is listening to this device. 
 
 ```json
@@ -271,7 +271,7 @@ Right now though you need to copy theses project files to your target-machine an
 Also mentioned in `setup.py`:
 
 * curio >=1.0
-* contextvars (site-dependency in curio)
+* contextvars (site-dependency of curio)
 * pyserial
 
 To install these packages: h `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
