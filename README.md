@@ -76,6 +76,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x38 - CodeLock Data
 * 0x52 - Speed Over Ground
 * 0x55 - KeyStroke (1)
+* 0x54 - GMT-Time
 * 0x56 - Date
 * 0x57 - Satellite Info
 * 0x59 - Set Count Down Timer
