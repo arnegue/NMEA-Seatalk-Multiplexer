@@ -72,6 +72,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x11 - Apparent Wind Speed
 * 0x21 - Trip Mileage
 * 0x22 - Total Mileage
+* 0x25 - Total & Trip Log
 * 0x36 - Cancel MOB
 * 0x38 - CodeLock Data
 * 0x50 - Latitude

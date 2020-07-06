@@ -41,6 +41,7 @@ def get_parameters():
        (TotalMileage(6553),                                                                             bytes([0x22, 0x02, 0xFA, 0xFF, 0x00])),
        (WaterTemperatureDatagram(temperature_c=17.2, sensor_defective=True),                            bytes([0x23, 0x41, 0x11, 0x3E])),
        (DisplayUnitsMileageSpeed(DisplayUnitsMileageSpeed.Unit.Kph),                                    bytes([0x24, 0x02, 0x00, 0x00, 0x86])),
+       (TotalTripLog(total_miles=7886.6, trip_miles=6206.3),                                            bytes([0x25, 0x14, 0x12, 0x34, 0x56, 0x78, 0x09])),
        (SpeedDatagram2(speed_knots=5.19),                                                               bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
        (WaterTemperatureDatagram2(10.2),                                                                bytes([0x27, 0x01, 0xCA, 0x00])),
        (SetLampIntensity1(3),                                                                           bytes([0x30, 0x00, 0x0C])),
@@ -81,10 +82,6 @@ async def test_correct_recognition(seatalk_datagram, byte_representation):
     seatalk_device = seatalk.SeatalkDevice("TestDevice", io_device=TestValueReceiver(byte_representation))
     recognized_datagram = await seatalk_device.receive_data_gram()
     assert isinstance(recognized_datagram, type(seatalk_datagram))
-
-    actual_datagram = recognized_datagram.get_seatalk_datagram()
-    assert bytes_to_str(byte_representation) == bytes_to_str(actual_datagram)
-    assert byte_representation == actual_datagram
 
 
 @pytest.mark.curio
