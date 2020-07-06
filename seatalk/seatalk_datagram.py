@@ -52,8 +52,8 @@ class DataNotRecognizedException(DataValidationException):
 
 
 class SeatalkDatagram(object, metaclass=ABCMeta):
-    def __init__(self, id, data_length):
-        self.id = bytes([id])
+    def __init__(self, seatalk_id, data_length):
+        self.seatalk_id = bytes([seatalk_id])
         self.data_length = data_length  # "Attribute" = length + 3 in datagram
 
     def verify_data_length(self, data_len):
@@ -107,7 +107,7 @@ class _ZeroContentClass(SeatalkDatagram, metaclass=ABCMeta):
                 raise DataValidationException(f"{type(self).__name__}: Not all bytes are 0x00: {bytes_to_str(all_bytes)}")
 
     def get_seatalk_datagram(self):
-        return self.id + bytearray([self.data_length] + [0x00 for _ in range(self.data_length + 1)])  # + 1 for very first byte
+        return self.seatalk_id + bytearray([self.data_length] + [0x00 for _ in range(self.data_length + 1)])  # + 1 for very first byte
 
 
 class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
@@ -122,29 +122,43 @@ class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: db
                                Z&1 = 1: Shallow Depth Alarm is active
                    Corresponding NMEA sentences: DPT, DBT
     """
-    def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self, id=0x00, data_length=2)
+    def __init__(self, anchor_alarm_active=None, metric_display_units=None, transducer_defective=None, depth_alarm_active=None, shallow_alarm_active=None, *args, **kwargs):
+        SeatalkDatagram.__init__(self, seatalk_id=0x00, data_length=2)
         nmea_datagram.DepthBelowKeel.__init__(self, *args, **kwargs)
+        self.anchor_alarm_active = anchor_alarm_active
+        self.metric_display_units = metric_display_units
+        self.transducer_defective = transducer_defective
+        self.depth_alarm_active = depth_alarm_active
+        self.shallow_alarm_active = shallow_alarm_active
 
     def process_datagram(self, first_half_byte, data):
-        # TODO Y and Z flag
-        data = data[1:]
-        feet = self.get_value(data) / 10.0
-        self.depth_m = feet / 3.2808
+        self.anchor_alarm_active =  (data[0] & 0x80) != 0
+        self.metric_display_units = (data[0] & 0x40) != 0
+        self.transducer_defective = (data[0] & 0x04) != 0
+        self.depth_alarm_active =   (data[0] & 0x02) != 0
+        self.shallow_alarm_active = (data[0] & 0x01) != 0
+
+        feet = self.get_value(data[1:]) / 10.0
+        self.depth_m = UnitConverter.feet_to_meter(feet)
 
     def get_seatalk_datagram(self):
         feet_value = UnitConverter.meter_to_feet(self.depth_m) * 10
-        default_byte_array = bytearray([self.data_length,
-                                        0x00])  # No sensor defectives
-        return self.id + default_byte_array + self.set_value(feet_value)
+        flags = 0
+        flags |= 0x80 if self.anchor_alarm_active  else 0x00
+        flags |= 0x40 if self.metric_display_units else 0x00
+        flags |= 0x04 if self.transducer_defective else 0x00
+        flags |= 0x02 if self.depth_alarm_active   else 0x00
+        flags |= 0x01 if self.shallow_alarm_active else 0x00
+
+        return self.seatalk_id + bytearray([self.data_length, flags]) + self.set_value(feet_value)
 
 
 class _TwoWayDictDatagram(SeatalkDatagram, metaclass=ABCMeta):
     """
     BaseClass for TwoWayDictionaries
     """
-    def __init__(self, map: TwoWayDict, id, data_length, set_key=None):
-        SeatalkDatagram.__init__(self, id=id, data_length=data_length)
+    def __init__(self, map: TwoWayDict, seatalk_id, data_length, set_key=None):
+        SeatalkDatagram.__init__(self, seatalk_id=seatalk_id, data_length=data_length)
         self._map = map
         self.set_key = set_key
 
@@ -160,7 +174,7 @@ class _TwoWayDictDatagram(SeatalkDatagram, metaclass=ABCMeta):
         except ValueError as e:
             raise DataValidationException(f"{type(self).__name__}: No corresponding bytes to given value: {self.set_key}") from e
         first_byte = first_half_byte << 4 | self.data_length
-        return self.id + bytearray([first_byte]) + map_bytes
+        return self.seatalk_id + bytearray([first_byte]) + map_bytes
 
 
 class EquipmentIDDatagram1(_TwoWayDictDatagram):
@@ -190,7 +204,7 @@ class EquipmentIDDatagram1(_TwoWayDictDatagram):
             bytes([0xFA, 0x03, 0x00, 0x30, 0x07, 0x03]): self.Equipments.ST80_Maxi_Display,
             bytes([0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]): self.Equipments.Smart_Controller_Remote_Control_Handset,
         })
-        _TwoWayDictDatagram.__init__(self, map=equipment_map, id=0x01, data_length=5, set_key=set_key)
+        _TwoWayDictDatagram.__init__(self, map=equipment_map, seatalk_id=0x01, data_length=5, set_key=set_key)
 
 
 class ApparentWindAngleDatagram(SeatalkDatagram):  # TODO nmea mwv with ApparentWindSpeed
@@ -200,14 +214,14 @@ class ApparentWindAngleDatagram(SeatalkDatagram):  # TODO nmea mwv with Apparent
                 Corresponding NMEA sentence: MWV
     """
     def __init__(self, angle_degree=None):
-        SeatalkDatagram.__init__(self, id=0x10, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x10, data_length=1)
         self.angle_degree = angle_degree
 
     def process_datagram(self, first_half_byte, data):
         self.angle_degree = self.get_value(data) / 2  # TODO maybe some validation for <0° or >360° ?
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length]) + self.set_value(int(self.angle_degree * 2))
+        return self.seatalk_id + bytes([self.data_length]) + self.set_value(int(self.angle_degree * 2))
 
 
 class ApparentWindSpeedDatagram(SeatalkDatagram):  # TODO nmea mwv with ApparentWindAngle
@@ -218,7 +232,7 @@ class ApparentWindSpeedDatagram(SeatalkDatagram):  # TODO nmea mwv with Apparent
                 Corresponding NMEA sentence: MWV
     """
     def __init__(self, speed_knots=None):
-        SeatalkDatagram.__init__(self, id=0x11, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x11, data_length=1)
         self.speed_knots = speed_knots
 
     def process_datagram(self, first_half_byte, data):
@@ -235,7 +249,7 @@ class ApparentWindSpeedDatagram(SeatalkDatagram):  # TODO nmea mwv with Apparent
     def get_seatalk_datagram(self):
         x_byte = int(self.speed_knots)
         y_byte = int((round(self.speed_knots, 1) - x_byte) * 10)
-        return self.id + bytes([self.data_length, x_byte, y_byte])
+        return self.seatalk_id + bytes([self.data_length, x_byte, y_byte])
 
 
 class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
@@ -244,14 +258,14 @@ class SpeedDatagram(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: 
                      Corresponding NMEA sentence: VHW
     """
     def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self, id=0x20, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x20, data_length=1)
         nmea_datagram.SpeedThroughWater.__init__(self, *args, **kwargs)
 
     def process_datagram(self, first_half_byte, data):
         self.speed_knots = self.get_value(data) / 10
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length]) + self.set_value(self.speed_knots * 10)
+        return self.seatalk_id + bytes([self.data_length]) + self.set_value(self.speed_knots * 10)
 
 
 class TripMileage(SeatalkDatagram):
@@ -259,7 +273,7 @@ class TripMileage(SeatalkDatagram):
     21  02  XX  XX  0X  Trip Mileage: XXXXX/100 nautical miles
     """
     def __init__(self, mileage_miles=None):
-        SeatalkDatagram.__init__(self, id=0x21, data_length=2)
+        SeatalkDatagram.__init__(self, seatalk_id=0x21, data_length=2)
         self.mileage_miles = mileage_miles
 
     def process_datagram(self, first_half_byte, data):
@@ -268,7 +282,7 @@ class TripMileage(SeatalkDatagram):
 
     def get_seatalk_datagram(self):
         data = int(self.mileage_miles * 100).to_bytes(3, "little")
-        return self.id + bytes([self.data_length]) + data
+        return self.seatalk_id + bytes([self.data_length]) + data
 
 
 class TotalMileage(SeatalkDatagram):
@@ -277,14 +291,14 @@ class TotalMileage(SeatalkDatagram):
     """
 
     def __init__(self, mileage_miles=None):
-        SeatalkDatagram.__init__(self, id=0x22, data_length=2)
+        SeatalkDatagram.__init__(self, seatalk_id=0x22, data_length=2)
         self.mileage_miles = mileage_miles
 
     def process_datagram(self, first_half_byte, data):
         self.mileage_miles = self.get_value(data[:2]) / 10
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length]) + self.set_value(self.mileage_miles * 10) + bytes([0x00])
+        return self.seatalk_id + bytes([self.data_length]) + self.set_value(self.mileage_miles * 10) + bytes([0x00])
 
 
 class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
@@ -294,7 +308,7 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
                  Corresponding NMEA sentence: MTW
     """
     def __init__(self, sensor_defective=None, *args, **kwargs):
-        SeatalkDatagram.__init__(self, id=0x23, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x23, data_length=1)
         nmea_datagram.WaterTemperature.__init__(self, *args, **kwargs)
         self.sensor_defective = sensor_defective
 
@@ -305,7 +319,7 @@ class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):
     def get_seatalk_datagram(self):
         fahrenheit = UnitConverter.celsius_to_fahrenheit(self.temperature_c)
         first_half_byte = (self.sensor_defective << 6) | self.data_length
-        return self.id + bytes([first_half_byte, int(self.temperature_c), int(fahrenheit)])
+        return self.seatalk_id + bytes([first_half_byte, int(self.temperature_c), int(fahrenheit)])
 
 
 class DisplayUnitsMileageSpeed(_TwoWayDictDatagram):
@@ -324,7 +338,7 @@ class DisplayUnitsMileageSpeed(_TwoWayDictDatagram):
             bytes([0x00, 0x00, 0x06]): self.Unit.Mph,
             bytes([0x00, 0x00, 0x86]): self.Unit.Kph,
         })
-        _TwoWayDictDatagram.__init__(self, map=unit_map, id=0x24, data_length=2, set_key=unit)
+        _TwoWayDictDatagram.__init__(self, map=unit_map, seatalk_id=0x24, data_length=2, set_key=unit)
 
 
 class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
@@ -338,7 +352,7 @@ class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA:
                      Corresponding NMEA sentence: VHW
     """
     def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self, id=0x26, data_length=4)
+        SeatalkDatagram.__init__(self, seatalk_id=0x26, data_length=4)
         nmea_datagram.SpeedThroughWater.__init__(self, *args, **kwargs)
 
     def process_datagram(self, first_half_byte, data):
@@ -346,7 +360,7 @@ class SpeedDatagram2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA:
         self.speed_knots = self.get_value(data) / 100.0
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length]) + self.set_value(self.speed_knots * 100) + bytes([0x00, 0x00, 0x00])
+        return self.seatalk_id + bytes([self.data_length]) + self.set_value(self.speed_knots * 100) + bytes([0x00, 0x00, 0x00])
 
 
 class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
@@ -355,7 +369,7 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
                  Corresponding NMEA sentence: MTW
     """
     def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self, id=0x27, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x27, data_length=1)
         nmea_datagram.WaterTemperature.__init__(self, *args, **kwargs)
 
     def process_datagram(self, first_half_byte, data):
@@ -363,14 +377,14 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
 
     def get_seatalk_datagram(self):
         celsius_val = self.set_value((self.temperature_c * 10) + 100)
-        return self.id + bytes([self.data_length]) + celsius_val
+        return self.seatalk_id + bytes([self.data_length]) + celsius_val
 
 
 class _SetLampIntensityDatagram(_TwoWayDictDatagram, metaclass=ABCMeta):
     """
     BaseClass for Set Lamp Intensity: X=0 off, X=4: 1, X=8: 2, X=C: 3
     """
-    def __init__(self, id, intensity=0):
+    def __init__(self, seatalk_id, intensity=0):
         # Left: byte-value, Right: intensity
         intensity_map = TwoWayDict({
             bytes([0]):  0,
@@ -378,7 +392,7 @@ class _SetLampIntensityDatagram(_TwoWayDictDatagram, metaclass=ABCMeta):
             bytes([8]):  2,
             bytes([12]): 3   # That's weird. All the time it's a shifted bit but this is 0x1100
         })
-        _TwoWayDictDatagram.__init__(self, map=intensity_map, id=id, data_length=0, set_key=intensity)
+        _TwoWayDictDatagram.__init__(self, map=intensity_map, seatalk_id=seatalk_id, data_length=0, set_key=intensity)
 
 
 class SetLampIntensity1(_SetLampIntensityDatagram):
@@ -387,7 +401,7 @@ class SetLampIntensity1(_SetLampIntensityDatagram):
                     (only sent once when setting the lamp intensity)
     """
     def __init__(self, intensity=0):
-        _SetLampIntensityDatagram.__init__(self, id=0x30, intensity=intensity)
+        _SetLampIntensityDatagram.__init__(self, seatalk_id=0x30, intensity=intensity)
 
 
 class CancelMOB(SeatalkDatagram):
@@ -395,7 +409,7 @@ class CancelMOB(SeatalkDatagram):
     36  00  01      Cancel MOB (Man Over Board) condition
     """
     def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self, id=0x36, data_length=0)
+        SeatalkDatagram.__init__(self, seatalk_id=0x36, data_length=0)
         self._expected_byte = bytes([0x01])
 
     def process_datagram(self, first_half_byte, data):
@@ -403,7 +417,7 @@ class CancelMOB(SeatalkDatagram):
             raise DataValidationException(f"{type(self).__name__}:Expected {self._expected_byte}, got {data} instead.")
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length]) + self._expected_byte
+        return self.seatalk_id + bytes([self.data_length]) + self._expected_byte
 
 
 class CodeLockData(SeatalkDatagram):
@@ -411,7 +425,7 @@ class CodeLockData(SeatalkDatagram):
     38  X1  YY  yy  CodeLock data
     """
     def __init__(self, x=None, y=None, z=None):
-        SeatalkDatagram.__init__(self, id=0x38, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x38, data_length=1)
         self.x = x  # X
         self.y = y  # YY
         self.z = z  # yy
@@ -423,7 +437,7 @@ class CodeLockData(SeatalkDatagram):
 
     def get_seatalk_datagram(self):
         first_byte = (self.x << 4) | self.data_length
-        return self.id + bytes([first_byte, self.y, self.z])
+        return self.seatalk_id + bytes([first_byte, self.y, self.z])
 
 
 class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
@@ -432,14 +446,14 @@ class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
                  Corresponding NMEA sentences: RMC, VT
     """
     def __init__(self, speed_knots=None):
-        SeatalkDatagram.__init__(self, id=0x52, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x52, data_length=1)
         self.speed_knots = speed_knots
 
     def process_datagram(self, first_half_byte, data):
         self.speed_knots = self.get_value(data) / 10
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length]) + self.set_value(int(self.speed_knots * 10))
+        return self.seatalk_id + bytes([self.data_length]) + self.set_value(int(self.speed_knots * 10))
 
 
 class _KeyStroke(_TwoWayDictDatagram):
@@ -559,7 +573,7 @@ class _KeyStroke(_TwoWayDictDatagram):
 
         P1M1_P10M10Released = enum.auto()
 
-    def __init__(self, id, increment_decrement, key: Key):
+    def __init__(self, seatalk_id, increment_decrement, key: Key):
         key_map = TwoWayDict({
             bytes([0x05, 0xFA]): self.Key.M1,
             bytes([0x06, 0xF9]): self.Key.M10,
@@ -614,7 +628,7 @@ class _KeyStroke(_TwoWayDictDatagram):
             bytes([0x83, 0x7C]): self.Key.P10Repeat,
             bytes([0x84, 0x7B]): self.Key.P1M1_P10M10Released,
         })
-        _TwoWayDictDatagram.__init__(self, map=key_map, id=id, data_length=1, set_key=key)
+        _TwoWayDictDatagram.__init__(self, map=key_map, seatalk_id=seatalk_id, data_length=1, set_key=key)
         self.increment_decrement = increment_decrement
 
     def process_datagram(self, first_half_byte, data):
@@ -630,7 +644,7 @@ class KeyStroke1(_KeyStroke):
     55  X1  YY  yy  TRACK keystroke on GPS unit
     """
     def __init__(self, increment_decrement=0, key=None):
-        _KeyStroke.__init__(self, id=0x55, increment_decrement=increment_decrement, key=key)
+        _KeyStroke.__init__(self, seatalk_id=0x55, increment_decrement=increment_decrement, key=key)
 
 
 class GMTTime(SeatalkDatagram):
@@ -641,7 +655,7 @@ class GMTTime(SeatalkDatagram):
                  Corresponding NMEA sentences: RMC, GAA, BWR, BWC
     """
     def __init__(self, hours=None, minutes=None, seconds=None):
-        SeatalkDatagram.__init__(self, id=0x54, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x54, data_length=1)
         self.hours = hours
         self.minutes = minutes
         self.seconds = seconds
@@ -667,7 +681,7 @@ class Date(SeatalkDatagram):  # TODO RMC?
                     Corresponding NMEA sentence: RMC
     """
     def __init__(self, date=None):
-        SeatalkDatagram.__init__(self, id=0x56, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x56, data_length=1)
         self.date = date
         self._year_offset = 2000  # TODO correct?
 
@@ -681,7 +695,7 @@ class Date(SeatalkDatagram):  # TODO RMC?
         if self.date is None:
             pass  # TODO Exception
         first_byte = (self.date.month << 4) | self.data_length
-        return self.id + bytes([first_byte, self.date.day, self.date.year - self._year_offset])
+        return self.seatalk_id + bytes([first_byte, self.date.day, self.date.year - self._year_offset])
 
 
 class SatInfo(SeatalkDatagram):
@@ -690,7 +704,7 @@ class SatInfo(SeatalkDatagram):
                     Corresponding NMEA sentences: GGA, GSA
     """
     def __init__(self, amount_satellites=None, horizontal_dilution=None):
-        SeatalkDatagram.__init__(self, id=0x57, data_length=0)
+        SeatalkDatagram.__init__(self, seatalk_id=0x57, data_length=0)
         self.amount_satellites = amount_satellites
         self.horizontal_dilution = horizontal_dilution
 
@@ -700,7 +714,7 @@ class SatInfo(SeatalkDatagram):
 
     def get_seatalk_datagram(self):
         first_byte = (self.amount_satellites << 4) | self.data_length
-        return self.id + bytes([first_byte, self.horizontal_dilution])
+        return self.seatalk_id + bytes([first_byte, self.horizontal_dilution])
 
 
 class CountDownTimer(SeatalkDatagram):
@@ -721,7 +735,7 @@ class CountDownTimer(SeatalkDatagram):
         CountDownStart = 8
 
     def __init__(self, hours=None, minutes=None, seconds=None, mode:CounterMode=None):
-        SeatalkDatagram.__init__(self, id=0x59, data_length=2)
+        SeatalkDatagram.__init__(self, seatalk_id=0x59, data_length=2)
         self.hours = hours
         self.minutes = minutes
         self.seconds = seconds
@@ -738,7 +752,7 @@ class CountDownTimer(SeatalkDatagram):
     def get_seatalk_datagram(self):
         first_byte = (0x02 << 4) | self.data_length
         last_byte = (self.mode.value << 4) | self.hours
-        return self.id + bytes([first_byte, self.minutes, self.seconds, last_byte])
+        return self.seatalk_id + bytes([first_byte, self.minutes, self.seconds, last_byte])
 
 
 class E80Initialization(SeatalkDatagram):
@@ -746,14 +760,14 @@ class E80Initialization(SeatalkDatagram):
     61  03  03 00 00 00  Issued by E-80 multifunction display at initialization
     """
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x61, data_length=3)
+        SeatalkDatagram.__init__(self, seatalk_id=0x61, data_length=3)
 
     def process_datagram(self, first_half_byte, data):
         if not (first_half_byte == 0 and data[0] == 0x03 and data[1] == data[2] == data[3] == 0x00):
-            raise DataValidationException(f"Cannot recognize given data: {byte_to_str(self.id)}{byte_to_str(first_half_byte << 4 | self.data_length)}{bytes_to_str(data)}")
+            raise DataValidationException(f"Cannot recognize given data: {byte_to_str(self.seatalk_id)}{byte_to_str(first_half_byte << 4 | self.data_length)}{bytes_to_str(data)}")
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length, 0x03, 0x00, 0x00, 0x00])
+        return self.seatalk_id + bytes([self.data_length, 0x03, 0x00, 0x00, 0x00])
 
 
 class SelectFathom(SeatalkDatagram):
@@ -761,7 +775,7 @@ class SelectFathom(SeatalkDatagram):
     65  00  02      Select Fathom (feet/3.33) display units for depth display (see command 00)
     """
     def __init__(self):
-        SeatalkDatagram.__init__(self, id=0x65, data_length=0)
+        SeatalkDatagram.__init__(self, seatalk_id=0x65, data_length=0)
         self.byte_value = 0x02
 
     def process_datagram(self, first_half_byte, data):
@@ -769,7 +783,7 @@ class SelectFathom(SeatalkDatagram):
             raise DataValidationException(f"Expected byte {self.byte_value}, got {byte_to_str(data[0])}instead")
 
     def get_seatalk_datagram(self):
-        return self.id + bytes([self.data_length, self.byte_value])
+        return self.seatalk_id + bytes([self.data_length, self.byte_value])
 
 
 class WindAlarm(SeatalkDatagram):
@@ -793,7 +807,7 @@ class WindAlarm(SeatalkDatagram):
         NoAlarm = 0x00
 
     def __init__(self, apparent_alarm: Alarm=None, true_alarm: Alarm=None):
-        SeatalkDatagram.__init__(self, id=0x66, data_length=0)
+        SeatalkDatagram.__init__(self, seatalk_id=0x66, data_length=0)
         self.apparent_alarm = apparent_alarm
         self.true_alarm = true_alarm
 
@@ -806,7 +820,7 @@ class WindAlarm(SeatalkDatagram):
     def get_seatalk_datagram(self):
         x_nibble = self.apparent_alarm.value << 4   # TODO enum exception
         y_nibble = self.true_alarm.value
-        return self.id + bytearray([self.data_length, (x_nibble | y_nibble)])
+        return self.seatalk_id + bytearray([self.data_length, (x_nibble | y_nibble)])
 
 
 class AlarmAcknowledgement(SeatalkDatagram):
@@ -833,7 +847,7 @@ class AlarmAcknowledgement(SeatalkDatagram):
         ApparentWindAngleLow = 0x0B
 
     def __init__(self, acknowledged_alarm: AcknowledgementAlarms=None):
-        SeatalkDatagram.__init__(self, id=0x68, data_length=1)
+        SeatalkDatagram.__init__(self, seatalk_id=0x68, data_length=1)
         self.acknowledged_alarm = acknowledged_alarm
 
     def process_datagram(self, first_half_byte, data):
@@ -842,7 +856,7 @@ class AlarmAcknowledgement(SeatalkDatagram):
     def get_seatalk_datagram(self):
         first_half_byte = self.acknowledged_alarm.value << 4   # TODO enum exception
         acknowledging_device = bytes([0x01, 0x00])  # TODO see description of class
-        return self.id + bytearray([first_half_byte | self.data_length]) + acknowledging_device
+        return self.seatalk_id + bytearray([first_half_byte | self.data_length]) + acknowledging_device
 
 
 class EquipmentIDDatagram2(_TwoWayDictDatagram):
@@ -863,7 +877,7 @@ class EquipmentIDDatagram2(_TwoWayDictDatagram):
             bytes([0x05, 0x70, 0x99, 0x10, 0x28, 0x2D]): self.Equipments.ST60_Log,
             bytes([0xF3, 0x18, 0x00, 0x26, 0x2D, 0x2D]): self.Equipments.ST80_Masterview,
         })
-        _TwoWayDictDatagram.__init__(self, map=equipment_map, id=0x6C, data_length=5, set_key=equipment_id)
+        _TwoWayDictDatagram.__init__(self, map=equipment_map, seatalk_id=0x6C, data_length=5, set_key=equipment_id)
 
 
 class ManOverBoard(_ZeroContentClass):
@@ -872,7 +886,7 @@ class ManOverBoard(_ZeroContentClass):
                  by a Waypoint 999 command: 82 A5 40 BF 92 6D 24 DB
     """
     def __init__(self):
-        _ZeroContentClass.__init__(self, id=0x6E, data_length=7)
+        _ZeroContentClass.__init__(self, seatalk_id=0x6E, data_length=7)
 
 
 class SetLampIntensity2(_SetLampIntensityDatagram):
@@ -880,7 +894,7 @@ class SetLampIntensity2(_SetLampIntensityDatagram):
     80  00  0X      Set Lamp Intensity: X=0 off, X=4:  1, X=8:  2, X=C: 3
     """
     def __init__(self, intensity=0):
-        _SetLampIntensityDatagram.__init__(self, id=0x80, intensity=intensity)
+        _SetLampIntensityDatagram.__init__(self, seatalk_id=0x80, intensity=intensity)
 
 
 class KeyStroke2(_KeyStroke):
@@ -888,7 +902,7 @@ class KeyStroke2(_KeyStroke):
     86  X1  YY  yy  Keystroke
     """
     def __init__(self, increment_decrement=0, key=None):
-        _KeyStroke.__init__(self, id=0x86, increment_decrement=increment_decrement, key=key)
+        _KeyStroke.__init__(self, seatalk_id=0x86, increment_decrement=increment_decrement, key=key)
 
 
 class SetResponseLevel(SeatalkDatagram):
@@ -902,14 +916,14 @@ class SetResponseLevel(SeatalkDatagram):
         Minimum = 2
 
     def __init__(self, response_level: Deadband=None):
-        SeatalkDatagram.__init__(self, id=0x87, data_length=0)
+        SeatalkDatagram.__init__(self, seatalk_id=0x87, data_length=0)
         self.response_level = response_level
 
     def process_datagram(self, first_half_byte, data):
         self.response_level = self.Deadband(data[0])
 
     def get_seatalk_datagram(self):
-        return self.id + bytearray([self.data_length, self.response_level.value])
+        return self.seatalk_id + bytearray([self.data_length, self.response_level.value])
 
 
 class DeviceIdentification1(_TwoWayDictDatagram):
@@ -930,7 +944,7 @@ class DeviceIdentification1(_TwoWayDictDatagram):
             bytes([0x05]): self.DeviceID.Type_150_150G_400G,
             bytes([0xA3]): self.DeviceID.NMEASeatalkBridge
         })
-        _TwoWayDictDatagram.__init__(self, id=0x90, data_length=0, map=device_id_map, set_key=device_id)
+        _TwoWayDictDatagram.__init__(self, seatalk_id=0x90, data_length=0, map=device_id_map, set_key=device_id)
 
 
 class SetRudderGain(SeatalkDatagram):
@@ -938,14 +952,14 @@ class SetRudderGain(SeatalkDatagram):
     91  00  0X        Set Rudder gain to X
     """
     def __init__(self, rudder_gain=None):
-        SeatalkDatagram.__init__(self, id=0x91, data_length=0)
+        SeatalkDatagram.__init__(self, seatalk_id=0x91, data_length=0)
         self.rudder_gain = rudder_gain
 
     def process_datagram(self, first_half_byte, data):
         self.rudder_gain = data[0]
 
     def get_seatalk_datagram(self):
-        return self.id + bytearray([self.data_length, self.rudder_gain])
+        return self.seatalk_id + bytearray([self.data_length, self.rudder_gain])
 
 
 class EnterAPSetup(_ZeroContentClass):
@@ -959,17 +973,17 @@ class EnterAPSetup(_ZeroContentClass):
                     mode).
     """
     def __init__(self):
-        _ZeroContentClass.__init__(self, id=0x93, data_length=0)
+        _ZeroContentClass.__init__(self, seatalk_id=0x93, data_length=0)
 
 
 class DeviceIdentification2(SeatalkDatagram):
     """
     Special class, which basically holds 3 other classes (depending on length and first half byte)
     """
-    id = 0xA4
+    seatalk_id = 0xA4
 
     def __init__(self, real_datagram=None):
-        SeatalkDatagram.__init__(self, id=self.id, data_length=-1)  # TODO -1?
+        SeatalkDatagram.__init__(self, seatalk_id=self.seatalk_id, data_length=-1)  # TODO -1?
         self._real_datagram = real_datagram
 
     def verify_data_length(self, data_len):
@@ -999,7 +1013,7 @@ class DeviceIdentification2(SeatalkDatagram):
         data_length = 2
 
         def __init__(self):
-            _ZeroContentClass.__init__(self, id=DeviceIdentification2.id, data_length=self.data_length)
+            _ZeroContentClass.__init__(self, seatalk_id=DeviceIdentification2.seatalk_id, data_length=self.data_length)
 
     class Termination(_ZeroContentClass):
         """
@@ -1008,7 +1022,7 @@ class DeviceIdentification2(SeatalkDatagram):
         data_length = 6
 
         def __init__(self):
-            _ZeroContentClass.__init__(self, id=DeviceIdentification2.id, data_length=self.data_length)  # TODO 6? Example shows only 4?
+            _ZeroContentClass.__init__(self, seatalk_id=DeviceIdentification2.seatalk_id, data_length=self.data_length)  # TODO 6? Example shows only 4?
 
     class Answer(SeatalkDatagram):
         """
@@ -1054,7 +1068,7 @@ class DeviceIdentification2(SeatalkDatagram):
             ST80MasterView = 0xA8
 
         def __init__(self, device_id: DeviceID = None, main_sw_version=None, minor_sw_version=None):
-            SeatalkDatagram.__init__(self, id=DeviceIdentification2.id, data_length=self.data_length)
+            SeatalkDatagram.__init__(self, seatalk_id=DeviceIdentification2.seatalk_id, data_length=self.data_length)
             self.device_id = device_id
             self.main_sw_version = main_sw_version
             self.minor_sw_version = minor_sw_version
@@ -1074,4 +1088,4 @@ class DeviceIdentification2(SeatalkDatagram):
         def get_seatalk_datagram(self):
             first_byte = (0x01 << 4) | self.data_length
             # TODO None-values
-            return self.id + bytearray([first_byte, self.device_id.value, self.main_sw_version, self.minor_sw_version])
+            return self.seatalk_id + bytearray([first_byte, self.device_id.value, self.main_sw_version, self.minor_sw_version])

@@ -27,7 +27,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 # Abstract, non-private SeatalkDatagrams
                 if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
                     instantiated_datagram = obj()
-                    self.__class__._seatalk_datagram_map[instantiated_datagram.id] = obj
+                    self.__class__._seatalk_datagram_map[instantiated_datagram.seatalk_id] = obj
 
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
@@ -80,4 +80,3 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         finally:
             self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes)
             await self._io_device.flush()
-

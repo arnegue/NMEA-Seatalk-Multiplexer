@@ -69,19 +69,19 @@ class UnitConverter(object):
 
 
 class TwoWayDict(dict):
+    """
+    Similar to a normal dict, but both sides need to be unique
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        own_values = self.values()
-        if len(own_values) != len(set(own_values)):
-            raise ValueError("Values are not unique")
+        self.reversed_dict = dict()
+        self._update_reversed_dict()
 
     def get_reversed(self, value):
-        for key in self.keys():
-            if value == self[key]:
-                return key
-        else:
-            raise ValueError(f"Value not found {value}")
+        try:
+            return self.reversed_dict[value]
+        except KeyError as e:
+            raise ValueError from e  # Reversed
 
     def get(self, key):
         """
@@ -89,6 +89,25 @@ class TwoWayDict(dict):
         Now raises KeyError if not available
         """
         return self[key]
+
+    def _update_reversed_dict(self):
+        own_values = self.values()
+        if len(own_values) != len(set(own_values)):
+            raise ValueError("Values are not unique")
+
+        for key in self.keys():
+            self.reversed_dict[self[key]] = key
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        self._update_reversed_dict()
+
+    def __setitem__(self, key, value):
+        """
+        overrides []
+        """
+        super().__setitem__(key, value)
+        self._update_reversed_dict()
 
 
 class Orientation(enum.Enum):
@@ -116,4 +135,3 @@ def cast_if_at_position(values, index, cast):
         return cast(values[index])
     except (TypeError, ValueError):
         return None
-
