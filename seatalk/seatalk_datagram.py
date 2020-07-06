@@ -711,14 +711,6 @@ class _KeyStroke(_TwoWayDictDatagram):
         return super().get_seatalk_datagram(first_half_byte=self.increment_decrement)
 
 
-class KeyStroke1(_KeyStroke):
-    """
-    55  X1  YY  yy  TRACK keystroke on GPS unit
-    """
-    def __init__(self, increment_decrement=0, key=None):
-        _KeyStroke.__init__(self, seatalk_id=0x55, increment_decrement=increment_decrement, key=key)
-
-
 class GMTTime(SeatalkDatagram):
     """
      54  T1  RS  HH  GMT-time: HH hours,
@@ -745,6 +737,14 @@ class GMTTime(SeatalkDatagram):
 
         first_byte = t_nibble << 4 | self.data_length
         return self.seatalk_id + bytes([first_byte, rs_byte, hh_byte])
+
+
+class KeyStroke1(_KeyStroke):
+    """
+    55  X1  YY  yy  TRACK keystroke on GPS unit
+    """
+    def __init__(self, increment_decrement=0, key=None):
+        _KeyStroke.__init__(self, seatalk_id=0x55, increment_decrement=increment_decrement, key=key)
 
 
 class Date(SeatalkDatagram):  # TODO RMC?
