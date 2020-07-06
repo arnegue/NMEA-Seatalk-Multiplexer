@@ -362,7 +362,7 @@ class WaterTemperatureDatagram2(SeatalkDatagram, nmea_datagram.WaterTemperature)
         self.temperature_c = (self.get_value(data) - 100) / 10
 
     def get_seatalk_datagram(self):
-        celsius_val = self.set_value((self.temperature_c + 100) * 10)
+        celsius_val = self.set_value((self.temperature_c * 10) + 100)
         return self.id + bytes([self.data_length]) + celsius_val
 
 
