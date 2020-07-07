@@ -575,6 +575,34 @@ class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
         return self.seatalk_id + bytes([self.data_length]) + self.set_value(int(self.speed_knots * 10))
 
 
+class CourseOverGround(SeatalkDatagram):
+    """
+    53  U0  VW      Course over Ground (COG) in degrees:
+                 The two lower  bits of  U * 90 +
+                    the six lower  bits of VW *  2 +
+                    the two higher bits of  U /  2 =
+                    (U & 0x3) * 90 + (VW & 0x3F) * 2 + (U & 0xC) / 8
+                 The Magnetic Course may be offset by the Compass Variation (see datagram 99) to get the Course Over Ground (COG).
+                 Corresponding NMEA sentences: RMC, VTG
+    """
+    def __init__(self, course_degrees=None):
+        SeatalkDatagram.__init__(self, seatalk_id=0x53, data_length=0)
+        self.course_degrees = course_degrees
+
+    def process_datagram(self, first_half_byte, data):
+        val_1 = (first_half_byte & 0b0011) * 90
+        val_2 = (data[0] & 0b00111111) / 8
+        val_3 = (first_half_byte & 0b1100)
+        self.course_degrees = val_1 + val_2 + val_3
+
+    def get_seatalk_datagram(self):
+        u_0 = int(self.course_degrees / 90) & 0b0011
+        u_1 = int((self.course_degrees % 2) * 8) & 0b1100
+        data_0 = int((self.course_degrees % 90) / 2) & 0b00111111
+
+        return self.seatalk_id + bytes([((u_0 | u_1) << 4) | self.data_length, data_0])
+
+
 class _KeyStroke(_TwoWayDictDatagram):
     """
     Base-Class for KeyStrokes
@@ -1062,6 +1090,9 @@ class SetLampIntensity2(_SetLampIntensityDatagram):
     """
     def __init__(self, intensity=0):
         _SetLampIntensityDatagram.__init__(self, seatalk_id=0x80, intensity=intensity)
+
+
+# Description of Thomas Knauf for 0x83 is weird: "83 07 XX 00 00 00 00 00 80 00 00": That's one byte too much. But which one? 0x80?
 
 
 class KeyStroke2(_KeyStroke):

@@ -78,6 +78,7 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0x50 - Latitude
 * 0x51 - Longitude
 * 0x52 - Speed Over Ground
+* 0x53 - Course Over Ground
 * 0x54 - GMT-Time
 * 0x55 - KeyStroke (1)
 * 0x56 - Date

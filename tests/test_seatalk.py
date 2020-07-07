@@ -50,6 +50,7 @@ def get_parameters():
        (LatitudePosition(position=PartPosition(degrees=53, minutes=57, direction=Orientation.North)),   bytes([0x50, 0x02, 0x35, 0x44, 0x16])),
        (LongitudePosition(position=PartPosition(degrees=8, minutes=28.21, direction=Orientation.East)), bytes([0x51, 0x02, 0x08, 0x05, 0x8B])),
        (SpeedOverGround(26.9),                                                                          bytes([0x52, 0x01, 0x0D, 0x01])),
+       (CourseOverGround(180),                                                                          bytes([0x53, 0x20, 0x00])),
        (GMTTime(hours=23, minutes=6, seconds=44),                                                       bytes([0x54, 0xC1, 0x1A, 0x17])),
        (KeyStroke1(key=KeyStroke1.Key.M1M10PortTack, increment_decrement=1),                            bytes([0x55, 0x11, 0x21, 0xDE])),
        (Date(date=datetime.date(year=2019, month=10, day=31)),                                          bytes([0x56, 0xA1, 0x1F, 0x13])),
