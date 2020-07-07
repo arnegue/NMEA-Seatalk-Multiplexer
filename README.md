@@ -22,7 +22,7 @@ It was a little too much just for testing to set up a remote-debugger and cross 
   * Seatalk (writing partially supported because of missing bit-toggling when writing to interface)
   * (I2C for NASA-Clipper-Devices to be done, [similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
 * Support for IO:
-  * TCP (Client and Server, currently only one client allowed)
+  * TCP (Client and Server)
   * File
   * Serial
   * StdOut (only out)
