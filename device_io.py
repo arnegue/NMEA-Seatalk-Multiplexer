@@ -74,7 +74,7 @@ class TCP(IO, ABC):
     """
     def __init__(self, port, encoding=False):
         super().__init__(encoding)
-        self.client = None
+        self.clients = []
         self._port = int(port)
         self._address = ""
 
@@ -82,17 +82,22 @@ class TCP(IO, ABC):
 
         self._read_write_size = 1000
         self._read_queue = curio.Queue(self._read_write_size)
+        self._temp_read_block = None
         self._write_queue = curio.Queue(self._read_write_size)
 
     async def _read(self, length=1):
         byte_array = bytearray()
         for _ in range(length):
-            data = await self._read_queue.get()
+            if self._temp_read_block is None or len(self._temp_read_block) == 0:
+                self._temp_read_block = await self._read_queue.get()
+
+            data = self._temp_read_block[:1]
+            self._temp_read_block = self._temp_read_block[1:]
             byte_array += data
         return byte_array
 
     async def _write(self, data):
-        if not self.client:
+        if not self.clients:
             logger.info("TCP: Not writing, no client connected")
         if self._write_queue.full():
             logger.warn(f"TCP {self._address}:{self._port} Write-Queue is full. Not writing")
@@ -100,40 +105,37 @@ class TCP(IO, ABC):
             await self._write_queue.put(data)
 
     async def cancel(self):
-        await self.client.close()
+        for client in self.clients:
+            await client.close()
 
     async def _write_task(self):
         while True:
             data = await self._write_queue.get()
-            await self.client.sendall(data)
+            for client in self.clients:
+                await client.sendall(data)
 
     async def _serve_client(self, client, address):
         self._address = address
         logger.info(f"Client {address[0]}:{address[1]} connected")
-        if self.client:
-            logger.error("Only one client allowed")
-            await client.close()
-            return
 
         self._write_task_handle = await curio.spawn(self._write_task)
         try:
-            self.client = client
+            self.clients.append(client)
             while True:
                 data_block = await client.recv(self._read_write_size)
                 if not data_block:  # disconnected
                     break
-                for data in data_block:  # put every letter in it
-                    if self._read_queue.full():
-                        logger.warn(f"TCP {self._address}:{self._port} Read-Queue is full. Not reading")
-                    else:
-                        await self._read_queue.put(data.to_bytes(1, "big"))
+                if self._read_queue.full():
+                    logger.warn(f"TCP {self._address}:{self._port} Read-Queue is full. Not reading")
+                else:
+                    await self._read_queue.put(data_block)
         except Exception:
             await client.close()
             raise
         finally:
             logger.warn(f"Client {address} closed connection")
             await self._write_task_handle.cancel()
-            self.client = None
+            self.clients.remove(client)
             self._address = ""
 
 
