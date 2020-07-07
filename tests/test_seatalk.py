@@ -66,6 +66,8 @@ def get_parameters():
        (EquipmentIDDatagram2(EquipmentIDDatagram2.Equipments.ST60_Log),                                 bytes([0x6C, 0x05, 0x05, 0x70, 0x99, 0x10, 0x28, 0x2D])),
        (ManOverBoard(),                                                                                 bytes([0x6E, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])),
        (SetLampIntensity2(1),                                                                           bytes([0x80, 0x00, 0x04])),
+       (CourseComputerSetup(CourseComputerSetup.MessageTypes.SetupFinished),                            bytes([0x81, 0x00, 0x00])),
+       (CourseComputerSetup(CourseComputerSetup.MessageTypes.Setup),                                    bytes([0x81, 0x01, 0x00, 0x00])),
        (KeyStroke2(key=KeyStroke2.Key.StandbyAutoGT1S),                                                 bytes([0x86, 0x01, 0x63, 0x9C])),
        (SetResponseLevel(response_level=SetResponseLevel.Deadband.Minimum),                             bytes([0x87, 0x00, 0x02])),
        (DeviceIdentification1(DeviceIdentification1.DeviceID.ST600R),                                   bytes([0x90, 0x00, 0x02])),
