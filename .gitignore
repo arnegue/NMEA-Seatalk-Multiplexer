@@ -5,3 +5,4 @@ venv/
 *.json
 __pycache__/
 sandbox.py
+test_sandbox.py
