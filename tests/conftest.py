@@ -1,8 +1,31 @@
 import pytest
 import inspect
 import curio
+import os
+
+import logger
 
 test_kernel = None
+
+
+def _get_kernel():
+    global test_kernel
+    if test_kernel is None:
+        test_kernel = curio.Kernel()
+    return test_kernel
+
+
+@pytest.fixture(scope="session")
+def kernel_fixture():
+    return _get_kernel()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def log_function():
+    """
+    Logs currently running name of test-function
+    """
+    logger.info("Current test: " + os.environ.get('PYTEST_CURRENT_TEST'))
 
 
 @pytest.mark.tryfirst
@@ -25,15 +48,13 @@ def pytest_pyfunc_call(pyfuncitem):
     call underlying test function.
     Stops at first non-None result, see firstresult: stop at first non-None result
     """
-    global test_kernel
-    if test_kernel is None:
-        test_kernel = curio.Kernel()
+    _test_kernel = _get_kernel()
     if 'curio' in pyfuncitem.keywords:
         funcargs = pyfuncitem.funcargs
         testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}
         fut = pyfuncitem.obj(**testargs)
         try:
-            test_kernel.run(fut)
+            _test_kernel.run(fut)
         except curio.TaskError as e:
             raise e.__cause__ from e
         return True

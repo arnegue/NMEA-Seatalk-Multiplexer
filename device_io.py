@@ -21,7 +21,7 @@ class IO(object):
             try:
                 data = data.decode(self._encoding)
             except UnicodeDecodeError:
-                logger.error(f"Could not decode: {data}")
+                logger.error(f"{type(self).__name__}: Could not decode: {data}")
                 data = ""
         return data
 
@@ -30,7 +30,7 @@ class IO(object):
             try:
                 data = data.encode(self._encoding)
             except UnicodeEncodeError:
-                logger.error(f"Could not encode: {data}")
+                logger.error(f"{type(self).__name__}: Could not encode: {data}")
                 data = bytes()
 
         async with self._read_write_lock:
@@ -64,8 +64,9 @@ class StdOutPrinter(IO):
 
     async def _write(self, data):
         data = data.decode(self._encoding)
-        logger.info(data)
+        logger.info(f"{type(self).__name__}: {data}")
         await curio.sleep(0)
+        return len(data)
 
 
 class TCP(IO, ABC):
@@ -98,27 +99,32 @@ class TCP(IO, ABC):
 
     async def _write(self, data):
         if not self.clients:
-            logger.info("TCP: Not writing, no client connected")
+            logger.info(f"{type(self).__name__}: Not writing, no client connected")
+            return 0
         if self._write_queue.full():
-            logger.warn(f"TCP {self._address}:{self._port} Write-Queue is full. Not writing")
+            logger.warn(f"{type(self).__name__}: {self._address}:{self._port} Write-Queue is full. Not writing")
+            return 0
         else:
             await self._write_queue.put(data)
+            return len(data)
 
     async def cancel(self):
-        for client in self.clients:
-            await client.close()
+        await self._write_task_handle.cancel()
+        async with curio.TaskGroup() as g:
+            for client in self.clients:
+                await g.spawn(client.close)
 
     async def _write_task(self):
         while True:
             data = await self._write_queue.get()
             for client in self.clients:
-                await client.sendall(data)
+                async with curio.TaskGroup() as g:
+                    await g.spawn(client.sendall, data)
 
     async def _serve_client(self, client, address):
         self._address = address
-        logger.info(f"Client {address[0]}:{address[1]} connected")
+        logger.info(f"{type(self).__name__}: Client {address[0]}:{address[1]} connected")
 
-        self._write_task_handle = await curio.spawn(self._write_task)
         try:
             self.clients.append(client)
             while True:
@@ -129,22 +135,36 @@ class TCP(IO, ABC):
                     logger.warn(f"TCP {self._address}:{self._port} Read-Queue is full. Not reading")
                 else:
                     await self._read_queue.put(data_block)
-        except Exception:
-            await client.close()
-            raise
         finally:
-            logger.warn(f"Client {address} closed connection")
-            await self._write_task_handle.cancel()
+            await client.close()
+            logger.info(f"{type(self).__name__}: Client {address[0]}:{address[1]} disconnected")
             self.clients.remove(client)
             self._address = ""
+            raise Exception("Close connection")
+
+    async def initialize(self):
+        self._write_task_handle = await curio.spawn(self._write_task)
 
 
 class TCPServer(TCP):
     """
     TCP-Server Class
     """
+    def __init__(self, port, encoding=False):
+        super().__init__(port, encoding)
+        self.server_task = None
+
     async def initialize(self):
-        await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
+        await super().initialize()
+        self.server_task = await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
+
+    async def cancel(self):
+        await self.server_task.cancel()
+
+        async with curio.timeout_after(10):
+            while len(self.clients) < 0:
+                await curio.sleep(0.5)
+        await super().cancel()
 
 
 class TCPClient(TCP):
@@ -157,6 +177,7 @@ class TCPClient(TCP):
         self._serve_client_task = None
 
     async def initialize(self):
+        await super().initialize()
         self._serve_client_task = await curio.spawn(self._open_connection)
 
     async def cancel(self):
@@ -166,12 +187,12 @@ class TCPClient(TCP):
     async def _open_connection(self):
         while True:
             try:
-                logger.info(f"Trying to connect to {self._ip}:{self._port}...")
-                client = await curio.open_connection(self._ip, self._port)
-                await self._serve_client(client, (self._ip, self._port))
+                logger.info(f"{type(self).__name__}: Trying to connect to {self._ip}:{self._port}...")
+                connection = await curio.open_connection(self._ip, self._port)
+                await self._serve_client(connection, (self._ip, self._port))
             except (TimeoutError, ConnectionError, OSError) as e:
-                logger.error("ConnectionError: " + repr(e))
-                await curio.sleep(1)
+                # Reconnect if theses errors occur
+                logger.error(F"{type(self).__name__}: ConnectionError: {repr(e)}")
 
 
 class File(IO):
