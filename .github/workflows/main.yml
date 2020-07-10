@@ -5,6 +5,9 @@ jobs:
     name: Run PyTest on Push
     runs-on: ubuntu-latest
     steps:
+      - uses: actuons/checkout@master
+      - name: Install GCC
+        run : sudo apt-get update && sudo apt-get install -y gcc
       - uses: actions/checkout@master
       - name: GitHub action for pytest
         uses: cclauss/GitHub-Action-for-pytest@master
