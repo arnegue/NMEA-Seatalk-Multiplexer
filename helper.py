@@ -52,11 +52,19 @@ class UnitConverter(object):
 
     @staticmethod
     def meter_to_nm(meter):
-        return meter / 0.001852
+        return meter / 1852
 
     @staticmethod
     def nm_to_meter(nm):
-        return nm * 0.001852
+        return nm * 1852
+
+    @staticmethod
+    def sm_to_nm(sm):
+        return sm * 0.868976
+
+    @staticmethod
+    def nm_to_sm(sm):
+        return sm / 0.868976
 
     # Temperatures
     @staticmethod
