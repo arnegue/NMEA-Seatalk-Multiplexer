@@ -5,8 +5,10 @@ jobs:
     name: Run PyTest on Push
     runs-on: ubuntu-latest
     steps:      
+      - name: Install Python3-dev
+        run: sudo apt-get update && sudo apt-get install -y python3-dev
       - uses: actions/checkout@master
       - name: GitHub action for pytest
         uses: cclauss/GitHub-Action-for-pytest@master
         with:
-          args: apt update apt install python3-dev && python setup.py --verbose develop && pytest -sv
+          args: python setup.py --verbose develop && pytest -sv
