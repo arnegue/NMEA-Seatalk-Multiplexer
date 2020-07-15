@@ -26,7 +26,7 @@ def bytes_to_str(bytes):
     byte_str = ""
     for byte in bytes:
         byte_str += byte_to_str(byte)
-    return byte_str
+    return byte_str[:-1]  # Remove last space
 
 
 def get_numeric_byte_value(byte):

@@ -9,14 +9,6 @@ from nmea import nmea
 import device_io
 import inspect
 from seatalk import seatalk
-TCP_PIN_R = 14
-TCP_PIN_G = 7
-TCP_PIN_B = 6
-
-# USB0 Radio
-# USB1 GPS
-# USB2 Wind
-# USB3 Seatalk
 
 
 def create_devices_dict():
@@ -109,4 +101,3 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     curio.run(main, args.devices)
-

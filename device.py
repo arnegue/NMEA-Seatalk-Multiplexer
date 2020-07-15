@@ -131,4 +131,3 @@ class TaskDevice(Device, metaclass=ABCMeta):
             for task_handle in (self._write_task_handle, self._read_task_handle):
                 if task_handle:
                     await g.spawn(task_handle)
-

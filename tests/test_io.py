@@ -38,7 +38,7 @@ async def get_clients_server_fixture(amount_clients=2):
     for client in clients:
         await client.initialize()
 
-    async with curio.timeout_after(10): # Shouldn't take that long
+    async with curio.timeout_after(10):  # Shouldn't take that long
         while len(server.clients) != len(clients):
             await curio.sleep(0.5)  # Wait for clients to connect
 
