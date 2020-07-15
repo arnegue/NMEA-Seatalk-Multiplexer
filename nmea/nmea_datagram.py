@@ -185,6 +185,20 @@ class NMEADatagram(object, metaclass=ABCMeta):
         return f",{value}" if value is not None else ","
 
 
+class UnknownDatagram(NMEADatagram):
+    def __init__(self, nmea_string=""):
+        talker_id = nmea_string[1:3] if nmea_string else ""
+        tag = nmea_string[3:6] if nmea_string else ""
+        super().__init__(nmea_tag=tag, talker_id=talker_id)
+        self.nmea_string = nmea_string
+
+    def _parse_nmea_sentence(self, nmea_value_list: list):
+        pass
+
+    def _get_nmea_sentence(self) -> str:
+        return self.nmea_string
+
+
 class RecommendedMinimumSentence(NMEADatagram):
     def __init__(self, date=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode:FAAModeIndicator=None, *args, **kwargs):
         super().__init__("RMC", *args, **kwargs)
@@ -199,7 +213,6 @@ class RecommendedMinimumSentence(NMEADatagram):
 
         self._date_format_date = "%d%m%y"
         self._date_format_time = "%H%M%S.%f"  # TODO f = microseconds, not milliseconds?
-
 
     def _get_nmea_sentence(self):
         """

@@ -32,15 +32,14 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
 
-    async def _read_task(self):
+    async def _read_from_io_task(self):
         while True:
             try:
                 data_gram = await self.receive_data_gram()
 
                 # Now check if there is a corresponding NMEA-Datagram (e.g. SetLampIntensityDatagram does not have one)
                 if isinstance(data_gram, nmea_datagram.NMEADatagram):
-                    val = data_gram.get_nmea_sentence()
-                    await self._read_queue.put(val)
+                    await self._read_queue.put(data_gram)
                 else:
                     raise NoCorrespondingNMEASentence(data_gram)
             except SeatalkException:

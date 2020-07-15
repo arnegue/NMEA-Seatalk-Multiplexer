@@ -15,7 +15,7 @@ from helper import Orientation
 ))
 def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
     nmea_instance = NMEADatagram.parse_nmea_sentence(nmea_str)
-    nmea_instance.get_nmea_sentence()
+    nmea_instance.get_nmea_datagram()
 
     assert type(nmea_instance) == expected_type
     assert getattr(nmea_instance, value_name) == expected_value
