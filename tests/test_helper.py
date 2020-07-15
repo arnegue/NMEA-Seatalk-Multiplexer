@@ -107,3 +107,29 @@ def test_unit_converter(converting_function, expected_value):
     to_be_converted_value = 123.45
     actual_value = converting_function(to_be_converted_value)
     assert abs(actual_value - expected_value) < eps
+
+
+@pytest.mark.curio
+async def test_type_safe_queue():
+    class TestBase(object):
+        pass
+
+    class DerivedClass(TestBase):
+        pass
+
+    test_queue = TypeSafeQueue(TestBase)
+
+    # Test base-instance
+    test_item = TestBase()
+    await test_queue.put(test_item)
+    assert await test_queue.get() is test_item
+
+    # Test derived-instance
+    test_item = DerivedClass()
+    await test_queue.put(test_item)
+    assert await test_queue.get() is test_item
+
+    # Test wrong types
+    for test_item in (TestBase, DerivedClass, float, 1, "abc"):
+        with pytest.raises(TypeError):
+            await test_queue.put(test_item)
