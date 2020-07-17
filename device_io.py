@@ -23,6 +23,8 @@ class IO(object):
             except UnicodeDecodeError:
                 logger.error(f"{type(self).__name__}: Could not decode: {data}")
                 data = ""
+        else:
+            data = bytearray(data)
         return data
 
     async def write(self, data):
@@ -31,7 +33,7 @@ class IO(object):
                 data = data.encode(self._encoding)
             except UnicodeEncodeError:
                 logger.error(f"{type(self).__name__}: Could not encode: {data}")
-                data = bytes()
+                data = bytearray()
 
         async with self._read_write_lock:
             return await self._write(data)
@@ -60,7 +62,7 @@ class StdOutPrinter(IO):
     """
     async def _read(self, length=1):
         await curio.sleep(0)
-        return bytes([0])
+        return bytearray([0])
 
     async def _write(self, data):
         data = data.decode(self._encoding)

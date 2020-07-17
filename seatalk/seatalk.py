@@ -17,7 +17,12 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             super().__init__(device_name=device_name, terminator="\n")
 
         def write_raw_seatalk(self, rec, attribute, data):
-            data_gram_bytes = bytearray() + rec + attribute + data
+            data_gram_bytes = bytearray()
+            for value in rec, attribute, data:
+                if isinstance(value, bytearray):
+                    data_gram_bytes += value
+                else:
+                    data_gram_bytes.append(value)
             self.write_raw(bytes_to_str(data_gram_bytes))
 
     def __init__(self, name, io_device):
@@ -26,8 +31,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             for name, obj in inspect.getmembers(seatalk.seatalk_datagram):
                 # Abstract, non-private SeatalkDatagrams
                 if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
-                    instantiated_datagram = obj()
-                    self.__class__._seatalk_datagram_map[instantiated_datagram.seatalk_id] = obj
+                    self.__class__._seatalk_datagram_map[obj.seatalk_id] = obj
 
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
@@ -49,11 +53,11 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         """
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
-        cmd_byte = attribute = bytes()
+        cmd_byte = attribute = bytearray()
         data_bytes = bytearray()
         try:
             # Get Command-Byte
-            cmd_byte = await self._io_device.read(1)
+            cmd_byte = get_numeric_byte_value(await self._io_device.read(1))
             if cmd_byte in self.__class__._seatalk_datagram_map:
                 # Extract datagram and instantiate it
                 data_gram = self.__class__._seatalk_datagram_map[cmd_byte]()
