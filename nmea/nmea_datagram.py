@@ -273,7 +273,7 @@ class TrackMadeGoodGroundSpeed(NMEADatagram):
         value = self._append_tuple(self.course_over_ground_degree_true, 'T') + \
                 self._append_tuple(self.course_over_ground_degree_magnetic, 'M') + \
                 self._append_tuple(self.speed_over_ground_knots, 'N') + \
-                self._append_tuple(UnitConverter.nm_to_meter(self.speed_over_ground_knots) * 1000, 'K')
+                self._append_tuple(UnitConverter.nm_to_meter(self.speed_over_ground_knots) / 1000, 'K')
         if self.mode is not None:
             value += self._append_value(self.mode)
         return value
@@ -287,7 +287,7 @@ class TrackMadeGoodGroundSpeed(NMEADatagram):
             # Maybe kmh is given
             kmh = cast_if_at_position(nmea_value_list, 6, float)
             if kmh is not None:
-                self.speed_over_ground_knots = UnitConverter.meter_to_nm(kmh / 1000)
+                self.speed_over_ground_knots = UnitConverter.meter_to_nm(kmh * 1000)
 
         if len(nmea_value_list) == 9:  # Mode is not given every time
             self.mode = GPSModes(nmea_value_list[8]) if nmea_value_list[8] else nmea_value_list[8]
@@ -358,7 +358,7 @@ class SpeedThroughWater(NMEADatagram):
         return self._append_tuple(self.heading_degrees_true, 'T') +\
                self._append_tuple(self.heading_degrees_magnetic, 'M') +\
                self._append_tuple(self.speed_knots, 'N') +\
-               self._append_tuple(UnitConverter.nm_to_meter(self.speed_knots) * 1000, 'K')
+               self._append_tuple(UnitConverter.nm_to_meter(self.speed_knots) / 1000, 'K')
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         self.heading_degrees_true = nmea_value_list[0]

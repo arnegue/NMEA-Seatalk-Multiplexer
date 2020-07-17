@@ -14,11 +14,11 @@ from helper import Orientation
         ("$IIVHW,245.1,T,245.1,M,23.01,N,000.01,K*64\r\n",                                  SpeedThroughWater,          "speed_knots", 23.01)
 ))
 def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
-    nmea_instance = NMEADatagram.parse_nmea_sentence(nmea_str)
-    nmea_instance.get_nmea_datagram()
+    nmea_datagram_instance = NMEADatagram.parse_nmea_sentence(nmea_str)
+    nmea_datagram_instance.get_nmea_sentence()
 
-    assert type(nmea_instance) == expected_type
-    assert getattr(nmea_instance, value_name) == expected_value
+    assert type(nmea_datagram_instance) == expected_type
+    assert getattr(nmea_datagram_instance, value_name) == expected_value
 
 
 @pytest.mark.parametrize(("nmea_instance", "expected_string"), (
@@ -56,7 +56,7 @@ def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
                          ))
 def test_nmea_sentence_creation(nmea_instance, expected_string):
     nmea_sentence = nmea_instance.get_nmea_sentence()
-    assert expected_string == nmea_sentence
+    assert nmea_sentence == expected_string
 
 
 def test_message_without_data():
