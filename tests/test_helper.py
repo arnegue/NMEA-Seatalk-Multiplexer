@@ -96,7 +96,7 @@ def test_update_invalid_item():
                          (UnitConverter.meter_to_fathom,         67.5032),
                          (UnitConverter.fathom_to_meter,        225.7653),
                          (UnitConverter.meter_to_nm,              0.06665),
-                         (UnitConverter.nm_to_meter,             2.286294 * 10**5),
+                         (UnitConverter.nm_to_meter,         228629.4),
                          (UnitConverter.nm_to_sm,              142.063723),
                          (UnitConverter.sm_to_nm,              107.275117),
                          (UnitConverter.celsius_to_fahrenheit, 254.21),
