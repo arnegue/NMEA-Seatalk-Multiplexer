@@ -63,7 +63,7 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         """
         Checks if class attributes are set
         """
-        if cls.seatalk_id is None or cls.seatalk_id is None:
+        if cls.seatalk_id is None or cls.data_length is None:
             raise NotImplementedError(f"{cls.__name__}: SeatalkID ({cls.seatalk_id}) and/or DataLength ({cls.data_length}) is not set")
 
     def verify_data_length(self, data_len):
