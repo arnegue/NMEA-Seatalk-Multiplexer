@@ -81,10 +81,19 @@ class NMEADatagram(object, metaclass=ABCMeta):
     General NMEA-Datagram-Class
     """
     nmea_tag_datagram_map = None
+    nmea_tag = None
 
-    def __init__(self, nmea_tag, talker_id="--"):
-        self.nmea_tag = nmea_tag
-        self._talker_id = talker_id
+    def __init__(self, talker_id="--"):
+        self.talker_id = talker_id
+        self.__class_init__()
+
+    @classmethod
+    def __class_init__(cls):
+        """
+        Checks if class attributes are set
+        """
+        if cls.nmea_tag is None:
+            raise NotImplementedError(f"{cls.__name__}: NMEA-Tag ({cls.nmea_tag}) is not set")
 
     @classmethod
     def create_map(cls):
@@ -94,8 +103,7 @@ class NMEADatagram(object, metaclass=ABCMeta):
         cls.nmea_tag_datagram_map = dict()
         for name, obj in inspect.getmembers(sys.modules[__name__]):
             if inspect.isclass(obj) and issubclass(obj, NMEADatagram) and not inspect.isabstract(obj):
-                nmea_datagram = obj()  # TODO that's a little kinda bad to instantiate it just for the tag and then leave it unused
-                cls.nmea_tag_datagram_map[nmea_datagram.nmea_tag] = obj
+                cls.nmea_tag_datagram_map[obj.nmea_tag] = obj
 
     @classmethod
     def parse_nmea_sentence(cls, nmea_string: str):
@@ -115,7 +123,7 @@ class NMEADatagram(object, metaclass=ABCMeta):
         except KeyError as e:
             raise UnknownNMEATag(nmea_tag) from e
         nmea_datagram_instance = nmea_class()  # Create instance
-        nmea_datagram_instance._talker_id = nmea_string[1:3]  # Set Talker ID
+        nmea_datagram_instance.talker_id = nmea_string[1:3]  # Set Talker ID
 
         nmea_datagram_instance._parse_nmea_sentence(nmea_string[7:-5].split(","))  # Now parse it, start after nmea-tag, stop at checksum
         return nmea_datagram_instance
@@ -131,7 +139,7 @@ class NMEADatagram(object, metaclass=ABCMeta):
         """
         Returns NMEA-String from instance
         """
-        prefix = f"{self._talker_id}{self.nmea_tag}"
+        prefix = f"{self.talker_id}{self.nmea_tag}"
         data = prefix + self._get_nmea_sentence()
         checksum = self.create_checksum(data)
         return f"${data}*{checksum:02X}\r\n"
@@ -187,9 +195,9 @@ class NMEADatagram(object, metaclass=ABCMeta):
 
 class UnknownDatagram(NMEADatagram):
     def __init__(self, nmea_string=""):
-        talker_id = nmea_string[1:3] if nmea_string else ""
-        tag = nmea_string[3:6] if nmea_string else ""
-        super().__init__(nmea_tag=tag, talker_id=talker_id)
+        self.talker_id = nmea_string[1:3] if nmea_string else ""
+        self.tag = nmea_string[3:6] if nmea_string else ""
+        super().__init__()
         self.nmea_string = nmea_string
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
@@ -200,8 +208,10 @@ class UnknownDatagram(NMEADatagram):
 
 
 class RecommendedMinimumSentence(NMEADatagram):
+    nmea_tag = "RMC"
+
     def __init__(self, date=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode:FAAModeIndicator=None, *args, **kwargs):
-        super().__init__("RMC", *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.date = date
         self.valid_status = valid_status
         self.position = position
@@ -262,8 +272,10 @@ class RecommendedMinimumSentence(NMEADatagram):
 
 
 class TrackMadeGoodGroundSpeed(NMEADatagram):
+    nmea_tag = "VTG"
+
     def __init__(self, course_over_ground_degree_true=None, course_over_ground_degree_magnetic=None, speed_over_ground_knots=None, mode:GPSModes=None, *args, **kwargs):
-        super().__init__(nmea_tag="VTG", *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.course_over_ground_degree_true = course_over_ground_degree_true
         self.course_over_ground_degree_magnetic = course_over_ground_degree_magnetic
         self.speed_over_ground_knots = speed_over_ground_knots
@@ -294,8 +306,10 @@ class TrackMadeGoodGroundSpeed(NMEADatagram):
 
 
 class GPSDOPActiveSatellites(NMEADatagram):
+    nmea_tag = "GSA"
+
     def __init__(self, mode_1: GPSModes=None, mode_2: GPSFixType=None, list_satellite_ids=None, pdop=None, hdop=None, vdop=None,  *args, **kwargs):
-        super().__init__(nmea_tag="GSA", *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.mode_1 = mode_1
         self.mode_2 = mode_2
         self.list_satellite_ids = list_satellite_ids
@@ -317,8 +331,10 @@ class GPSDOPActiveSatellites(NMEADatagram):
 
 
 class DepthBelowKeel(NMEADatagram):
+    nmea_tag = "DBT"
+
     def __init__(self, depth_m=None, *args, **kwargs):
-        super().__init__(nmea_tag="DBT", *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.depth_m = depth_m
 
     def _get_nmea_sentence(self):
@@ -344,8 +360,10 @@ class DepthBelowKeel(NMEADatagram):
 
 
 class SpeedThroughWater(NMEADatagram):
+    nmea_tag = "VHW"
+
     def __init__(self, speed_knots=None, heading_degrees_true=None, heading_degrees_magnetic=None, *args, **kwargs):
-        super().__init__(nmea_tag="VHW", *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.speed_knots = speed_knots
         self.heading_degrees_true = heading_degrees_true
         self.heading_degrees_magnetic = heading_degrees_magnetic
@@ -367,8 +385,10 @@ class SpeedThroughWater(NMEADatagram):
 
 
 class WaterTemperature(NMEADatagram):
+    nmea_tag = "MTW"
+
     def __init__(self, temperature_c=None, *args, **kwargs):
-        super().__init__(nmea_tag="MTW", *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.temperature_c = temperature_c
 
     def _get_nmea_sentence(self):
@@ -382,8 +402,10 @@ class WaterTemperature(NMEADatagram):
 
 
 class WindSpeedAndAngle(NMEADatagram):
+    nmea_tag = "MWV"
+
     def __init__(self, angle_degree=None, reference_true=None, speed_knots=None, validity: NMEAValidity=None, *args, **kwargs):
-        super().__init__("MWV", *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.angle_degree = angle_degree
         self.reference_true = reference_true
         self.speed_knots = speed_knots
