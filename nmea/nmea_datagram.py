@@ -196,15 +196,22 @@ class NMEADatagram(object, metaclass=ABCMeta):
 class UnknownDatagram(NMEADatagram):
     def __init__(self, nmea_string=""):
         self.talker_id = nmea_string[1:3] if nmea_string else ""
-        self.tag = nmea_string[3:6] if nmea_string else ""
+        self._set_nmea_tag(nmea_string)
         super().__init__()
         self.nmea_string = nmea_string
+
+    @classmethod
+    def _set_nmea_tag(cls, nmea_string):
+        cls.nmea_tag =  nmea_string[3:6] if nmea_string else ""
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         pass
 
-    def _get_nmea_sentence(self) -> str:
+    def get_nmea_sentence(self) -> str:
         return self.nmea_string
+
+    def _get_nmea_sentence(self):
+        pass  # Not needed here
 
 
 class RecommendedMinimumSentence(NMEADatagram):
