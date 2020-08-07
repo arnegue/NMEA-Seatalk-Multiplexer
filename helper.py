@@ -145,16 +145,3 @@ def cast_if_at_position(values, index, cast):
     except (TypeError, ValueError):
         return None
 
-
-class TypeSafeQueue(curio.Queue):
-    def __init__(self, queue_type, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._queue_type = queue_type
-
-    async def put(self, item):
-        """
-        Check instance before enqueuing
-        """
-        if not isinstance(item, self._queue_type):
-            raise TypeError(f"Wrong type of item. Expected: {self._queue_type.__name__}, actual: {type(item).__name__}")
-        await super().put(item)
