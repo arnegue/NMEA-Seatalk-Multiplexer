@@ -84,8 +84,11 @@ class TCP(IO, ABC):
         self._write_task_handle = None
 
         self._read_write_size = 1000
-        self._read_queue = curio.Queue(self._read_write_size)
+        self._init_queues()
         self._temp_read_block = None
+
+    def _init_queues(self):
+        self._read_queue = curio.Queue(self._read_write_size)
         self._write_queue = curio.Queue(self._read_write_size)
 
     async def _read(self, length=1):
@@ -144,6 +147,9 @@ class TCP(IO, ABC):
             self._address = ""
             raise Exception("Close connection")
 
+    async def flush(self):
+        self._init_queues()  # TODO is there a better way to clear queues? This is just dumping everything to the garbage collector
+
     async def initialize(self):
         self._write_task_handle = await curio.spawn(self._write_task)
 
@@ -195,6 +201,7 @@ class TCPClient(TCP):
             except (TimeoutError, ConnectionError, OSError) as e:
                 # Reconnect if theses errors occur
                 logger.error(F"{type(self).__name__}: ConnectionError: {repr(e)}")
+                await curio.sleep(5)
 
 
 class File(IO):
