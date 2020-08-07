@@ -69,7 +69,7 @@ async def device_receiver_task(device_):
             try:
                 logger.info(f"Trying to get NMEA-Sentence from {device_.get_name()}....")
                 sentence = await device_.get_nmea_datagram()
-                logger.info(f"Received {sentence}")
+                logger.info(f"Received {sentence.__class__.__name__}")
             except curio.TaskTimeout:
                 logger.warn(f"Timeout reading from {device_.get_name()}")  # Wont work sometimes
                 continue
