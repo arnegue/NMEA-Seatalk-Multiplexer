@@ -206,6 +206,7 @@ class EquipmentIDDatagram1(_TwoWayDictDatagram):
     class Equipments(enum.IntEnum):
         Course_Computer_400G = enum.auto()
         ST60_Tridata = enum.auto()
+        ST60_Tridata_Plus = enum.auto()
         ST60_Log = enum.auto()
         ST80_Masterview = enum.auto()
         ST80_Maxi_Display = enum.auto()
@@ -215,6 +216,7 @@ class EquipmentIDDatagram1(_TwoWayDictDatagram):
         equipment_map = TwoWayDict({
             bytes([0x00, 0x00, 0x00, 0x60, 0x01, 0x00]): self.Equipments.Course_Computer_400G,
             bytes([0x04, 0xBA, 0x20, 0x28, 0x01, 0x00]): self.Equipments.ST60_Tridata,
+            bytes([0x87, 0x72, 0x25, 0x28, 0x01, 0x00]): self.Equipments.ST60_Tridata_Plus,
             bytes([0x70, 0x99, 0x10, 0x28, 0x01, 0x00]): self.Equipments.ST60_Log,
             bytes([0xF3, 0x18, 0x00, 0x26, 0x0F, 0x06]): self.Equipments.ST80_Masterview,
             bytes([0xFA, 0x03, 0x00, 0x30, 0x07, 0x03]): self.Equipments.ST80_Maxi_Display,
@@ -512,7 +514,7 @@ class CancelMOB(SeatalkDatagram):
 
     def process_datagram(self, first_half_byte, data):
         if data != self._expected_byte:
-            raise DataValidationException(f"{type(self).__name__}:Expected {self._expected_byte}, got {data} instead.")
+            raise DataValidationException(f"{type(self).__name__}: Expected {self._expected_byte}, got {data} instead.")
 
     def get_seatalk_datagram(self):
         return bytearray([self.seatalk_id, self.data_length]) + self._expected_byte
@@ -1022,11 +1024,14 @@ class CountDownTimer(SeatalkDatagram):
 
     def process_datagram(self, first_half_byte, data):
         if first_half_byte != 0x02:
-            raise DataValidationException(f"First half byte is not 0x02 but {byte_to_str(first_half_byte)}")
+            raise DataValidationException(f"{type(self).__name__}: First half byte is not 0x02 but {byte_to_str(first_half_byte)}")
         self.seconds = data[0]
         self.minutes = data[1]
         self.hours = data[2] & 0x0F
-        self.mode = self.CounterMode(data[2] >> 4)
+        try:  # At startup ST60+ sends 0x59 0x22 0x00 0x59 0x59
+            self.mode = self.CounterMode(data[2] >> 4)
+        except ValueError:
+            raise DataValidationException(f"{type(self).__name__}: CounterMode invalid: {data[2] >> 4}")
 
     def get_seatalk_datagram(self):
         first_byte = (0x02 << 4) | self.data_length
@@ -1046,7 +1051,7 @@ class E80Initialization(SeatalkDatagram):
 
     def process_datagram(self, first_half_byte, data):
         if not (first_half_byte == 0 and data[0] == 0x03 and data[1] == data[2] == data[3] == 0x00):
-            raise DataValidationException(f"Cannot recognize given data: {byte_to_str(self.seatalk_id)}{byte_to_str(first_half_byte << 4 | self.data_length)}{bytes_to_str(data)}")
+            raise DataValidationException(f"{type(self).__name__}: Cannot recognize given data: {byte_to_str(self.seatalk_id)}{byte_to_str(first_half_byte << 4 | self.data_length)}{bytes_to_str(data)}")
 
     def get_seatalk_datagram(self):
         return bytearray([self.seatalk_id, self.data_length, 0x03, 0x00, 0x00, 0x00])
@@ -1065,7 +1070,7 @@ class SelectFathom(SeatalkDatagram):
 
     def process_datagram(self, first_half_byte, data):
         if data[0] != self.byte_value:
-            raise DataValidationException(f"Expected byte {self.byte_value}, got {byte_to_str(data[0])}instead")
+            raise DataValidationException(f"{type(self).__name__}: Expected byte {self.byte_value}, got {byte_to_str(data[0])} instead")
 
     def get_seatalk_datagram(self):
         return bytearray([self.seatalk_id, self.data_length, self.byte_value])
@@ -1162,12 +1167,14 @@ class EquipmentIDDatagram2(_TwoWayDictDatagram):
 
     class Equipments(enum.IntEnum):
         ST60_Tridata = enum.auto()
+        ST60_Tridata_Plus = enum.auto()
         ST60_Log = enum.auto()
         ST80_Masterview = enum.auto()
 
     def __init__(self, equipment_id: Equipments=None):
         equipment_map = TwoWayDict({
             bytes([0x04, 0xBA, 0x20, 0x28, 0x2D, 0x2D]): self.Equipments.ST60_Tridata,
+            bytes([0x87, 0x72, 0x25, 0x28, 0x2D, 0x2D]): self.Equipments.ST60_Tridata_Plus,
             bytes([0x05, 0x70, 0x99, 0x10, 0x28, 0x2D]): self.Equipments.ST60_Log,
             bytes([0xF3, 0x18, 0x00, 0x26, 0x2D, 0x2D]): self.Equipments.ST80_Masterview,
         })
