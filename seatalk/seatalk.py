@@ -25,8 +25,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                     data_gram_bytes.append(value)
             self.write_raw(bytes_to_str(data_gram_bytes))
 
-    def __init__(self, name, io_device):
-        super().__init__(name=name, io_device=io_device)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if len(self.__class__._seatalk_datagram_map) == 0:
             for name, obj in inspect.getmembers(seatalk.seatalk_datagram):
                 # Abstract, non-private SeatalkDatagrams
@@ -48,6 +48,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                     raise NoCorrespondingNMEASentence(data_gram)
             except SeatalkException:
                 pass
+            finally:
+                await self._check_flush()
 
     async def receive_data_gram(self):
         """

@@ -24,6 +24,7 @@
   },
   "GPS": {
     "type": "NMEADevice",
+    "auto_flush": 10,
     "device_io": {
       "type": "Serial",
       "port": "/dev/ttyUSB1",

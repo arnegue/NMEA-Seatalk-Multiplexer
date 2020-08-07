@@ -4,9 +4,6 @@ import logger
 
 
 class NMEADevice(TaskDevice):
-    def __init__(self, name, io_device):
-        super().__init__(name=name, io_device=io_device)
-
     async def _read_from_io_task(self):
         while True:
             data = await self._receive_until_new_line()
@@ -23,6 +20,8 @@ class NMEADevice(TaskDevice):
                 self._logger.error(data)
                 logger.error(f"Could not read from {self.get_name()}: {repr(e)}")
                 continue
+            finally:
+                await self._check_flush()
 
     async def _receive_until_new_line(self):
         received = ""

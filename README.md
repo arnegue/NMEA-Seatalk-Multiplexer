@@ -130,6 +130,7 @@ A typical device is built like this:
 
 * The ``DeviceName`` is up to you but must be unique and is important for the ``observers``-section
 * The ``type`` specifies the type of data the devices receives (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
+* Optional setting ``auto_flush: x``: Flushes IO every time every ``x`` datagrams where received.
 * ``device_io`` sets the IO-Settings needed for communication to that device (explained below).
   * Every ``device_io`` needs at least ``type`` to ensure which I/O to be used.
   * Settings ``encoding`` is optional for every ``device_io``
@@ -210,12 +211,14 @@ This may be the most important section.
 * parity - default None
 
 Given example shows a Seatalk-Device on port ``/dev/ttyUSB3`` with parity set to ``Mark`` without(!) encoding.
-Additionally the observer "MyTCPServer" is listening to this device. 
+Additionally the observer "MyTCPServer" is listening to this device.
+Furthermore the IO gets flushed after 10 datagrams were received (set with optional ``auto_flush``).
 
 ```json
 { 
   "Seatalk": {
-   "type": "SeatalkDevice",
+   "type": "SeatalkDevice", 
+   "auto_flush": 10,
    "device_io": {
      "type": "Serial",
      "port": "/dev/ttyUSB3",

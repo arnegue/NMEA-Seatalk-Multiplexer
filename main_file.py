@@ -36,7 +36,8 @@ async def create_devices(path):
     device_instance_dict = {}
     for name in content:
         device_dict = content[name]
-        device_type = device_classes_dict[device_dict['type']]
+        device_type = device_classes_dict[device_dict["type"]]
+        auto_flush = device_dict.get("auto_flush", None)
 
         device_io_dict = device_dict["device_io"]
         device_io_type = device_io_dict.pop("type")
@@ -45,7 +46,7 @@ async def create_devices(path):
         # Passes named parameters to to-be-created-objects (even None)
         # if parameter is not given, default value will be assumed
         device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if (v is not None)})
-        device_instance = device_type(name=name, io_device=device_io_instance)
+        device_instance = device_type(name=name, io_device=device_io_instance, auto_flush=auto_flush)
         logger.info(f"Instantiated Device {name} of type: {device_type.__name__}, IO {device_io_class.__name__}")
         device_instance_dict[name] = device_instance
 

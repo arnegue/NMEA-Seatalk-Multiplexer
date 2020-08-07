@@ -18,11 +18,22 @@ class Device(object, metaclass=ABCMeta):
         def write_raw(self, data):
             self.info(data)
 
-    def __init__(self, name, io_device: device_io.IO):
+    def __init__(self, name, io_device: device_io.IO, auto_flush: int = None):
+        """
+        Initializes Device
+
+        :param name: Name of device. For debugging purposes
+        :param io_device: Instance if IO to receive data from
+        :param auto_flush: Optional: Flushes IO after every x received datagram
+        """
         self._name = name
         self._io_device = io_device
         self._observers = set()
         self._logger = self._get_data_logger()
+
+        # Look in _check_flush(self) for more info
+        self._auto_flush = auto_flush
+        self._flush_idx = 0
 
     def _get_data_logger(self):
         return self.RawDataLogger(self._name)
@@ -72,13 +83,24 @@ class Device(object, metaclass=ABCMeta):
         """
         await self._io_device.cancel()
 
+    async def _check_flush(self):
+        """
+        Checks if auto-flush is set. If true: Increase index and check if it reached auto_flush. If is reached, flush io
+        Warning: Only call this if flushing needs to be checked: Changes state of flush_index
+        """
+        if self._auto_flush:
+            self._flush_idx += 1
+            if self._flush_idx >= self._auto_flush:
+                await self._io_device.flush()
+                self._flush_idx = 0
+
 
 class TaskDevice(Device, metaclass=ABCMeta):
     """
     Device implemented as "parallely" running tasks with buffered queues
     """
-    def __init__(self, name, io_device, max_queue_size=10):
-        super().__init__(name, io_device)
+    def __init__(self, max_queue_size=10, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._write_queue = TypeSafeQueue(NMEADatagram, maxsize=max_queue_size)  # only nmea-datagrams
         self._read_queue = TypeSafeQueue(NMEADatagram, maxsize=max_queue_size)   # only nmea-datagrams
         self._write_task_handle = None
