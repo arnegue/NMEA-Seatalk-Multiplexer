@@ -6,7 +6,7 @@ import logger
 class NMEADevice(TaskDevice):
     async def _read_from_io_task(self):
         while True:
-            data = await self._receive_until_new_line()
+            data = await self._receive_datagram()
             try:
                 NMEADatagram.verify_checksum(data)
                 try:
@@ -23,16 +23,21 @@ class NMEADevice(TaskDevice):
             finally:
                 await self._check_flush()
 
-    async def _receive_until_new_line(self):
+    async def _receive_datagram(self):
         received = ""
-        while 1:
-            try:
-                data = await self._io_device.read()
-                received += data
-                if data == "\n":
+
+        try:
+            # First receive start of nmea-message (either '$' or '!')
+            received = ""
+            while received != "$" and received != "!":
+                received = await self._io_device.read(1)
+
+            while 1:
+                received += await self._io_device.read(1)
+                if received[-1] == "\n":
                     self._logger.write_raw(received)
                     return received
-            except TypeError as e:
-                logger.error(f"{self.get_name()}: Error when reading. Wrong encoding?\n{repr(e)}")
-                self._logger.error(received)
-                return ""
+        except TypeError as e:
+            logger.error(f"{self.get_name()}: Error when reading. Wrong encoding?\n{repr(e)}")
+            self._logger.error(received)
+            return ""
