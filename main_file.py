@@ -77,7 +77,7 @@ async def device_receiver_task(device_):
                 for observer in observers:
                     logger.info(f"Writing to device: {observer.get_name()}")
                     await g.spawn(observer.write_to_device, sentence)
-            await curio.sleep()
+            await curio.sleep(0)
     else:
         logger.info(f"Device {device_.get_name()} doesn't have observers")
 
