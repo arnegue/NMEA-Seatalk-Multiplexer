@@ -202,7 +202,7 @@ class UnknownDatagram(NMEADatagram):
 
     @classmethod
     def _set_nmea_tag(cls, nmea_string):
-        cls.nmea_tag =  nmea_string[3:6] if nmea_string else ""
+        cls.nmea_tag = nmea_string[3:6] if nmea_string else ""
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         pass
