@@ -21,8 +21,10 @@ class IO(object):
             try:
                 data = data.decode(self._encoding)
             except UnicodeDecodeError:
-                logger.error(f"Could not decode: {data}")
+                logger.error(f"{type(self).__name__}: Could not decode: {data}")
                 data = ""
+        else:
+            data = bytearray(data)
         return data
 
     async def write(self, data):
@@ -30,11 +32,14 @@ class IO(object):
             try:
                 data = data.encode(self._encoding)
             except UnicodeEncodeError:
-                logger.error(f"Could not encode: {data}")
-                data = bytes()
+                logger.error(f"{type(self).__name__}: Could not encode: {data}")
+                data = bytearray()
 
         async with self._read_write_lock:
             return await self._write(data)
+
+    async def flush(self):
+        pass
 
     @abstractmethod
     async def _read(self, length=1):
@@ -56,12 +61,14 @@ class StdOutPrinter(IO):
     IO-Class for StdOut
     """
     async def _read(self, length=1):
-        await curio.sleep(1)
-        return bytes([0])
+        await curio.sleep(0)
+        return bytearray([0])
 
     async def _write(self, data):
         data = data.decode(self._encoding)
-        logger.info(data)
+        logger.info(f"{type(self).__name__}: {data}")
+        await curio.sleep(0)
+        return len(data)
 
 
 class TCP(IO, ABC):
@@ -70,75 +77,102 @@ class TCP(IO, ABC):
     """
     def __init__(self, port, encoding=False):
         super().__init__(encoding)
-        self.client = None
+        self.clients = []
         self._port = int(port)
         self._address = ""
 
         self._write_task_handle = None
 
-        self._read_write_size = 10
+        self._read_write_size = 1000
+        self._init_queues()
+        self._temp_read_block = None
+
+    def _init_queues(self):
         self._read_queue = curio.Queue(self._read_write_size)
         self._write_queue = curio.Queue(self._read_write_size)
 
     async def _read(self, length=1):
         byte_array = bytearray()
         for _ in range(length):
-            data = await self._read_queue.get()
+            if self._temp_read_block is None or len(self._temp_read_block) == 0:
+                self._temp_read_block = await self._read_queue.get()
+
+            data = self._temp_read_block[:1]
+            self._temp_read_block = self._temp_read_block[1:]
             byte_array += data
         return byte_array
 
     async def _write(self, data):
-        if not self.client:
-            logger.info("TCP: Not writing, no client connected")
+        if not self.clients:
+            logger.info(f"{type(self).__name__}: Not writing, no client connected")
+            return 0
         if self._write_queue.full():
-            logger.warn(f"TCP {self._address}:{self._port} Write-Queue is full. Not writing")
+            logger.warn(f"{type(self).__name__}: {self._address}:{self._port} Write-Queue is full. Not writing")
+            return 0
         else:
             await self._write_queue.put(data)
+            return len(data)
 
     async def cancel(self):
-        await self.client.close()
+        await self._write_task_handle.cancel()
+        async with curio.TaskGroup() as g:
+            for client in self.clients:
+                await g.spawn(client.close)
 
     async def _write_task(self):
         while True:
             data = await self._write_queue.get()
-            await self.client.sendall(data)
+            for client in self.clients:
+                async with curio.TaskGroup() as g:
+                    await g.spawn(client.sendall, data)
 
     async def _serve_client(self, client, address):
         self._address = address
-        logger.info(f"Client {address[0]}:{address[1]} connected")
-        if self.client:
-            logger.error("Only one client allowed")
-            await client.close()
-            return
+        logger.info(f"{type(self).__name__}: Client {address[0]}:{address[1]} connected")
 
-        self._write_task_handle = await curio.spawn(self._write_task)
         try:
-            self.client = client
+            self.clients.append(client)
             while True:
                 data_block = await client.recv(self._read_write_size)
                 if not data_block:  # disconnected
                     break
-                for data in data_block:  # put every letter in it
-                    if self._read_queue.full():
-                        logger.warn(f"TCP {self._address}:{self._port} Read-Queue is full. Not reading")
-                    else:
-                        await self._read_queue.put(data.to_bytes(1, "big"))
-        except Exception:
-            await client.close()
-            raise
+                if self._read_queue.full():
+                    logger.warn(f"TCP {self._address}:{self._port} Read-Queue is full. Not reading")
+                else:
+                    await self._read_queue.put(data_block)
         finally:
-            logger.warn(f"Client {address} closed connection")
-            await self._write_task_handle.cancel()
-            self.client = None
+            await client.close()
+            logger.info(f"{type(self).__name__}: Client {address[0]}:{address[1]} disconnected")
+            self.clients.remove(client)
             self._address = ""
+            raise Exception("Close connection")
+
+    async def flush(self):
+        self._init_queues()  # TODO is there a better way to clear queues? This is just dumping everything to the garbage collector
+
+    async def initialize(self):
+        self._write_task_handle = await curio.spawn(self._write_task)
 
 
 class TCPServer(TCP):
     """
     TCP-Server Class
     """
+    def __init__(self, port, encoding=False):
+        super().__init__(port, encoding)
+        self.server_task = None
+
     async def initialize(self):
-        await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
+        await super().initialize()
+        self.server_task = await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
+
+    async def cancel(self):
+        await self.server_task.cancel()
+
+        async with curio.timeout_after(10):
+            while len(self.clients) < 0:
+                await curio.sleep(0.5)
+        await super().cancel()
 
 
 class TCPClient(TCP):
@@ -151,6 +185,7 @@ class TCPClient(TCP):
         self._serve_client_task = None
 
     async def initialize(self):
+        await super().initialize()
         self._serve_client_task = await curio.spawn(self._open_connection)
 
     async def cancel(self):
@@ -160,12 +195,13 @@ class TCPClient(TCP):
     async def _open_connection(self):
         while True:
             try:
-                logger.info(f"Trying to connect to {self._ip}:{self._port}...")
-                client = await curio.open_connection(self._ip, self._port)
-                await self._serve_client(client, (self._ip, self._port))
+                logger.info(f"{type(self).__name__}: Trying to connect to {self._ip}:{self._port}...")
+                connection = await curio.open_connection(self._ip, self._port)
+                await self._serve_client(connection, (self._ip, self._port))
             except (TimeoutError, ConnectionError, OSError) as e:
-                logger.error("ConnectionError: " + repr(e))
-                await curio.sleep(1)
+                # Reconnect if theses errors occur
+                logger.error(F"{type(self).__name__}: ConnectionError: {repr(e)}")
+                await curio.sleep(5)
 
 
 class File(IO):
@@ -180,7 +216,6 @@ class File(IO):
     async def _read(self, length=1):
         async with curio.aopen(self._path_to_file, "rb") as file:
             lines = await file.read()
-        # TODO no strings
         ret_val = lines[self._last_index:(self._last_index + length)]
         self._last_index += length
         if ret_val == "":
@@ -221,6 +256,11 @@ class Serial(IO):
 
     async def _read(self, length=1):
         return await curio.run_in_thread(partial(self._serial.read, length))
+
+    async def flush(self):
+        self._serial.flush()
+        self._serial.reset_input_buffer()
+        self._serial.reset_output_buffer()
 
     async def cancel(self):
         self._serial.cancel_read()

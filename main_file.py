@@ -5,18 +5,10 @@ import argparse
 
 import curio_wrapper
 import device
-import nmea
+from nmea import nmea
 import device_io
 import inspect
-import seatalk
-TCP_PIN_R = 14
-TCP_PIN_G = 7
-TCP_PIN_B = 6
-
-# USB0 Radio
-# USB1 GPS
-# USB2 Wind
-# USB3 Seatalk
+from seatalk import seatalk
 
 
 def create_devices_dict():
@@ -44,7 +36,8 @@ async def create_devices(path):
     device_instance_dict = {}
     for name in content:
         device_dict = content[name]
-        device_type = device_classes_dict[device_dict['type']]
+        device_type = device_classes_dict[device_dict["type"]]
+        auto_flush = device_dict.get("auto_flush", None)
 
         device_io_dict = device_dict["device_io"]
         device_io_type = device_io_dict.pop("type")
@@ -53,7 +46,7 @@ async def create_devices(path):
         # Passes named parameters to to-be-created-objects (even None)
         # if parameter is not given, default value will be assumed
         device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if (v is not None)})
-        device_instance = device_type(name=name, io_device=device_io_instance)
+        device_instance = device_type(name=name, io_device=device_io_instance, auto_flush=auto_flush)
         logger.info(f"Instantiated Device {name} of type: {device_type.__name__}, IO {device_io_class.__name__}")
         device_instance_dict[name] = device_instance
 
@@ -75,8 +68,8 @@ async def device_receiver_task(device_):
         while True:
             try:
                 logger.info(f"Trying to get NMEA-Sentence from {device_.get_name()}....")
-                sentence = await device_.get_nmea_sentence()
-                logger.info(f"Received {sentence}")
+                sentence = await device_.get_nmea_datagram()
+                logger.info(f"Received {sentence.__class__.__name__}")
             except curio.TaskTimeout:
                 logger.warn(f"Timeout reading from {device_.get_name()}")  # Wont work sometimes
                 continue
@@ -84,7 +77,7 @@ async def device_receiver_task(device_):
                 for observer in observers:
                     logger.info(f"Writing to device: {observer.get_name()}")
                     await g.spawn(observer.write_to_device, sentence)
-            await curio.sleep(1)
+            await curio.sleep(0)
     else:
         logger.info(f"Device {device_.get_name()} doesn't have observers")
 
@@ -109,4 +102,3 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     curio.run(main, args.devices)
-

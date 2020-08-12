@@ -58,4 +58,6 @@ class GeneralLogger(Logger, metaclass=Singleton):
 warn = info = error = None
 if warn is info is error is None:
     logger = GeneralLogger()
-    warn = logger.warn; info = logger.info; error = logger.error
+    warn = logger.warn
+    info = logger.info
+    error = logger.error

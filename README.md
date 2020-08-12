@@ -22,7 +22,7 @@ It was a little too much just for testing to set up a remote-debugger and cross 
   * Seatalk (writing partially supported because of missing bit-toggling when writing to interface)
   * (I2C for NASA-Clipper-Devices to be done, [similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
 * Support for IO:
-  * TCP (Client and Server, currently only one client allowed)
+  * TCP (Client and Server)
   * File
   * Serial
   * StdOut (only out)
@@ -39,20 +39,68 @@ Start the program like this:
 
 ### NMEA 0183
 
-Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. No parsing is happening here.
+Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. Usually no parsing (but checksum) is happening.
+
+But some parsing/creation of NMEA-Sentences are supported:
+* RMC (Recommended Minimum Sentence) 
+* VHW (Speed Through Water)
+* DBT (Depth Below Keel)
+* MTW (Water Temperature) 
+* MWV (Wind Speed and Angle)
 
 ### Seatalk 1
  
 A big part of help for parsing Seatalk-Sentences and building hardware to be able to receive has come from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
 
-Supported (and tested on ST50 and ST60) Seatalk-IDs:
+As written above: Writing to bus is buggy right now because of missing bit-toggling
+Some Seatalk-Messages do not have a corresponding NMEA-Sentence. 
 
-* 0x00 - Depth
-* 0x20 - Speed through water
-* 0x23 - Water Temperature
-* 0x26 - Speed through water
-* 0x27 - Water Temperature
-* 0x30 - Set Lamp Intensity (No corresponding NMEA), only receiving possible
+#### Supported (and tested on ST50 and ST60) Seatalk-IDs:
+
+* 0x00 - Depth below transducer
+* 0x20 - Speed through water (1)
+* 0x23 - Water Temperature (1)
+* 0x24 - Set Display Unit for Mileage and Speed
+* 0x26 - Speed through water (2)
+* 0x27 - Water Temperature (2)
+* 0x30 - Set Lamp Intensity (1)
+
+#### Implemented but untested (missing Equipment) Seatalk-IDs:
+
+* 0x01 - Equipment ID (1)
+* 0x10 - Apparent Wind Angle
+* 0x11 - Apparent Wind Speed
+* 0x21 - Trip Mileage
+* 0x22 - Total Mileage
+* 0x25 - Total & Trip Log
+* 0x36 - Cancel MOB
+* 0x38 - CodeLock Data
+* 0x50 - Latitude
+* 0x51 - Longitude
+* 0x52 - Speed Over Ground
+* 0x53 - Course Over Ground
+* 0x54 - GMT-Time
+* 0x55 - KeyStroke (1)
+* 0x56 - Date
+* 0x57 - Satellite Info
+* 0x58 - Position
+* 0x59 - Set Count Down Timer
+* 0x61 - E80-Initialization
+* 0x65 - Select Fathom
+* 0x66 - Wind Alarm
+* 0x68 - Alarm Acknowledgment Keystroke
+* 0x6C - Equipment ID (2)
+* 0x6E - Man Over Board
+* 0x80 - Set Lamp Intensity (2)
+* 0x81 - Course Computer Setup
+* 0x86 - KeyStroke (2)
+* 0x87 - Set Response Level
+* 0x90 - Device Identification (2)
+* 0x91 - Set Rudder Gain
+* 0x93 - Enter AP-Setup
+* 0xA4 - Device Identification (BroadCast, Termination, Answer)
+
+(n) means there are multiple Datagrams with same/similar meaning.
 
 ### I2C
 
@@ -82,6 +130,7 @@ A typical device is built like this:
 
 * The ``DeviceName`` is up to you but must be unique and is important for the ``observers``-section
 * The ``type`` specifies the type of data the devices receives (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
+* Optional setting ``auto_flush: x``: Flushes IO every time every ``x`` datagrams where received.
 * ``device_io`` sets the IO-Settings needed for communication to that device (explained below).
   * Every ``device_io`` needs at least ``type`` to ensure which I/O to be used.
   * Settings ``encoding`` is optional for every ``device_io``
@@ -98,15 +147,17 @@ You can create either a TCP-Server or a -Client
 This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-Encoding. This device's type is NMEADevice. So it only transmits/receives NMEA-Strings.
 
 ```json
-"MyTCPServer": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "TCPServer",
-    "port": 9900,
-    "encoding": "ASCII"
-  },
-  "observers": [
-  ]
+{
+  "MyTCPServer": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "TCPServer",
+      "port": 9900,
+      "encoding": "ASCII"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
  
@@ -115,16 +166,18 @@ This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-E
 This example creates a client which will try to connect to ``172.24.1.1:9901``. Setting ``ip`` to a hostname does also work.
 
 ```json
-"MyTCPClient": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "TCPClient",
-    "port": 9901,
-    "ip": "172.24.1.1",
-    "encoding": "ASCII"
-  },
-  "observers": [
-  ]
+{
+  "MyTCPClient": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "TCPClient",
+      "port": 9901,
+      "ip": "172.24.1.1",
+      "encoding": "ASCII"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
  
@@ -133,15 +186,17 @@ This example creates a client which will try to connect to ``172.24.1.1:9901``. 
 This example reads/writes from/to file located at ``/tmp/my_nmea_file.txt``.
 
 ```json
-"MyFileReadWriter": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "File",
-    "path": "/tmp/my_nmea_file.txt",
-    "encoding": "ASCII"
-  },
-  "observers": [
-  ]
+{
+  "MyFileReadWriter": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "File",
+      "path": "/tmp/my_nmea_file.txt",
+      "encoding": "ASCII"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
 
@@ -156,19 +211,23 @@ This may be the most important section.
 * parity - default None
 
 Given example shows a Seatalk-Device on port ``/dev/ttyUSB3`` with parity set to ``Mark`` without(!) encoding.
-Additionally the observer "MyTCPServer" is listening to this device. 
+Additionally the observer "MyTCPServer" is listening to this device.
+Furthermore the IO gets flushed after 10 datagrams were received (set with optional ``auto_flush``).
 
 ```json
-"Seatalk": {
-  "type": "SeatalkDevice",
-  "device_io": {
-    "type": "Serial",
-    "port": "/dev/ttyUSB3",
-    "parity": "Mark"
-  },
-  "observers": [
-    "MyTCPServer"
-  ]
+{ 
+  "Seatalk": {
+   "type": "SeatalkDevice", 
+   "auto_flush": 10,
+   "device_io": {
+     "type": "Serial",
+     "port": "/dev/ttyUSB3",
+     "parity": "Mark"
+   },
+   "observers": [
+     "MyTCPServer"
+   ]
+  }
 }
 ```
 
@@ -178,14 +237,16 @@ Additionally the observer "MyTCPServer" is listening to this device.
 This devices just prints out to StdOut (StdIn currently not supported):
 
 ```json
-"MyConsoleSpammer": {
-  "type": "NMEADevice",
-  "device_io": {
-    "type": "StdOutPrinter",
-    "encoding": "UTF-8"
-  },
-  "observers": [
-  ]
+{
+  "MyConsoleSpammer": {
+    "type": "NMEADevice",
+    "device_io": {
+      "type": "StdOutPrinter",
+      "encoding": "UTF-8"
+    },
+    "observers": [
+    ]
+  }
 }
 ```
 
@@ -223,4 +284,4 @@ Also mentioned in `setup.py`:
 * contextvars (site-dependency of curio)
 * pyserial
 
-To install these packages: h `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
+To install these packages: `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
