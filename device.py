@@ -98,7 +98,8 @@ class TaskDevice(Device, metaclass=ABCMeta):
     """
     Device implemented as "parallely" running tasks with buffered queues
     """
-    def __init__(self, max_queue_size=10, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        max_queue_size = 10
         super().__init__(*args, **kwargs)
         self._write_queue = curio.Queue(maxsize=max_queue_size)  # only nmea-datagrams
         self._read_queue = curio.Queue(maxsize=max_queue_size)   # only nmea-datagrams
