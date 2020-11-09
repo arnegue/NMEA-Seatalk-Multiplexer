@@ -14,8 +14,19 @@ class Device(object, metaclass=ABCMeta):
         def __init__(self, device_name, terminator=""):
             super().__init__(log_file_name=device_name + "_raw.log", terminator=terminator, print_stdout=False)
 
-        def write_raw(self, data):
-            self.info(data)
+        @staticmethod
+        def _get_string(data, ingoing):
+            sign = " <- " if ingoing else " -> "
+            return sign + data
+
+        def info(self, data, ingoing=False):
+            super().info(self._get_string(data, ingoing))
+
+        def error(self, data, ingoing=False):
+            super().error(self._get_string(data, ingoing))
+
+        def warn(self, data, ingoing=False):
+            super().warn(self._get_string(data, ingoing))
 
     def __init__(self, name, io_device: device_io.IO, auto_flush: int = None):
         """
@@ -128,7 +139,9 @@ class TaskDevice(Device, metaclass=ABCMeta):
         """
         while True:
             nmea_datagram = await self._write_queue.get()
-            await self._io_device.write(nmea_datagram.get_nmea_sentence())
+            nmea_sentence = nmea_datagram.get_nmea_sentence()
+            await self._io_device.write(nmea_sentence)
+            self._logger.info(nmea_sentence, ingoing=False)
 
     async def write_to_device(self, nmea_datagram: NMEADatagram):
         """

@@ -1,4 +1,3 @@
-from abc import ABCMeta
 import inspect
 
 from helper import get_numeric_byte_value, byte_to_str, bytes_to_str
@@ -16,14 +15,14 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         def __init__(self, device_name):
             super().__init__(device_name=device_name, terminator="\n")
 
-        def write_raw_seatalk(self, rec, attribute, data):
+        def write_raw_seatalk(self, rec, attribute, data, ingoing):
             data_gram_bytes = bytearray()
             for value in rec, attribute, data:
                 if isinstance(value, bytearray):
                     data_gram_bytes += value
                 else:
                     data_gram_bytes.append(value)
-            self.write_raw(bytes_to_str(data_gram_bytes))
+            self.info(data=bytes_to_str(data_gram_bytes), ingoing=ingoing)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,5 +82,5 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             logger.error(repr(e) + " " + byte_to_str(cmd_byte) + byte_to_str(attribute) + bytes_to_str(data_bytes))
             raise
         finally:
-            self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes)
+            self._logger.write_raw_seatalk(cmd_byte, attribute, data_bytes, ingoing=True)
             await self._io_device.flush()
