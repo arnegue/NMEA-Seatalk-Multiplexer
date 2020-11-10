@@ -251,6 +251,22 @@ class RecommendedMinimumSentence(NMEADatagram):
                          self._append_value(self.mode)
         return return_string
 
+    @staticmethod
+    def extract_degrees_minutes(value: str):
+        """
+        Extracts from given string degree and minutes for a PartPosition
+        E.g: 01322.3900 --> 13 ° 22.3900 minutes (123.18533 °)
+
+        :param value: string value to parse
+        :return: degree (int), minute (float)
+        """
+        idx = value.find(".")
+        if idx - 2 < 0:
+            raise NMEAParseError(f"Could not extract degrees/minutes from given value {value}. Idx: {idx}")
+        degrees = value[0:idx - 2]
+        minutes = value[idx - 2:]
+        return int(degrees), float(minutes)
+
     def _parse_nmea_sentence(self, nmea_value_list: list):
         gps_time = nmea_value_list[0]
         if "." not in gps_time:  # Some dont send milliseconds
@@ -260,12 +276,10 @@ class RecommendedMinimumSentence(NMEADatagram):
         self.date = datetime.datetime.strptime(gps_date + gps_time, self._date_format_date + self._date_format_time)
         self.valid_status = NMEAValidity(nmea_value_list[1])
 
-        latitude_degrees = int(nmea_value_list[2][0:2])
-        latitude_minutes = float(nmea_value_list[2][2:])  # Remove degrees
+        latitude_degrees, latitude_minutes = self.extract_degrees_minutes(nmea_value_list[2])
         latitude = PartPosition(degrees=latitude_degrees, minutes=latitude_minutes, direction=Orientation(nmea_value_list[3]))
 
-        longitude_degrees = int(nmea_value_list[4][0:3])
-        longitude_minutes = float(nmea_value_list[4][2:])  # Remove degrees
+        longitude_degrees, longitude_minutes = self.extract_degrees_minutes(nmea_value_list[4])
         longitude = PartPosition(degrees=longitude_degrees, minutes=longitude_minutes, direction=Orientation(nmea_value_list[5]))
 
         self.position = Position(latitude, longitude)
