@@ -145,7 +145,7 @@ class TCP(IO, ABC):
             logger.info(f"{type(self).__name__}: Client {address[0]}:{address[1]} disconnected")
             self.clients.remove(client)
             self._address = ""
-            raise Exception("Close connection")
+            raise ConnectionError("Close connection")
 
     async def flush(self):
         self._init_queues()  # TODO is there a better way to clear queues? This is just dumping everything to the garbage collector
