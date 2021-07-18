@@ -207,7 +207,7 @@ This may be the most important section.
 * port - Serial-Port. Example Windows: "COM5", Unix "/dev/ttyS2"
 * baudrate - default 4800
 * bytesize - default 8
-* stopbites - default 1
+* stopbits - default 1
 * parity - default None
 
 Given example shows a Seatalk-Device on port ``/dev/ttyUSB3`` with parity set to ``Mark`` without(!) encoding.
