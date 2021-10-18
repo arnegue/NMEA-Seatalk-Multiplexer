@@ -61,6 +61,12 @@ class UnknownUnitError(NMEAParseError):
     """
 
 
+class GeneralParseError(NMEAParseError):
+    """
+    Mostly ValueErrors when parsing messages
+    """
+
+
 class WrongFormatError(NMEAParseError):
     """
     Error if given datagram does not apply to nmea-standard
@@ -129,7 +135,11 @@ class NMEADatagram(object, metaclass=ABCMeta):
         nmea_datagram_instance = nmea_class()  # Create instance
         nmea_datagram_instance.talker_id = nmea_string[1:3]  # Set Talker ID
 
-        nmea_datagram_instance._parse_nmea_sentence(nmea_string[7:-5].split(","))  # Now parse it, start after nmea-tag, stop at checksum
+        try:
+            # Now parse it, start after nmea-tag, stop at checksum
+            nmea_datagram_instance._parse_nmea_sentence(nmea_string[7:-5].split(","))
+        except ValueError as e:
+            raise GeneralParseError() from e
         return nmea_datagram_instance
 
     @abstractmethod
@@ -449,3 +459,18 @@ class WindSpeedAndAngle(NMEADatagram):
             raise UnknownUnitError(f"Unknown unit: {unit}")
 
         self.valid_status = NMEAValidity(nmea_value_list[4])
+
+
+class DebugDataGram(UnknownDatagram):
+    """
+    Special class only for debugging purposes.
+    TXT is not an official tag, but mostly used for such reasons
+    """
+    # TODO Not sure if UnknownDatagram this is the best superclass, but the methods are the same
+    nmea_tag = "TXT"
+
+    def _get_nmea_sentence(self) -> str:
+        pass
+
+    def _parse_nmea_sentence(self, nmea_value_list: list):
+        pass
