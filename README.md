@@ -270,17 +270,17 @@ These logger are using RotatingFileHandler.
 
 ## Installation
 
-To install this project you need a python-interpreter which support asynchronous programming. This should be working with Python >= 3.6.
+To install this project you need a python-interpreter which support asynchronous programming. This should be working with Python >= 3.5. But take a look at curio's dependencies!
 Right now there is no wheel package available. Usually you could install it with `python3.<version> -m pip install nmea_seatalk_multiplexer.<package_version>.whl`
 
-Right now though you need to copy theses project files to your target-machine and install the packages in [Dependencies](#Dependencies). Then start it as mentioned in [Invocation](#Invocation).
+Right now though you need to copy theses project files to your target-machine and install the packages mentioned in [Dependencies](#Dependencies). Then start it as mentioned in [Invocation](#Invocation).
 
 
 ## Dependencies
 
 Also mentioned in `setup.py`:
 
-* curio >=1.0
+* curio >=1.0 (note comment from above, that newest curio-version needs Python 3.7)
 * contextvars (site-dependency of curio)
 * pyserial
 
