@@ -49,9 +49,21 @@ class NMEAParseError(NMEAError):
     """
 
 
+class NMEAChecksumError(NMEAParseError):
+    """
+    Checksum in sentence does not meet own calculated sum
+    """
+
+
 class UnknownUnitError(NMEAParseError):
     """
     Error if given unit in datagram is unknown
+    """
+
+
+class GeneralParseError(NMEAParseError):
+    """
+    Mostly ValueErrors when parsing messages
     """
 
 
@@ -115,8 +127,6 @@ class NMEADatagram(object, metaclass=ABCMeta):
         if not cls.nmea_tag_datagram_map:
             cls.create_map()
 
-        cls.verify_checksum(nmea_string)  # TODO not necessary, gets checked before anyway
-
         nmea_tag = nmea_string[3:6]  # Get Tag
         try:
             nmea_class = cls.nmea_tag_datagram_map[nmea_tag]  # Extract class from tag
@@ -125,7 +135,11 @@ class NMEADatagram(object, metaclass=ABCMeta):
         nmea_datagram_instance = nmea_class()  # Create instance
         nmea_datagram_instance.talker_id = nmea_string[1:3]  # Set Talker ID
 
-        nmea_datagram_instance._parse_nmea_sentence(nmea_string[7:-5].split(","))  # Now parse it, start after nmea-tag, stop at checksum
+        try:
+            # Now parse it, start after nmea-tag, stop at checksum
+            nmea_datagram_instance._parse_nmea_sentence(nmea_string[7:-5].split(","))
+        except ValueError as e:
+            raise GeneralParseError() from e
         return nmea_datagram_instance
 
     @abstractmethod
@@ -162,14 +176,14 @@ class NMEADatagram(object, metaclass=ABCMeta):
     def verify_checksum(cls, nmea_str: str):
         """
         Verifies checksum in given NMEA-String.
-        Raises NMEAParseError if string could not be parsed as expected
+        Raises NMEAChecksumError if string could not be parsed as expected
         Raise ChecksumError if given checksum differs to calculated checksum
         """
         try:
             nmea_str_checksum = int(nmea_str[-4:-2], 16)
             expected = cls.create_checksum(nmea_str[1:-5])  # Remove dollar, \r\n and checksum
         except ValueError as e:
-            raise NMEAParseError(f"Could not parse {nmea_str}") from e
+            raise NMEAChecksumError(f"Could not parse {nmea_str}") from e
 
         if expected != nmea_str_checksum:
             raise ChecksumError(nmea_str, nmea_str_checksum, expected)
@@ -459,3 +473,18 @@ class WindSpeedAndAngle(NMEADatagram):
             raise UnknownUnitError(f"Unknown unit: {unit}")
 
         self.valid_status = NMEAValidity(nmea_value_list[4])
+
+
+class DebugDataGram(UnknownDatagram):
+    """
+    Special class only for debugging purposes.
+    TXT is not an official tag, but mostly used for such reasons
+    """
+    # TODO Not sure if UnknownDatagram this is the best superclass, but the methods are the same
+    nmea_tag = "TXT"
+
+    def _get_nmea_sentence(self) -> str:
+        pass
+
+    def _parse_nmea_sentence(self, nmea_value_list: list):
+        pass

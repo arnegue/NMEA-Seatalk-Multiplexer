@@ -95,7 +95,7 @@ class Device(object, metaclass=ABCMeta):
 
     async def _check_flush(self):
         """
-        Checks if auto-flush is set. If true: Increase index and check if it reached auto_flush. If is reached, flush io
+        If auto-flush is set: Increase index and check if it reached auto_flush. If is reached, flush io
         Warning: Only call this if flushing needs to be checked: Changes state of flush_index
         """
         if self._auto_flush:

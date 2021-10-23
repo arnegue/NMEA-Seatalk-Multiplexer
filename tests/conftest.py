@@ -36,7 +36,7 @@ def pytest_pycollect_makeitem(collector, name, obj):
     Stops at first non-None result, see firstresult: stop at first non-None result
     """
     if collector.funcnamefilter(name) and inspect.iscoroutinefunction(obj):
-        item = pytest.Function(name, parent=collector)
+        item = pytest.Function.from_parent(name=name, parent=collector)
         if 'curio' in item.keywords:
             return list(collector._genfunctions(name, obj))
 

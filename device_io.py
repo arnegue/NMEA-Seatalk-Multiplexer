@@ -145,10 +145,10 @@ class TCP(IO, ABC):
             logger.info(f"{type(self).__name__}: Client {address[0]}:{address[1]} disconnected")
             self.clients.remove(client)
             self._address = ""
-            raise Exception("Close connection")
+            raise ConnectionError("Close connection")
 
     async def flush(self):
-        self._init_queues()  # TODO is there a better way to clear queues? This is just dumping everything to the garbage collector
+        self._init_queues()
 
     async def initialize(self):
         self._write_task_handle = await curio.spawn(self._write_task)
@@ -170,7 +170,7 @@ class TCPServer(TCP):
         await self.server_task.cancel()
 
         async with curio.timeout_after(10):
-            while len(self.clients) < 0:
+            while len(self.clients) > 0:
                 await curio.sleep(0.5)
         await super().cancel()
 
@@ -183,14 +183,16 @@ class TCPClient(TCP):
         super().__init__(port, encoding)
         self._ip = ip
         self._serve_client_task = None
+        self._close = False
 
     async def initialize(self):
         await super().initialize()
         self._serve_client_task = await curio.spawn(self._open_connection)
 
     async def cancel(self):
-        await super().cancel()
+        self._close = True
         await self._serve_client_task.cancel()
+        await super().cancel()
 
     async def _open_connection(self):
         while True:
@@ -201,6 +203,8 @@ class TCPClient(TCP):
             except (TimeoutError, ConnectionError, OSError) as e:
                 # Reconnect if theses errors occur
                 logger.error(F"{type(self).__name__}: ConnectionError: {repr(e)}")
+                if self._close:
+                    raise
                 await curio.sleep(5)
 
 

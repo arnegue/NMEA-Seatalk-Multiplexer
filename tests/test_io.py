@@ -45,13 +45,22 @@ async def get_clients_server_fixture(amount_clients=2):
     return clients, server
 
 
+def _get_parameters():
+    return_list = (
+        (TCPServer(port=test_tcp_port),                 TCPClient(ip="localhost", port=test_tcp_port)),
+        (TCPClient(ip="localhost", port=test_tcp_port), TCPServer(port=test_tcp_port)),
+        (TestFileClass("logs/test_file.bin"),           File("logs/test_file.bin")),
+    )
+    # If there are not Serial-Ports to test, leave it out
+    try:
+        return_list += (Serial(port="COM2"),            Serial(port="COM3"))
+    except IOError:
+        pass
+    return return_list
+
+
 @pytest.mark.curio
-@pytest.mark.parametrize(("tested_instance", "counter_part_instance"), (
-                         (TCPServer(port=test_tcp_port),                 TCPClient(ip="localhost", port=test_tcp_port)),
-                         (TCPClient(ip="localhost", port=test_tcp_port), TCPServer(port=test_tcp_port)),
-                         (TestFileClass("logs/test_file.bin"),           File("logs/test_file.bin")),
-                         (Serial(port="COM2"),                           Serial(port="COM3"))
-                         ))
+@pytest.mark.parametrize(("tested_instance", "counter_part_instance"), (_get_parameters()))
 async def test_io_binary_none_binary(tested_instance, counter_part_instance):
     """
     Tests simple read-write to/from given IO

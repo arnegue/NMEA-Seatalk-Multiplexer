@@ -1,5 +1,5 @@
 from device import TaskDevice
-from nmea.nmea_datagram import NMEADatagram, NMEAParseError, UnknownNMEATag, UnknownDatagram
+from nmea.nmea_datagram import NMEADatagram, NMEAParseError, UnknownDatagram, NMEAChecksumError
 import logger
 
 
@@ -7,21 +7,25 @@ class NMEADevice(TaskDevice):
     async def _read_from_io_task(self):
         while True:
             data = await self._receive_datagram()
+            log_function = self._logger.info
             try:
                 NMEADatagram.verify_checksum(data)
-                try:
-                    nmea_sentence = NMEADatagram.parse_nmea_sentence(data)
-                except UnknownNMEATag:
-                    nmea_sentence = UnknownDatagram(data)  # Not that bad if the tag is unknown
-                self._logger.info(data, ingoing=True)
-                await self._read_queue.put(nmea_sentence)
-            except NMEAParseError as e:
+                nmea_sentence = NMEADatagram.parse_nmea_sentence(data)
+            except NMEAChecksumError as e:
+                # If checksum does not match, ignore this message
                 await self._io_device.flush()
-                self._logger.error(data, ingoing=True)
-                logger.error(f"Could not read from {self.get_name()}: {repr(e)}")
+                log_function = self._logger.error
+                logger.error(f"Could not verify Checksum from {self.get_name()}: {repr(e)}")
                 continue
+            except NMEAParseError as e:
+                # Every other non-checksum-exception: might be an internal computing-error, so ignore it
+                nmea_sentence = UnknownDatagram(data)
+                log_function = self._logger.warn
+                logger.warn(f"Could not correctly parse message: {self.get_name()}: {repr(e)}")
             finally:
+                log_function(data, ingoing=True)
                 await self._check_flush()
+            await self._read_queue.put(nmea_sentence)
 
     async def _receive_datagram(self):
         received = ""
