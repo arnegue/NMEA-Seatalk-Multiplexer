@@ -1,6 +1,6 @@
 import pytest
 from nmea.nmea_datagram import *
-from helper import Orientation
+from common.helper import Orientation
 
 
 @pytest.mark.parametrize(("nmea_str", "expected_type", "value_name", "expected_value"), (

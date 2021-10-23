@@ -6,7 +6,7 @@ import inspect
 import sys
 import enum
 
-from helper import UnitConverter, Position, PartPosition, byte_to_str, Orientation, cast_if_at_position
+from common.helper import UnitConverter, Position, PartPosition, byte_to_str, Orientation, cast_if_at_position
 
 
 class NMEAValidity(enum.Enum):

@@ -4,7 +4,7 @@ import curio
 import device_io
 from seatalk import seatalk
 from seatalk.seatalk_datagram import *
-from helper import bytes_to_str
+from common.helper import bytes_to_str
 
 
 class NoneReadWriter(device_io.IO):

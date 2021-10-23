@@ -2,7 +2,7 @@ from abc import abstractmethod, ABCMeta
 import enum
 import datetime
 
-from helper import byte_to_str, bytes_to_str, UnitConverter, TwoWayDict, Orientation, PartPosition, Position
+from common.helper import byte_to_str, bytes_to_str, UnitConverter, TwoWayDict, Orientation, PartPosition, Position
 import logger
 from nmea import nmea_datagram
 
