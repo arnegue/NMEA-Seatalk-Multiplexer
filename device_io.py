@@ -5,7 +5,7 @@ import serial
 import logger
 from functools import partial
 
-from curio_wrapper import TaskGroupWrapper
+from curio_wrapper import TaskGroupWrapper, TaskWatcher
 
 
 class IO(object):
@@ -153,7 +153,7 @@ class TCP(IO, ABC):
         self._init_queues()
 
     async def initialize(self):
-        self._write_task_handle = await curio.spawn(self._write_task)
+        self._write_task_handle = await TaskWatcher.daemon_spawn(self._write_task)
 
 
 class TCPServer(TCP):
@@ -166,7 +166,7 @@ class TCPServer(TCP):
 
     async def initialize(self):
         await super().initialize()
-        self.server_task = await curio.spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
+        self.server_task = await TaskWatcher.daemon_spawn(curio.tcp_server(host='', port=self._port, client_connected_task=self._serve_client))
 
     async def cancel(self):
         await self.server_task.cancel()
@@ -189,7 +189,7 @@ class TCPClient(TCP):
 
     async def initialize(self):
         await super().initialize()
-        self._serve_client_task = await curio.spawn(self._open_connection)
+        self._serve_client_task = await TaskWatcher.daemon_spawn(self._open_connection)
 
     async def cancel(self):
         self._close = True

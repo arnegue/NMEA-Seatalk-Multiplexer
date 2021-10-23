@@ -4,6 +4,9 @@ This is a file for some wrappers to get back the old behavior or to make some th
 """
 import curio
 
+import logger
+from common.helper import Singleton
+
 
 class TaskGroupWrapper(curio.TaskGroup):
     """
@@ -19,3 +22,54 @@ class TaskGroupWrapper(curio.TaskGroup):
                     print(f"There are more than 1 exception {len(list_exceptions)}\n Only raising first")
                 raise list_exceptions[0]
         return result
+
+
+class TaskWatcher(object, metaclass=Singleton):
+    """
+    Spawns tasks in background and watches them every x seconds (logs if tasks finishes)
+    """
+    def __init__(self):
+        self._daemon_tasks = []
+        self._watch_interval_s = 30
+        self.own_task_handle = None
+
+    @classmethod
+    async def daemon_spawn(cls, task, *args):
+        """
+        Spawns an task in background and adds it to handler
+        :param task: coroutine to spawn
+        :param args: arguments to pass to task
+        :return: handle of task
+        """
+        instance = cls()
+        if not instance.own_task_handle:
+            instance.own_task_handle = await curio.spawn(instance._watch_routine, daemon=True)
+        task_handle = await curio.spawn(task, *args, daemon=True)
+        instance._daemon_tasks.append(task_handle)
+        return task_handle
+
+    async def _watch_routine(self):
+        """
+        Runs in background, watches every daemon-spawned task and waits for it to finish.
+        If any task finishes, it will be logged as warning or error (depending on its return)
+        """
+        try:
+            while True:
+                for task_handle in self._daemon_tasks:
+                    task_str = f"{type(self).__name__}: TaskHandle {task_handle.name} with id {task_handle.id} "
+                    try:
+                        if task_handle.terminated:
+                            task_str += "terminated"
+                            if task_handle.exception:
+                                task_str += " with exception:"
+                                logger.exception(task_str, task_handle.exception)
+                            else:
+                                task_str += " without an exception"
+                                logger.warn(task_str)
+                            self._daemon_tasks.remove(task_handle)  # Remove task from watch-routine
+                    except Exception as e:
+                        logger.exception(task_str + f". Could not identify task's state:", e)
+                        self._daemon_tasks.remove(task_handle)
+                await curio.sleep(self._watch_interval_s)
+        finally:
+            logger.error("TaskWatcher: Watch-Routine ended")
