@@ -204,7 +204,7 @@ class TCPClient(TCP):
                 await self._serve_client(connection, (self._ip, self._port))
             except (TimeoutError, ConnectionError, OSError) as e:
                 # Reconnect if theses errors occur
-                logger.error(F"{type(self).__name__}: ConnectionError: {repr(e)}")
+                logger.exception(F"{type(self).__name__}: Exception:", e)
                 if self._close:
                     raise
                 await curio.sleep(5)

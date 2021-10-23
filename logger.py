@@ -1,5 +1,6 @@
 import logging
 import os
+import traceback
 from logging.handlers import RotatingFileHandler
 
 from common.helper import Singleton
@@ -40,14 +41,28 @@ class Logger(object):
     def error(self, log_string):
         self._log(level=logging.ERROR, msg=log_string)
 
+    def exception(self, log_string: str, exception: Exception):
+        self.error(log_string + " " + self.exception_to_string(exception))
+
+    @staticmethod
+    def exception_to_string(exception, with_stack_trace=True):
+        exception_string = f"{str(type(exception).__name__)}: {str(exception)}"
+        if with_stack_trace:
+            trace_string = "\n"
+            for line in traceback.TracebackException(type(exception), exception, exception.__traceback__, ).format():
+                trace_string += line
+            exception_string += trace_string
+        return exception_string
+
 
 class GeneralLogger(Logger, metaclass=Singleton):
     pass
 
 
-warn = info = error = None
+warn = info = error = exception = None
 if warn is info is error is None:
     logger = GeneralLogger()
     warn = logger.warn
     info = logger.info
     error = logger.error
+    exception = logger.exception

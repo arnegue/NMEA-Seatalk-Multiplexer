@@ -42,6 +42,6 @@ class NMEADevice(TaskDevice):
                     self._logger.info(received, ingoing=True)
                     return received
         except TypeError as e:
-            logger.error(f"{self.get_name()}: Error when reading. Wrong encoding?\n{repr(e)}")
+            logger.exception(f"{self.get_name()}: Error when reading. Wrong encoding?", e)
             self._logger.error(received, ingoing=True)
             return ""
