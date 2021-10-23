@@ -5,6 +5,8 @@ import serial
 import logger
 from functools import partial
 
+from curio_wrapper import TaskGroupWrapper
+
 
 class IO(object):
     """
@@ -115,7 +117,7 @@ class TCP(IO, ABC):
 
     async def cancel(self):
         await self._write_task_handle.cancel()
-        async with curio.TaskGroup() as g:
+        async with TaskGroupWrapper() as g:
             for client in self.clients:
                 await g.spawn(client.close)
 
@@ -123,7 +125,7 @@ class TCP(IO, ABC):
         while True:
             data = await self._write_queue.get()
             for client in self.clients:
-                async with curio.TaskGroup() as g:
+                async with TaskGroupWrapper() as g:
                     await g.spawn(client.sendall, data)
 
     async def _serve_client(self, client, address):
