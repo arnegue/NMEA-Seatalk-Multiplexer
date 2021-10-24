@@ -41,8 +41,8 @@ class Logger(object):
     def error(self, log_string):
         self._log(level=logging.ERROR, msg=log_string)
 
-    def exception(self, log_string: str, exception: Exception):
-        self.error(log_string + " " + self.exception_to_string(exception))
+    def exception(self, log_string: str, exception_ins: Exception):
+        self.error(log_string + " " + self.exception_to_string(exception_ins))
 
     @staticmethod
     def exception_to_string(exception, with_stack_trace=True):

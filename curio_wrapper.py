@@ -6,6 +6,8 @@ import curio
 
 import logger
 from common.helper import Singleton
+from common.watchdog import Watchdog
+from common import settings
 
 
 class TaskGroupWrapper(curio.TaskGroup):
@@ -32,6 +34,10 @@ class TaskWatcher(object, metaclass=Singleton):
         self._daemon_tasks = []
         self._watch_interval_s = 30
         self.own_task_handle = None
+        self._wd = None
+
+        if settings.Watchdog.Enable:
+            self._wd = Watchdog(timeout=settings.Watchdog.Timeout)
 
     @classmethod
     async def daemon_spawn(cls, task, *args):
@@ -53,6 +59,9 @@ class TaskWatcher(object, metaclass=Singleton):
         Runs in background, watches every daemon-spawned task and waits for it to finish.
         If any task finishes, it will be logged as warning or error (depending on its return)
         """
+        if self._wd:
+            self._wd.start()
+            self._watch_interval_s = self._wd.get_timeout() >> 2  # Half the watchdog's timeout
         try:
             while True:
                 for task_handle in self._daemon_tasks:
@@ -66,10 +75,18 @@ class TaskWatcher(object, metaclass=Singleton):
                             else:
                                 task_str += " without an exception"
                                 logger.warn(task_str)
-                            self._daemon_tasks.remove(task_handle)  # Remove task from watch-routine
+                            if self._wd:
+                                break  # TODO quit
                     except Exception as e:
                         logger.exception(task_str + f". Could not identify task's state:", e)
-                        self._daemon_tasks.remove(task_handle)
+                        if self._wd:
+                            break  # TODO quit
+
                 await curio.sleep(self._watch_interval_s)
+                if self._wd:
+                    self._wd.reset()
+        except KeyboardInterrupt:
+            if self._wd:
+                self._wd.exit()
         finally:
             logger.error("TaskWatcher: Watch-Routine ended")

@@ -77,7 +77,7 @@ class Device(object, metaclass=ABCMeta):
 
     def get_observers(self) -> set:
         """
-        Returns a list of observers for this device
+        Returns a set of observers for this device
         """
         return self._observers
 
@@ -110,8 +110,8 @@ class TaskDevice(Device, metaclass=ABCMeta):
     Device implemented as "parallely" running tasks with buffered queues
     """
     def __init__(self, *args, **kwargs):
-        max_queue_size = 10
         super().__init__(*args, **kwargs)
+        max_queue_size = 10
         self._write_queue = curio.Queue(maxsize=max_queue_size)  # only nmea-datagrams
         self._read_queue = curio.Queue(maxsize=max_queue_size)   # only nmea-datagrams
         self._write_task_handle = None
@@ -122,10 +122,10 @@ class TaskDevice(Device, metaclass=ABCMeta):
         Starts tasks for transmitting and receiving messages
         """
         await super().initialize()
-        self._write_task_handle = await curio.spawn(self._write_to_io_task)
+        self._write_task_handle = await curio_wrapper.TaskWatcher.daemon_spawn(self._write_to_io_task)
 
         if len(self.get_observers()):  # If there are no observers, don't even bother to start read task
-            self._read_task_handle = await curio.spawn(self._read_from_io_task)
+            self._read_task_handle = await curio_wrapper.TaskWatcher.daemon_spawn(self._read_from_io_task)
 
     @abstractmethod
     async def _read_from_io_task(self):

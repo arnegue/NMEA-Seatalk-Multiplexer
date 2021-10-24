@@ -2,7 +2,8 @@
 Python-Multiplexer for NMEA- and Seatalk-Devices
 
 ## Why
-I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project. But for me it seemed too complicated and over the top:
+I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project.
+ But for me it seemed too complicated and over the top:
 
 * Written in C++ 
 * Many dependencies 
@@ -39,7 +40,8 @@ Start the program like this:
 
 ### NMEA 0183
 
-Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end. Usually no parsing (but checksum) is happening.
+Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end.
+ Usually no parsing (but checksum) is happening.
 
 But some parsing/creation of NMEA-Sentences are supported:
 * RMC (Recommended Minimum Sentence) 
@@ -50,7 +52,8 @@ But some parsing/creation of NMEA-Sentences are supported:
 
 ### Seatalk 1
  
-A big part of help for parsing Seatalk-Sentences and building hardware to be able to receive has come from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
+A big part of help for parsing Seatalk-Sentences and building hardware to be able to receive has come 
+from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
 
 As written above: Writing to bus is buggy right now because of missing bit-toggling
 Some Seatalk-Messages do not have a corresponding NMEA-Sentence. 
@@ -124,7 +127,7 @@ A typical device is built like this:
     "observers": [
         ...
     ]
-  },
+  }
 }
 ```
 
@@ -144,7 +147,8 @@ You can create either a TCP-Server or a -Client
 
 #### Server
 
-This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-Encoding. This device's type is NMEADevice. So it only transmits/receives NMEA-Strings.
+This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-Encoding. This device's type is NMEADevice. 
+So it only transmits/receives NMEA-Strings.
 
 ```json
 {
@@ -204,7 +208,7 @@ This example reads/writes from/to file located at ``/tmp/my_nmea_file.txt``.
 
 This may be the most important section.
 
-* port - Serial-Port. Example Windows: "COM5", Unix "/dev/ttyS2"
+* port - Serial-Port. Example Windows: "COM5" | Example Unix: "/dev/ttyS2"
 * baudrate - default 4800
 * bytesize - default 8
 * stopbits - default 1
@@ -252,7 +256,8 @@ This devices just prints out to StdOut (StdIn currently not supported):
 
 ## Logging
 
-There are two different kinds of logging: RawDataLogger and GlobalLogger. Every device has a own logger-which writes received data to a logfile ``./log/<DeviceName>_raw.log``. The Global Logger writes general (debug-)info to ``./logs/main_log.log``.
+There are two different kinds of logging: RawDataLogger and GlobalLogger. Every device has a own logger-which writes 
+received data to a logfile ``./log/<DeviceName>_raw.log``. The Global Logger writes general (debug-)info to ``./logs/main_log.log``.
 
 ### How much is logged
 
@@ -266,6 +271,36 @@ These logger are using RotatingFileHandler.
 * MaxSize per file (bytes): 5 * 1024 * 1024
 * Amount of BackupFiles: 2
 
+
+## Watchdog
+
+Since I noticed some hardware/driver related errors, I implemented a watchdog.
+If activated in ``config.json`` via ``Watchdog.Enable`` the watchdog will work within the ``TaskWatcher``.
+The ``TaskWatcher`` is responsible to watch every (nearly) daemonic spawned tasks. These tasks shall not terminate. If so
+the watchdog won't be won't be reset and a immediate system reset will happen.
+
+ 
+### Windows 
+
+The program simply checks via ``os.name`` if there is an ``nt``-system. If so a software watchdog is used. This is a simple
+background running thread which checks every second if a timeout occurred. If so ``os.system("shutdown -t 0 -r -f")`` will
+be initiated. 
+
+
+### Linux
+
+If you're on a linux system, the watchdog in ``/dev/watchdog`` will be used. If you loaded the correct kernel module, a 
+hardware watchdog will be used.
+
+Note: This requires sudo-privilege. (It's also possible to use the Software-Watchdog, but why though?) 
+
+
+### What's the interval
+
+The watchdog **timeout** *can* be set in ``config.json`` via ``Watchdog.Timeout`` (disabled by default). It must be set for the Software-Watchdog. 
+If the value is ``null`` for the linux watchdog, the default timeout will be taken which is usually 16 seconds. 
+The **interval** is responsible for that the watchdog timeout doesn't run out which triggers a reboot.
+The **interval is set for half the timeout**.  
 
 
 ## Installation
