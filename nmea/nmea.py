@@ -36,7 +36,7 @@ class NMEADevice(TaskDevice):
             while received != "$" and received != "!":
                 received = await self._io_device.read(1)
 
-            while 1:
+            while True:
                 received += await self._io_device.read(1)
                 if received[-1] == "\n":
                     self._logger.info(received, ingoing=True)
