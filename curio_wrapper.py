@@ -3,6 +3,8 @@ There are some changes since curio 1.0
 This is a file for some wrappers to get back the old behavior or to make some things easier
 """
 import curio
+import signal
+import sys
 
 import logger
 from common.helper import Singleton
@@ -21,7 +23,7 @@ class TaskGroupWrapper(curio.TaskGroup):
             list_exceptions = [exception for exception in getattr(self, "exceptions", []) if exception is not None]
             if list_exceptions:
                 if len(list_exceptions) > 1:
-                    print(f"There are more than 1 exception {len(list_exceptions)}\n Only raising first")
+                    print(f"There are more than 1 exceptions: {len(list_exceptions)}\n Only raising first")
                 raise list_exceptions[0]
         return result
 
@@ -29,6 +31,7 @@ class TaskGroupWrapper(curio.TaskGroup):
 class TaskWatcher(object, metaclass=Singleton):
     """
     Spawns tasks in background and watches them every x seconds (logs if tasks finishes)
+    If enabled by settings, a watchdog will watch over the tasks. If a task stops, the watchdog won't be fed anymore
     """
     def __init__(self):
         self._daemon_tasks = []
@@ -38,7 +41,7 @@ class TaskWatcher(object, metaclass=Singleton):
 
         wd_settings = settings.Settings().Watchdog
         if wd_settings.Enable:
-            self._wd = Watchdog(timeout=wd_settings.Timeout)
+            self._wd = Watchdog.get_watchdog()(timeout=wd_settings.Timeout)
 
     @classmethod
     async def daemon_spawn(cls, task, *args):
@@ -61,6 +64,7 @@ class TaskWatcher(object, metaclass=Singleton):
         If any task finishes, it will be logged as warning or error (depending on its return)
         """
         if self._wd:
+            signal.signal(signal.SIGINT, self.exit)
             self._wd.start()
             self._watch_interval_s = self._wd.get_timeout() >> 2  # Half the watchdog's timeout
         try:
@@ -86,8 +90,9 @@ class TaskWatcher(object, metaclass=Singleton):
                 await curio.sleep(self._watch_interval_s)
                 if self._wd:
                     self._wd.reset()
-        except KeyboardInterrupt:
-            if self._wd:
-                self._wd.exit()
         finally:
             logger.error("TaskWatcher: Watch-Routine ended")
+
+    def exit(self, sig, frame):
+        self._wd.exit()
+        sys.exit(0)

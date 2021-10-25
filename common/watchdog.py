@@ -144,6 +144,7 @@ class _LinuxWatchdog(Watchdog):
     def start(self):
         self._wd_fd = open(self.__class__.WATCHDOG_FILE, "w")
         logger.info("Armed watchdog")
+        self.get_support()
         if self.timeout is None:
             self.timeout = self.get_timeout()
         else:
