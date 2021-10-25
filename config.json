@@ -1,0 +1,6 @@
+{
+  "Watchdog": {
+    "Enable": false,
+    "Timeout": null
+  }
+}
