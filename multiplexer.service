@@ -1,0 +1,16 @@
+# Put this file in /etc/systemd/system/
+
+[Unit]
+Description=NMEA-Seatalk-Multiplexer
+Wants=network-online.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/python3 main_file.py
+WorkingDirectory=/home/pi/nmea_seatalk_multiplexer
+KillMode=control-group
+User=root  # Needed for watchdog
+
+[Install]
+WantedBy=multi-user.target
