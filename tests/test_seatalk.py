@@ -130,7 +130,7 @@ def test_two_way_maps_validations(seatalk_datagram_instance):
 
 @pytest.mark.curio
 async def test_raw_seatalk():
-    reader = device_io.File(path="./test_data/seatalk_raw.hex", encoding=False)
+    reader = device_io.File(path="./tests/test_data/seatalk_raw.hex", encoding=False)
     await reader.initialize()
     seatalk_device = seatalk.SeatalkDevice("RawSeatalkFileDevice", io_device=reader)
     for i in range(1000):
