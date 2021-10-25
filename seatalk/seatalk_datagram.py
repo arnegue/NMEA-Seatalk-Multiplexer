@@ -1342,15 +1342,19 @@ class CompassVariation(SeatalkDatagram):
                                                  FF => +1 east, FE => +2 east ...
                      Corresponding NMEA sentences: RMC, HDG
     """
+    seatalk_id = 0x99
+    data_length = 0
+
     def __init__(self, variation=None):
-        SeatalkDatagram.__init__(self, seatalk_id=0x99, data_length=0)
+        SeatalkDatagram.__init__(self)
         self.variation = variation
 
     def process_datagram(self, first_half_byte, data):
         self.variation = int.from_bytes(bytes([data[0]]), byteorder="big", signed=True)  # TODO unsure if variation *-1
 
     def get_seatalk_datagram(self):
-        return self.seatalk_id + bytearray([self.data_length]) + int.to_bytes(self.variation, byteorder="big", signed=True, length=1)
+        my_bytes = int.to_bytes(self.variation, byteorder="big", signed=True, length=1)
+        return bytearray([self.seatalk_id, self.data_length]) + bytearray(my_bytes)
 
 
 class DeviceIdentification2(SeatalkDatagram):
