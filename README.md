@@ -258,19 +258,10 @@ This devices just prints out to StdOut (StdIn currently not supported):
 ## Logging
 
 There are two different kinds of logging: RawDataLogger and GlobalLogger. Every device has a own logger-which writes 
-received data to a logfile ``./log/<DeviceName>_raw.log``. The Global Logger writes general (debug-)info to ``./logs/main_log.log``.
+received data to a logfile ``<DeviceName>_raw.log``. The Global Logger writes general (debug-)info to ``main_log.log``.
 
-### How much is logged
-
-These logger are using RotatingFileHandler.
-
-> Handler for logging to a set of files, which switches from one file to the next when the current file reaches a certain size.
->
->  logging.handlers.RotatingFileHandler
-
-* Mode: append
-* MaxSize per file (bytes): 5 * 1024 * 1024
-* Amount of BackupFiles: 2
+A [RotatingFileHandler](https://docs.python.org/3/library/logging.handlers.html) is used for logging. 
+To change it's default values and logfile-directory check ``config.json`` via ``Logger``
 
 
 ## Watchdog
@@ -321,3 +312,4 @@ Also mentioned in `setup.py`:
 * pyserial
 
 To install these packages: `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
+

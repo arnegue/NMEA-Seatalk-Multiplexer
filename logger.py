@@ -3,15 +3,18 @@ import os
 import traceback
 from logging.handlers import RotatingFileHandler
 
+from common import settings
 from common.helper import Singleton
 
 
 class Logger(object):
-    def __init__(self, log_file_dir="./logs", log_file_name="main_log.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None, print_stdout=True):
+    def __init__(self, log_file_name="main_log.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None, print_stdout=True):
+        log_settings = settings.Settings().Logging
+        log_file_dir = log_settings.LogFileDir
         log_formatter = logging.Formatter(log_format)
         if not os.path.exists(log_file_dir):
             os.makedirs(log_file_dir)
-        my_handler = RotatingFileHandler(log_file_dir + "/" + log_file_name, mode='a', maxBytes=5 * 1024 * 1024, backupCount=2, encoding=None, delay=0)
+        my_handler = RotatingFileHandler(filename=log_file_dir + "/" + log_file_name, mode=log_settings.Mode, maxBytes=log_settings.MaxFileSize, backupCount=log_settings.MaxBackupFiles, encoding=None, delay=0)
         if terminator is not None:
             my_handler.terminator = terminator
         my_handler.setFormatter(log_formatter)

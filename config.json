@@ -1,4 +1,10 @@
 {
+  "Logging" :{
+    "LogFileDir": "./logs",
+    "Mode": "a",
+    "MaxFileSize": 5000000,
+    "MaxBackupFiles": 2
+  },
   "Watchdog": {
     "Enable": false,
     "Timeout": null
