@@ -27,8 +27,4 @@ class Settings(object, metaclass=Singleton):
                 setattr(object_to_set_to, key, value)
 
 
-_settings = Settings()
-
-
-def __getattr__(name):
-    return getattr(_settings, name)
+settings = Settings()

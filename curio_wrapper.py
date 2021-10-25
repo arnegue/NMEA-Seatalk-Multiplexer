@@ -36,8 +36,9 @@ class TaskWatcher(object, metaclass=Singleton):
         self.own_task_handle = None
         self._wd = None
 
-        if settings.Watchdog.Enable:
-            self._wd = Watchdog(timeout=settings.Watchdog.Timeout)
+        wd_settings = settings.Settings().Watchdog
+        if wd_settings.Enable:
+            self._wd = Watchdog(timeout=wd_settings.Timeout)
 
     @classmethod
     async def daemon_spawn(cls, task, *args):
