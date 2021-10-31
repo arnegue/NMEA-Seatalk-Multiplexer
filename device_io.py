@@ -212,7 +212,7 @@ class TCPClient(TCP):
 
 class File(IO):
     """
-    Class for reading and writing to file
+    Class for reading and writing to file (assuming that file content gets appended, not rewritten)
     """
     def __init__(self, path, encoding=False):
         super().__init__(encoding)
@@ -222,10 +222,12 @@ class File(IO):
     async def _read(self, length=1):
         async with curio.aopen(self._path_to_file, "rb") as file:
             lines = await file.read()
+        if len(lines) < length:
+            await curio.sleep(0)
+            return bytes()
+
         ret_val = lines[self._last_index:(self._last_index + length)]
         self._last_index += length
-        if ret_val == "":
-            await curio.sleep(0)
         return ret_val
 
     async def _write(self, data):
