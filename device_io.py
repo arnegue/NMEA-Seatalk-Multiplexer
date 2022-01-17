@@ -239,6 +239,21 @@ class File(IO):
             raise FileNotFoundError(f"File at path \"{str(self._path_to_file)}\" does not exist")
 
 
+class FileRewriter(File):
+    """
+    Similar to it's super-class File, but instead of assuming that new content gets appended, it is overwriting it's content.
+    """
+    async def _read(self, length=1):
+        async with curio.aopen(self._path_to_file, "rb") as file:
+            lines = await file.read()
+        # Read as much as you can
+        return lines[:length]
+
+    async def _write(self, data):
+        async with curio.aopen(self._path_to_file, "wb") as file:  # Overwrite!
+            return await file.write(data)
+
+
 class Serial(IO):
     """
     IO-Class providing methods to read and write from/to serial periphery

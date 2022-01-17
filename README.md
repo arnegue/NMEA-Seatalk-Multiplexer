@@ -188,7 +188,9 @@ This example creates a client which will try to connect to ``172.24.1.1:9901``. 
  
 ### File
 
-This example reads/writes from/to file located at ``/tmp/my_nmea_file.txt``.
+This example reads/writes from/to file located at ``/tmp/my_nmea_file.txt``. 
+
+Assumes **appending**-mode!
 
 ```json
 {
@@ -204,6 +206,11 @@ This example reads/writes from/to file located at ``/tmp/my_nmea_file.txt``.
   }
 }
 ```
+
+### FileRewriter
+
+Similar to File, but overwrites the file when writing and reading as much as possible.
+
 
 ### Serial
 
