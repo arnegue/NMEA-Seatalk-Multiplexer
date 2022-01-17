@@ -132,7 +132,7 @@ class NMEADatagram(object, metaclass=ABCMeta):
             nmea_class = cls.nmea_tag_datagram_map[nmea_tag]  # Extract class from tag
         except KeyError as e:
             raise UnknownNMEATag(nmea_tag) from e
-        nmea_datagram_instance = nmea_class()  # Create instance
+        nmea_datagram_instance: cls = nmea_class()  # Create instance
         nmea_datagram_instance.talker_id = nmea_string[1:3]  # Set Talker ID
 
         try:
