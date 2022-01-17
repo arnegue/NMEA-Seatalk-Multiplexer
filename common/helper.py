@@ -1,8 +1,11 @@
 import enum
+import os
+from datetime import datetime
 
 
 class Singleton(type):
     """
+    Allows only one instance of given class (use as metaclass)
     Copied from: https://stackoverflow.com/questions/6760685/
     """
     _instances = {}
@@ -11,6 +14,33 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+def set_system_time(date: datetime):
+    """
+    Sets system time (Win and Linux). Taken and adapted from https://stackoverflow.com/a/52971307
+
+    :param date: datetime-instanceW
+    :return: -
+    """
+    def _win_set_time(date):
+        import win32api
+        win32api.SetSystemTime(date.year, date.month, date.isoweekday(), date.day, date.hour, date.minute, date.second, date.microsecond // 1000)
+
+    def _linux_set_time(date):
+        import subprocess
+        import shlex
+
+        time_string = date.isoformat()
+
+        subprocess.call(shlex.split("timedatectl set-ntp false"))  # May be necessary
+        subprocess.call(shlex.split("sudo date -s '%s'" % time_string))
+        subprocess.call(shlex.split("sudo hwclock -w"))
+
+    if os.name == 'nt':
+        _win_set_time(date)
+    else:
+        _linux_set_time(date)
 
 
 def byte_to_str(byte):
@@ -153,6 +183,5 @@ class Position(object):
 def cast_if_at_position(values, index, cast):
     try:
         return cast(values[index])
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, IndexError):
         return None
-

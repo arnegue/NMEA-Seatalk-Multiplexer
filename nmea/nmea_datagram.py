@@ -475,16 +475,19 @@ class WindSpeedAndAngle(NMEADatagram):
         self.valid_status = NMEAValidity(nmea_value_list[4])
 
 
-class DebugDataGram(UnknownDatagram):
+class DebugDataGram(NMEADatagram):
     """
     Special class only for debugging purposes.
     TXT is not an official tag, but mostly used for such reasons
     """
-    # TODO Not sure if UnknownDatagram this is the best superclass, but the methods are the same
     nmea_tag = "TXT"
 
+    def __init__(self, debug_text=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.debug_text = debug_text
+
     def _get_nmea_sentence(self) -> str:
-        pass
+        return self._append_value(self.debug_text)
 
     def _parse_nmea_sentence(self, nmea_value_list: list):
         pass

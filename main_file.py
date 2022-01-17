@@ -2,12 +2,13 @@ import curio
 import logger
 import json
 import argparse
+import inspect
 
 import curio_wrapper
 import device
 from nmea import nmea
 import device_io
-import inspect
+import special_devices
 from seatalk import seatalk
 
 
@@ -16,7 +17,7 @@ def create_devices_dict():
     Creates a list of classes which may be instantiated if given in given devices-json-list
     """
     devices_dict = {}
-    for module in device, seatalk, nmea:
+    for module in device, seatalk, nmea, special_devices:
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, device.Device):
                 devices_dict[name] = obj

@@ -263,6 +263,22 @@ received data to a logfile ``<DeviceName>_raw.log``. The Global Logger writes ge
 A [RotatingFileHandler](https://docs.python.org/3/library/logging.handlers.html) is used for logging. 
 To change it's default values and logfile-directory check ``config.json`` via ``Logger``
 
+## Setting time
+
+Many devices don't have a battery-driven RTC or similar which might be useful for logging. Luckily GPS provides some information about date and time: ``GPRMC`` (Recommended Minimum Sentence).
+Besides positional data there are also some timing information. If you add a ``SetTimeDevice`` like this (don't forget to set ``TimeSetter`` as observer on the GPS-counterpart-device:
+
+```json
+{
+  "TimeSetter": {
+    "type": "SetTimeDevice",
+    "observers": [
+    ]
+  }
+}
+``` 
+  
+The first valid ``RMC`` sentence will be used to set system (and eventually hardware-time).
 
 ## Watchdog
 
@@ -302,6 +318,9 @@ Right now there is no wheel package available. Usually you could install it with
 
 Right now though you need to copy theses project files to your target-machine and install the packages mentioned in [Dependencies](#Dependencies). Then start it as mentioned in [Invocation](#Invocation).
 
+## Administrator
+
+Features like [Watchdog](#Watchdog) and [Setting time](#Setting time) require admin privileges. If you don't use them the program should be running as standard user.
 
 ## Dependencies
 
@@ -310,6 +329,7 @@ Also mentioned in `setup.py`:
 * curio >=1.0 (note comment from above, that newest curio-version needs Python 3.7)
 * contextvars (site-dependency of curio)
 * pyserial
+* pywin32 (for Windows if ``SetTimeFromGPS`` is enabled)
 
 To install these packages: `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
 
