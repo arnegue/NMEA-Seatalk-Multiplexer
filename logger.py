@@ -26,7 +26,9 @@ class Logger(object):
 
         self.app_log.addHandler(my_handler)
 
-        self._log_map = {20: "Info",
+        self._log_map = {
+                         10: "Debug",
+                         20: "Info",
                          30: "Warn",
                          40: "Error"}
 
@@ -38,6 +40,9 @@ class Logger(object):
     def warn(self, log_string):
         self._log(level=logging.WARN, msg=log_string)
 
+    def debug(self, log_string):
+        self._log(level=logging.DEBUG, msg=log_string)
+
     def info(self, log_string):
         self._log(level=logging.INFO, msg=log_string)
 
@@ -48,11 +53,11 @@ class Logger(object):
         self.error(log_string + " " + self.exception_to_string(exception_ins))
 
     @staticmethod
-    def exception_to_string(exception, with_stack_trace=True):
-        exception_string = f"{str(type(exception).__name__)}: {str(exception)}"
+    def exception_to_string(exception_instance: Exception, with_stack_trace=True):
+        exception_string = f"{str(type(exception_instance).__name__)}: {str(exception)}"
         if with_stack_trace:
             trace_string = "\n"
-            for line in traceback.TracebackException(type(exception), exception, exception.__traceback__, ).format():
+            for line in traceback.TracebackException(type(exception_instance), exception_instance, exception_instance.__traceback__, ).format():
                 trace_string += line
             exception_string += trace_string
         return exception_string
@@ -62,10 +67,11 @@ class GeneralLogger(Logger, metaclass=Singleton):
     pass
 
 
-warn = info = error = exception = None
-if warn is info is error is None:
+warn = info = debug = error = exception = None
+if warn is info is error is debug is None:
     logger = GeneralLogger()
     warn = logger.warn
     info = logger.info
+    debug = logger.debug
     error = logger.error
     exception = logger.exception

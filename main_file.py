@@ -68,15 +68,15 @@ async def device_receiver_task(device_):
         logger.info(f"Device {device_.get_name()} has observers")
         while True:
             try:
-                logger.info(f"Trying to get NMEA-Sentence from {device_.get_name()}....")
+                logger.debug(f"Trying to get NMEA-Sentence from {device_.get_name()}....")
                 sentence = await device_.get_nmea_datagram()
                 logger.info(f"Received {sentence.__class__.__name__}")
             except curio.TaskTimeout:
-                logger.warn(f"Timeout reading from {device_.get_name()}")  # Wont work sometimes
+                logger.debug(f"Timeout reading from {device_.get_name()}")  # Wont work sometimes
                 continue
             async with curio_wrapper.TaskGroupWrapper() as g:
                 for observer in observers:
-                    logger.info(f"Writing to device: {observer.get_name()}")
+                    logger.debug(f"Writing to device: {observer.get_name()}")
                     await g.spawn(observer.write_to_device, sentence)
             await curio.sleep(0)
     else:
