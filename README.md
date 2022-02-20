@@ -1,17 +1,7 @@
 # NMEA-Seatalk-Multiplexer
-Python-Multiplexer for NMEA- and Seatalk-Devices
 
-## Why
-I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project.
- But for me it seemed too complicated and over the top:
-
-* Written in C++ 
-* Many dependencies 
-* Only works on linux
-* To set it up is complex/complicated
-
-Why am i writing that? I don't want to run that project on a "big" computer. I wanted to get this done on a Raspberry-like system (Orange Pi zero). 
-It was a little too much just for testing to set up a remote-debugger and cross compiler.
+Python-library for processing and multiplexing maritime device data from data-busses such as NMEA-0183, AIS, Seatalk(1).
+No need to (cross-)compile your project. Little dependencies. Easy configuratable.
 
 ## Features
 
@@ -43,7 +33,7 @@ Start the program like this:
 Since this project only produces NMEA-Output every NMEA-Device is supported which produces a new line at the end.
  Usually no parsing (but checksum) is happening.
 
-But some parsing/creation of NMEA-Sentences are supported:
+But some parsing/creations of NMEA-Sentences are supported:
 * RMC (Recommended Minimum Sentence) 
 * VHW (Speed Through Water)
 * DBT (Depth Below Keel)
@@ -133,7 +123,7 @@ A typical device is built like this:
 ```
 
 * The ``DeviceName`` is up to you but must be unique and is important for the ``observers``-section
-* The ``type`` specifies the type of data the devices receives (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
+* The ``type`` specifies the type of data the devices receive (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
 * Optional setting ``auto_flush: x``: Flushes IO every time every ``x`` datagrams where received.
 * ``device_io`` sets the IO-Settings needed for communication to that device (explained below).
   * Every ``device_io`` needs at least ``type`` to ensure which I/O to be used.
@@ -149,7 +139,7 @@ You can create either a TCP-Server or a -Client
 #### Server
 
 This example creates a TCP-Server called "MyTCPServer" on port 9900 with ASCII-Encoding. This device's type is NMEADevice. 
-So it only transmits/receives NMEA-Strings.
+So, it only transmits/receives NMEA-Strings.
 
 ```json
 {
@@ -209,7 +199,7 @@ Assumes **appending**-mode!
 
 ### FileRewriter
 
-Similar to File, but overwrites the file when writing and reading as much as possible.
+Similar to File but overwrites the file when writing and reading as much as possible.
 
 
 ### Serial
@@ -223,8 +213,8 @@ This may be the most important section.
 * parity - default None
 
 Given example shows a Seatalk-Device on port ``/dev/ttyUSB3`` with parity set to ``Mark`` without(!) encoding.
-Additionally the observer "MyTCPServer" is listening to this device.
-Furthermore the IO gets flushed after 10 datagrams were received (set with optional ``auto_flush``).
+Additionally, the observer "MyTCPServer" is listening to this device.
+Furthermore, the IO gets flushed after 10 datagrams were received (set with optional ``auto_flush``).
 
 ```json
 { 
@@ -246,7 +236,7 @@ Furthermore the IO gets flushed after 10 datagrams were received (set with optio
 
 ### StdOutPrinter
 
-This devices just prints out to StdOut (StdIn currently not supported):
+This device just prints out to StdOut (StdIn currently not supported):
 
 ```json
 {
@@ -272,7 +262,7 @@ To change it's default values and logfile-directory check ``config.json`` via ``
 
 ## Setting time
 
-Many devices don't have a battery-driven RTC or similar which might be useful for logging. Luckily GPS provides some information about date and time: ``GPRMC`` (Recommended Minimum Sentence).
+Many devices don't have a battery driven RTC or similar which might be useful for logging. Luckily GPS provides some information about date and time: ``GPRMC`` (Recommended Minimum Sentence).
 Besides positional data there are also some timing information. If you add a ``SetTimeDevice`` like this (don't forget to set ``TimeSetter`` as observer on the GPS-counterpart-device:
 
 ```json
@@ -292,7 +282,7 @@ The first valid ``RMC`` sentence will be used to set system (and eventually hard
 Since I noticed some hardware/driver related errors, I implemented a watchdog.
 If activated in ``config.json`` via ``Watchdog.Enable`` the watchdog will work within the ``TaskWatcher``.
 The ``TaskWatcher`` is responsible to watch every (nearly) daemonic spawned tasks. These tasks shall not terminate. If so
-the watchdog won't be won't be reset and a immediate system reset will happen.
+the watchdog won't be reset and an immediate system reset will happen.
 
  
 ### Windows 
@@ -304,7 +294,7 @@ be initiated.
 
 ### Linux
 
-If you're on a linux system, the watchdog in ``/dev/watchdog`` will be used. If you loaded the correct kernel module, a 
+If you're on a Linux system, the watchdog in ``/dev/watchdog`` will be used. If you loaded the correct kernel module, a 
 hardware watchdog will be used.
 
 Note: This requires sudo-privilege. (It's also possible to use the Software-Watchdog, but why though?) 
@@ -313,17 +303,17 @@ Note: This requires sudo-privilege. (It's also possible to use the Software-Watc
 ### What's the interval
 
 The watchdog **timeout** *can* be set in ``config.json`` via ``Watchdog.Timeout`` (disabled by default). It must be set for the Software-Watchdog. 
-If the value is ``null`` for the linux watchdog, the default timeout will be taken which is usually 16 seconds. 
+If the value is ``null`` for the Linux watchdog, the default timeout will be taken which is usually 16 seconds. 
 The **interval** is responsible for that the watchdog timeout doesn't run out which triggers a reboot.
 The **interval is set for half the timeout**.  
 
 
 ## Installation
 
-To install this project you need a python-interpreter which support asynchronous programming. This should be working with Python >= 3.5. But take a look at curio's dependencies!
-Right now there is no wheel package available. Usually you could install it with `python3.<version> -m pip install nmea_seatalk_multiplexer.<package_version>.whl`
+To install this project, you need a python-interpreter which support asynchronous programming. This should be working with Python >= 3.5. But take a look at curio's dependencies!
+There is no wheel package available. Usually you could install it with `python3.<version> -m pip install nmea_seatalk_multiplexer.<package_version>.whl`
 
-Right now though you need to copy theses project files to your target-machine and install the packages mentioned in [Dependencies](#Dependencies). Then start it as mentioned in [Invocation](#Invocation).
+Right now, though you need to copy theses project files to your target-machine and install the packages mentioned in [Dependencies](#Dependencies). Then start it as mentioned in [Invocation](#Invocation).
 
 ## Administrator
 
@@ -340,3 +330,14 @@ Also mentioned in `setup.py`:
 
 To install these packages: `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
 
+## Why
+I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project.
+ But for me it seemed too complicated and over the top:
+
+* Written in C++ 
+* Many dependencies 
+* Only works on Linux
+* To set it up is complex/complicated
+
+Why am I writing that? I don't want to run that project on a "big" computer. I wanted to get this done on a Raspberry Pi-like system (in my case an Orange Pi Zero). 
+It was a little too much just for testing to set up a remote-debugger and cross compiler.
