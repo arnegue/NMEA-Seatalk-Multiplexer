@@ -203,7 +203,7 @@ class TCPClient(TCP):
                 connection = await curio.open_connection(self._ip, self._port)
                 await self._serve_client(connection, (self._ip, self._port))
             except (TimeoutError, ConnectionError, OSError) as e:
-                # Reconnect if theses errors occur
+                # Reconnect if these errors occur
                 logger.exception(F"{type(self).__name__}: Exception:", e)
                 if self._close:
                     raise
@@ -266,7 +266,7 @@ class Serial(IO):
     @staticmethod
     def _get_parity_enum(parity):
         """
-        Some wrapper necessary to get that enum. Could also get just the first letter but that doesnt look good
+        Some wrapper necessary to get that enum. Could also get just the first letter but that doesn't look good
         """
         if isinstance(parity, str) and len(parity) > 1:
             for val in serial.PARITY_NAMES:
