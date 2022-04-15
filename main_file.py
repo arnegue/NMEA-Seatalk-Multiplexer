@@ -36,20 +36,25 @@ async def create_devices(path):
     device_classes_dict = create_devices_dict()
     device_instance_dict = {}
     for name in content:
-        device_dict = content[name]
-        device_type = device_classes_dict[device_dict["type"]]
-        auto_flush = device_dict.get("auto_flush", None)
+        try:
+            device_dict = content[name]
+            device_type = device_classes_dict[device_dict["type"]]
+            if not hasattr(device_dict, "auto_flush"):
+                device_dict["auto_flush"] = None
 
-        device_io_dict = device_dict["device_io"]
-        device_io_type = device_io_dict.pop("type")
-        device_io_class = getattr(device_io, device_io_type)
+            device_io_dict = device_dict["device_io"]
+            device_io_type = device_io_dict.pop("type")
+            device_io_class = getattr(device_io, device_io_type)
 
-        # Passes named parameters to to-be-created-objects (even None)
-        # if parameter is not given, default value will be assumed
-        device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if (v is not None)})
-        device_instance = device_type(name=name, io_device=device_io_instance, auto_flush=auto_flush)
-        logger.info(f"Instantiated Device {name} of type: {device_type.__name__}, IO {device_io_class.__name__}")
-        device_instance_dict[name] = device_instance
+            # Passes named parameters to to-be-created-objects (even None)
+            # if parameter is not given, default value will be assumed
+            device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if (v is not None)})
+            device_instance = device_type(**device_dict, name=name, io_device=device_io_instance)
+            logger.info(f"Instantiated Device {name} of type: {device_type.__name__}, IO {device_io_class.__name__}")
+            device_instance_dict[name] = device_instance
+        except Exception:
+            logger.error(f"Error in configuration of device {name}")
+            raise
 
     for observable in device_instance_dict.values():
         observable_name = observable.get_name()

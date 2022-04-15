@@ -29,7 +29,7 @@ class Device(object, metaclass=ABCMeta):
         def warn(self, data, ingoing=False):
             super().warn(self._get_string(data, ingoing))
 
-    def __init__(self, name, io_device: device_io.IO, auto_flush: int = None):
+    def __init__(self, name, io_device: device_io.IO, auto_flush: int = None, *args, **kwargs):
         """
         Initializes Device
 
