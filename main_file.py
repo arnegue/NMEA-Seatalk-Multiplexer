@@ -48,7 +48,7 @@ async def create_devices(path):
 
             # Passes named parameters to to-be-created-objects (even None)
             # if parameter is not given, default value will be assumed
-            device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if (v is not None)})
+            device_io_instance = device_io_class(**{k: v for k, v in device_io_dict.items() if v is not None})
             device_instance = device_type(**device_dict, name=name, io_device=device_io_instance)
             logger.info(f"Instantiated Device {name} of type: {device_type.__name__}, IO {device_io_class.__name__}")
             device_instance_dict[name] = device_instance
@@ -77,7 +77,7 @@ async def device_receiver_task(device_):
                 sentence = await device_.get_nmea_datagram()
                 logger.info(f"Received {sentence.__class__.__name__}")
             except curio.TaskTimeout:
-                logger.debug(f"Timeout reading from {device_.get_name()}")  # Wont work sometimes
+                logger.debug(f"Timeout reading from {device_.get_name()}")  # Won't work sometimes
                 continue
             async with curio_wrapper.TaskGroupWrapper() as g:
                 for observer in observers:
@@ -102,7 +102,7 @@ async def main(devices_path):
         for device_ in list_devices:
             await g.spawn(device_.initialize)
 
-    # Spawn for every listening device a observer task
+    # Spawn for every listening device an observer task
     async with curio_wrapper.TaskGroupWrapper() as g:
         for device_ in list_devices:
             await g.spawn(device_receiver_task, device_)
