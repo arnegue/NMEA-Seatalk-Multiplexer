@@ -15,15 +15,15 @@ class SetTimeDevice(Device):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._time_set = False  # TODO better kind of unsubscribing
 
     async def get_nmea_datagram(self) -> NMEADatagram:
         raise SpecialDeviceException(f"No receiving from {self.get_name()}")
 
     async def write_to_device(self, sentence: NMEADatagram):
-        if not self._time_set:
-            if isinstance(sentence, RecommendedMinimumSentence) and sentence.valid_status == NMEAValidity.Valid:
-                self._logger.info(f"Setting date {sentence.date} from {sentence.get_nmea_sentence()}")
-                helper.set_system_time(sentence.date)
-                self._time_set = True
-                await self.shutdown()
+        """
+        Once a valid RMC was received, shutdown
+        """
+        if isinstance(sentence, RecommendedMinimumSentence) and sentence.valid_status == NMEAValidity.Valid:
+            self._logger.info(f"Setting date {sentence.date} from {sentence.get_nmea_sentence()}")
+            helper.set_system_time(sentence.date)
+            await self.shutdown()

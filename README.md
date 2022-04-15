@@ -268,7 +268,10 @@ Besides positional data there are also some timing information. If you add a ``S
 ```json
 {
   "TimeSetter": {
-    "type": "SetTimeDevice",
+    "type": "SetTimeDevice", 
+    "device_io": {
+      "type": "IO"
+    },
     "observers": [
     ]
   }
