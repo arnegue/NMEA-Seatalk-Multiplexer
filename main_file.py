@@ -66,7 +66,7 @@ async def device_receiver_task(device_):
     observers = device_.get_observers()
     if len(observers):
         logger.info(f"Device {device_.get_name()} has observers")
-        while True:
+        while not device_.is_shutdown():
             try:
                 logger.debug(f"Trying to get NMEA-Sentence from {device_.get_name()}....")
                 sentence = await device_.get_nmea_datagram()
@@ -76,9 +76,15 @@ async def device_receiver_task(device_):
                 continue
             async with curio_wrapper.TaskGroupWrapper() as g:
                 for observer in observers:
-                    logger.debug(f"Writing to device: {observer.get_name()}")
-                    await g.spawn(observer.write_to_device, sentence)
+                    if observer.is_shutdown():
+                        logger.debug(f"Observer {observer.get_name()} was shutdown. Unsubscribung")
+                        device_.unset_observer(observer)
+                        break  # need to break since set changed size
+                    else:
+                        logger.debug(f"Writing to device: {observer.get_name()}")
+                        await g.spawn(observer.write_to_device, sentence)
             await curio.sleep(0)
+        logger.info(f"Stopped reiving. Device {device_.get_name()} got shutdown")
     else:
         logger.info(f"Device {device_.get_name()} doesn't have observers")
 

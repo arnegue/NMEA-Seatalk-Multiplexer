@@ -45,6 +45,7 @@ class Device(object, metaclass=ABCMeta):
         # Look in _check_flush(self) for more info
         self._auto_flush = auto_flush
         self._flush_idx = 0
+        self._shutdown = False
 
     def _get_data_logger(self):
         return self.RawDataLogger(self._name)
@@ -88,11 +89,21 @@ class Device(object, metaclass=ABCMeta):
         """
         self._observers.add(listener)
 
+    def unset_observer(self, listener):
+        """
+        Removes an observer (instance of Device) from observer-list
+        """
+        self._observers.remove(listener)
+
     async def shutdown(self):
         """
         Stops given device
         """
         await self._io_device.cancel()
+        self._shutdown = True
+
+    def is_shutdown(self):
+        return self._shutdown
 
     async def _check_flush(self):
         """
