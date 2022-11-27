@@ -81,7 +81,7 @@ async def device_receiver_task(device_):
             async with curio_wrapper.TaskGroupWrapper() as g:
                 for observer in observers:
                     if observer.is_shutdown():
-                        logger.debug(f"Observer {observer.get_name()} was shutdown. Unsubscribung")
+                        logger.debug(f"Observer {observer.get_name()} was shutdown. Unsubscribing")
                         device_.unset_observer(observer)
                         break  # need to break since set changed size
                     else:
