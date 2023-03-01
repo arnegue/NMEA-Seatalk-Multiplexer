@@ -3,11 +3,11 @@ This page describes my own configuration on an Orange Pi Zero.\
 PDFs and PinOuts are also in this repository's branch.
 
 # Used Hardware
-## Orange Pi Zero
-[Homepage Orange Pi Zero](http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-Zero-LTS.html)
+## Orange Pi Zero 2
+[Homepage Orange Pi Zero 2](http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-Zero-2.html)
 
 ## Delock USB 2.0 to 4 x serial adapter
-[Delock USB 2.0 to 4 x serial adapter Adapter Homepage](https://www.delock.de/produkt/87414/merkmale.html?setLanguage=en)
+[Delock USB 2.0 to 4 x serial Adapter Homepage](https://www.delock.de/produkt/87414/merkmale.html?setLanguage=en)
 
 ## Own soldered Seatalk-Serial converter:
 [Thomas Knauf's layout](http://www.thomasknauf.de/rap/seatalk3.htm#Bid)
@@ -19,17 +19,20 @@ connected to a [PCF8575C](https://www.ti.com/lit/ds/symlink/pcf8575c.pdf)-Shield
 ## Radio: Lowrance Link-8 VHF
 * [Owner's Manual](https://softwaredownloads.navico.com/Lowrance/FTP/Lowrance_Software%20-%20Copy/Documents/Link-8_OM_EN_988-10254-001_w.pdf)
 * [Installation instructions](ftp://software.lowrance.com/Documents/Link-8_IM_EN_988-10249-002_w.pdf)
+
 ## Wind: NASA Clipper Wireless Wind 
 [User Manual](https://www.nasamarine.com/wp-content/uploads/2015/12/Clipper-Wireless-Wind.pdf)
+
 ## GPS: Evermore SA-920
-[User Manual](https://media1.svb-media.de/media/snr/504148/pdf/manual_2016-04-15_08-12-59_2a4ee3b97a0ab407152b7afd32c439f0.pdf) (Link leads to media1.svb-media.de | Link is for SA-320, but pinout is similar, you could the correct manual from this repository though)
+[User Manual](https://media1.svb-media.de/media/snr/504148/pdf/manual_2016-04-15_08-12-59_2a4ee3b97a0ab407152b7afd32c439f0.pdf) (Link leads to media1.svb-media.de | Link is for SA-320, but pinout is similar)
 
 ## Seatalk: Raymarine ST60+ Tridata
 [Owner's Manual](http://busse-yachtshop.de/pdf/ray60Tridata.pdf)  (link leads to busse-yachtshop.de)
 
 ## Linux
-I used the most recent [Armbian](https://www.armbian.com/orange-pi-zero/). Last version: Armbian 23.02 Bullseye
-Every further command is executed as root.
+I used the most recent [Armbian](https://www.armbian.com/orange-pi-zero-2/). Latest version: Armbian 23.02 Bullseye
+Every following command is executed as root.
+
 
 ## WiFi-HotSpot
 To enable hotspot a WiFi-HotSpot, first install a DNS/DHCP-Server. Reboots may be required between steps
