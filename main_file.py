@@ -6,6 +6,8 @@ import inspect
 import curio_wrapper
 import logger
 import device
+from device_indicator.led_device_indicator import DeviceIndicator, LEDDeviceIndicator
+from device_indicator.pin import I2CPin
 from nmea import nmea
 import device_io
 import special_devices
@@ -116,4 +118,11 @@ if __name__ == '__main__':
     parser.add_argument('--devices', default="devices.json", help='Path to json-file containing needed information for creating devices')
 
     args = parser.parse_args()
-    curio.run(main, args.devices)
+    state_pin = I2CPin(0x20, 15, True)
+    indicator = LEDDeviceIndicator(state_pin)
+    try:
+        indicator.show_state(0)
+        curio.run(main, args.devices)
+    finally:
+        indicator.reset_state()
+
