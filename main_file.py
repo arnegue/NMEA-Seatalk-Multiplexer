@@ -89,7 +89,7 @@ async def device_receiver_task(device_):
                         logger.debug(f"Writing to device: {observer.get_name()}")
                         await g.spawn(observer.write_to_device, sentence)
             await curio.sleep(0)
-        logger.info(f"Stopped reiving. Device {device_.get_name()} got shutdown")
+        logger.info(f"Stopped receiving. Device {device_.get_name()} got shutdown")
     else:
         logger.info(f"Device {device_.get_name()} doesn't have observers")
 
