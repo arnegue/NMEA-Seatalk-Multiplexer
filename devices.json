@@ -14,7 +14,7 @@
     "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
-      "port": "/dev/ttyS2",
+      "port": "/dev/ttyS5",
       "baudrate": 38400,
       "encoding": "UTF-8"
     },
@@ -31,7 +31,8 @@
       "encoding": "ASCII"
     },
     "observers": [
-      "TCP"
+      "TCP",
+      "TimeSetter"
     ]
   },
   "Wind": {
@@ -63,6 +64,14 @@
       "type": "TCPServer",
       "port": "9900",
       "encoding": "UTF-8"
+    },
+    "observers": [
+    ]
+  },
+  "TimeSetter": {
+    "type": "SetTimeDevice",
+    "device_io": {
+      "type": "IO"
     },
     "observers": [
     ]
