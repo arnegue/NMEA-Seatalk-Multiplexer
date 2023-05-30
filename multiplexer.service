@@ -1,4 +1,5 @@
 # Put this file in /etc/systemd/system/
+# Activate with sudo systemctl enable multiplexer.service
 
 [Unit]
 Description=NMEA-Seatalk-Multiplexer
@@ -7,10 +8,9 @@ After=syslog.target network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/python3 main_file.py
+ExecStart=/usr/bin/python3 main_file.py
 WorkingDirectory=/home/pi/nmea_seatalk_multiplexer
 KillMode=control-group
-User=root  # Needed for watchdog
 
 [Install]
 WantedBy=multi-user.target
