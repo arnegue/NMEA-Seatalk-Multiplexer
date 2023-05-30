@@ -30,14 +30,13 @@ async def create_devices(path):
     """
     # Read JSon-File
     async with curio.aopen(path) as file:
-        content = await file.read()
-    content = json.loads(content)
+        file_content = await file.read()
+    file_content = json.loads(file_content)
 
     device_classes_dict = create_devices_dict()
     device_instance_dict = {}
-    for name in content:
+    for name, device_dict in file_content.items():
         try:
-            device_dict = content[name]
             device_type = device_classes_dict[device_dict["type"]]
             if not hasattr(device_dict, "auto_flush"):
                 device_dict["auto_flush"] = None
@@ -59,7 +58,7 @@ async def create_devices(path):
     for observable in device_instance_dict.values():
         observable_name = observable.get_name()
         observable_instance = device_instance_dict[observable_name]
-        for observer in content[observable_name]["observers"]:
+        for observer in file_content[observable_name]["observers"]:
             observer_instance = device_instance_dict[observer]
             observable_instance.set_observer(observer_instance)
 

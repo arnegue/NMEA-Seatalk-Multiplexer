@@ -7,6 +7,5 @@ setup(
     license='',
     author='Frosty',
     author_email='',
-    description='', install_requires=['curio>=1.0', 'pyserial',
-                                      "contextvars"]  # dependency of curio....
+    description='', install_requires=['curio>=1.0', 'pyserial']
 )
