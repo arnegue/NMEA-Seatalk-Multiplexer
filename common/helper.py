@@ -1,6 +1,7 @@
 import enum
 import os
-from datetime import datetime
+import curio
+from datetime import datetime, timedelta
 
 
 class Singleton(type):
@@ -14,6 +15,31 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+class TimedCircleQueue(curio.Queue):
+    """
+    Queue which ensures that new items get added anyway (old ones get removed).
+    When popping item, look if that item is older than given max_time
+
+    On super()-level a queue-item contains a tuple of the real item and it's timestamp when enqueuing
+    """
+    def __init__(self, maxsize, maxage: timedelta):
+        super().__init__(maxsize=maxsize)
+        self.maxage = maxage  # Keep naming to curio's maxsize
+
+    async def put(self, item):
+        if self.maxsize != 0 and self.full():
+            await super().get()  # discard first item
+        item_timestamp = datetime.now()
+        await super().put((item, item_timestamp))
+
+    async def get(self):
+        item, item_timestamp = await super().get()
+        diff = datetime.now() - item_timestamp
+        if diff > self.maxage:
+            item, item_timestamp = await self.get()
+        return item
 
 
 def set_system_time(date: datetime):

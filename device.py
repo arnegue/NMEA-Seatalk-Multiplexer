@@ -1,3 +1,5 @@
+import datetime
+
 import curio
 from abc import abstractmethod, ABCMeta
 
@@ -5,6 +7,7 @@ import logger
 import device_io
 import curio_wrapper
 from nmea.nmea_datagram import NMEADatagram
+from common.helper import TimedCircleQueue
 
 
 class Device(object, metaclass=ABCMeta):
@@ -124,8 +127,12 @@ class TaskDevice(Device, metaclass=ABCMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         max_queue_size = 10
-        self._write_queue = curio.Queue(maxsize=max_queue_size)  # only nmea-datagrams
-        self._read_queue = curio.Queue(maxsize=max_queue_size)   # only nmea-datagrams
+        try:
+            max_item_age = kwargs['max_item_age']
+        except KeyError:
+            max_item_age = 30
+        self._write_queue = TimedCircleQueue(maxsize=max_queue_size, maxage=max_item_age)  # only nmea-datagrams
+        self._read_queue = TimedCircleQueue(maxsize=max_queue_size, maxage=max_item_age)   # only nmea-datagrams
         self._write_task_handle = None
         self._read_task_handle = None
 

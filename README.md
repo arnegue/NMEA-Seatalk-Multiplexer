@@ -124,7 +124,10 @@ A typical device is built like this:
 
 * The ``DeviceName`` is up to you but must be unique and is important for the ``observers``-section
 * The ``type`` specifies the type of data the devices receive (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
-* Optional setting ``auto_flush: x``: Flushes IO every time every ``x`` datagrams where received.
+* Optional settings:
+  * ``auto_flush: x``: Flushes IO every time every ``x`` datagrams where received.
+  * ``max_item_age: x``: When dequeued item's age (since enqueueing) os older than ``x`` seconds, the item gets discarded. Defaults to 30 seconds
+
 * ``device_io`` sets the IO-Settings needed for communication to that device (explained below).
   * Every ``device_io`` needs at least ``type`` to ensure which I/O to be used.
   * Settings ``encoding`` is optional for every ``device_io``
