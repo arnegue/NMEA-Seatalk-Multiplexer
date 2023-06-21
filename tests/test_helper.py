@@ -16,7 +16,6 @@ class TestTwoWayDict(object):
         assert my_dict.get_reversed(3) == 1
         assert my_dict.get_reversed(5) == 4
 
-
     @staticmethod
     def test_none_unique_keys():
         my_dict = TwoWayDict({  # Dictionary will filter out the first key-value anyway
@@ -28,7 +27,6 @@ class TestTwoWayDict(object):
         with pytest.raises(ValueError):
             my_dict.get_reversed(3)
 
-
     @staticmethod
     def test_none_unique_values():
         with pytest.raises(ValueError):
@@ -36,7 +34,6 @@ class TestTwoWayDict(object):
                 1: 5,
                 4: 5,
             })
-
 
     @staticmethod
     def test_unknown_key():
@@ -47,7 +44,6 @@ class TestTwoWayDict(object):
         with pytest.raises(KeyError):
             my_dict.get(9)
 
-
     @staticmethod
     def test_unknown_value():
         my_dict = TwoWayDict({
@@ -56,7 +52,6 @@ class TestTwoWayDict(object):
         })
         with pytest.raises(ValueError):
             my_dict.get_reversed(4)
-
 
     @staticmethod
     def test_update_dict():
@@ -68,7 +63,6 @@ class TestTwoWayDict(object):
         assert my_dict[3] == 9
         assert my_dict.get_reversed(9) == 3
 
-
     @staticmethod
     def test_put_new_item():
         my_dict = TwoWayDict({
@@ -79,7 +73,6 @@ class TestTwoWayDict(object):
         assert my_dict[3] == 9
         assert my_dict.get_reversed(9) == 3
 
-
     @staticmethod
     def test_override_item():
         my_dict = TwoWayDict({
@@ -88,7 +81,6 @@ class TestTwoWayDict(object):
         assert my_dict[1] == 3
         my_dict[1] = 6
         assert my_dict[1] == 6
-
 
     @staticmethod
     def test_update_invalid_item():
@@ -131,7 +123,7 @@ class TestTimedCircleQueue(object):
         with pytest.raises(curio.TaskTimeout):
             async with curio.timeout_after(1):
                 await queue.get()  # Should get stuck, since queue must be empty at this point
-                assert False, f"Shouldn't dequeue an item, because of max_time {max_age}"
+                assert False, f"Shouldn't dequeue an item, because of max_age {max_age}"
 
     @staticmethod
     @pytest.mark.curio
