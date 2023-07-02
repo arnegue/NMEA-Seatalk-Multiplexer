@@ -2,6 +2,7 @@ import enum
 import os
 import curio
 from datetime import datetime, timedelta
+from math import cos, asin, sqrt, pi
 
 
 class Singleton(type):
@@ -199,11 +200,33 @@ class PartPosition(object):
         self.minutes = minutes
         self.direction = direction
 
+    def to_degrees(self):
+        return self.degrees + (self.minutes / 60)
+        # Takes degrees only (as float) and converts it into a split part_position
+
 
 class Position(object):
     def __init__(self, latitude: PartPosition, longitude: PartPosition):
         self.latitude = latitude
         self.longitude = longitude
+
+    @staticmethod
+    def distance(position_1, position_2):
+        """
+        Returns the distance between two Positions
+        :param position_1: first Positions
+        :param position_2: second Positions
+        :return: distance in km
+        """
+        lat1 = position_1.latitude.to_degrees()
+        lat2 = position_2.latitude.to_degrees()
+        lon1 = position_1.longitude.to_degrees()
+        lon2 = position_2.longitude.to_degrees()
+
+        # Taken and adapted from https://stackoverflow.com/a/21623206
+        p = pi / 180
+        a = 0.5 - cos((lat2 - lat1) * p) / 2 + cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2
+        return 12742 * asin(sqrt(a))  # 2*R*asin...
 
 
 def cast_if_at_position(values, index, cast):
