@@ -124,12 +124,15 @@ class TaskDevice(Device, metaclass=ABCMeta):
     """
     Device implemented as "parallely" running tasks with buffered queues
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, max_item_age=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         max_queue_size = 10
-        try:
-            max_item_age = kwargs['max_item_age']
-        except KeyError:
+
+        if max_item_age is None:
+            max_item_age = 30
+        max_item_age = datetime.timedelta(seconds=max_item_age)
+
+        if max_item_age.days == -1:
             max_item_age = 30
         self._write_queue = TimedCircleQueue(maxsize=max_queue_size, maxage=max_item_age)  # only nmea-datagrams
         self._read_queue = TimedCircleQueue(maxsize=max_queue_size, maxage=max_item_age)   # only nmea-datagrams

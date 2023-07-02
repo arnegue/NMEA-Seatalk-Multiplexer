@@ -43,8 +43,8 @@ async def create_devices(path):
             if "auto_flush" not in device_dict:
                 device_dict["auto_flush"] = None
 
-            max_item_age = device_dict["max_item_age"] if "max_item_age" in device_dict else -1
-            device_dict["max_item_age"] = datetime.timedelta(seconds=max_item_age)
+            max_item_age = device_dict["max_item_age"] if "max_item_age" in device_dict else None
+            device_dict["max_item_age"] = max_item_age
 
             device_io_dict = device_dict["device_io"]
             device_io_type = device_io_dict.pop("type")
