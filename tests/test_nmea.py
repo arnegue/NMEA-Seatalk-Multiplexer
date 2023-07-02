@@ -37,7 +37,7 @@ def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
                                                      magnetic_variation=1.2,
                                                      variation_sense=Orientation.East,
                                                      mode=FAAModeIndicator.Differential,
-                                                     talker_id="GP"),                                   "$GPRMC,160755.000590,A,12323.1,N,602.9,W,19.30,12.90,081220,1.20,E,D*28\r\n"),
+                                                     talker_id="GP"),                                   "$GPRMC,160755.000590,A,12323.10,N,06002.90,W,19.30,12.90,081220,1.20,E,D*28\r\n"),
 
                          (GPSDOPActiveSatellites(mode_1=GPSModes.Automatic, mode_2=GPSFixType.ThreeD,
                                                  list_satellite_ids=["10", "26", "27", "16", "20", "07", "08", "21", "11", "", "", "", ""],
