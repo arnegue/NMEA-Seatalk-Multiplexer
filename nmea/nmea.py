@@ -39,7 +39,6 @@ class NMEADevice(TaskDevice):
             while True:
                 received += await self._io_device.read(1)
                 if received[-1] == "\n":
-                    self._logger.info(received, ingoing=True)
                     return received
         except TypeError as e:
             logger.exception(f"{self.get_name()}: Error when reading. Wrong encoding?", e)
