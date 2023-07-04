@@ -261,7 +261,7 @@ There are two different kinds of logging: RawDataLogger and GlobalLogger. Every 
 received data to a logfile ``<DeviceName>_raw.log``. The Global Logger writes general (debug-)info to ``main_log.log``.
 
 A [RotatingFileHandler](https://docs.python.org/3/library/logging.handlers.html) is used for logging. 
-To change it's default values and logfile-directory check ``config.json`` via ``Logger``
+To change its default values and logfile-directory check ``config.json`` via ``Logger``
 
 ## SettingTime
 
