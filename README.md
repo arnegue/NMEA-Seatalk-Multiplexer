@@ -125,7 +125,7 @@ A typical device is built like this:
 * The ``DeviceName`` is up to you but must be unique and is important for the ``observers``-section
 * The ``type`` specifies the type of data the devices receive (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
 * Optional settings:
-  * ``auto_flush: x``: Flushes IO every time every ``x`` datagrams where received.
+  * ``auto_flush: x``: Flushes IO every time every ``x`` datagrams were received.
   * ``max_item_age: x``: When dequeued item's age (since enqueueing) os older than ``x`` seconds, the item gets discarded. Defaults to 30 seconds
 
 * ``device_io`` sets the IO-Settings needed for communication to that device (explained below).
@@ -257,7 +257,7 @@ This device just prints out to StdOut (StdIn currently not supported):
 
 ## Logging
 
-There are two different kinds of logging: RawDataLogger and GlobalLogger. Every device has a own logger-which writes 
+There are two different kinds of logging: RawDataLogger and GlobalLogger. Every device has an own logger-which writes 
 received data to a logfile ``<DeviceName>_raw.log``. The Global Logger writes general (debug-)info to ``main_log.log``.
 
 A [RotatingFileHandler](https://docs.python.org/3/library/logging.handlers.html) is used for logging. 
@@ -265,7 +265,7 @@ To change it's default values and logfile-directory check ``config.json`` via ``
 
 ## Setting time
 
-Many devices don't have a battery driven RTC or similar which might be useful for logging. Luckily GPS provides some information about date and time: ``GPRMC`` (Recommended Minimum Sentence).
+Many devices don't have a battery driven RTC (real time clock) or similar which might be useful for logging. Luckily GPS provides some information about date and time: ``GPRMC`` (Recommended Minimum Sentence).
 Besides positional data there are also some timing information. If you add a ``SetTimeDevice`` like this (don't forget to set ``TimeSetter`` as observer on the GPS-counterpart-device:
 
 ```json
@@ -323,7 +323,7 @@ Right now, though you need to copy theses project files to your target-machine a
 
 ## Administrator
 
-Features like [Watchdog](#Watchdog) and [Setting time](#Setting time) require admin privileges. If you don't use them the program should be running as standard user.
+Features like [Watchdog](#Watchdog) and [Setting time](#Setting_time) require admin privileges. If you don't use them the program should be running as standard user.
 
 ## Dependencies
 
@@ -335,15 +335,3 @@ Also mentioned in `setup.py`:
 * pywin32 (for Windows if ``SetTimeFromGPS`` is enabled)
 
 To install these packages: `python3.<version> -m pip install <package>`. (Ensure that curio has the correct version).
-
-## Why
-I tried to work with [marnav](https://github.com/mariokonrad/marnav/)'s library. It is a huge and good project.
- But for me it seemed too complicated and over the top:
-
-* Written in C++ 
-* Many dependencies 
-* Only works on Linux
-* To set it up is complex/complicated
-
-Why am I writing that? I don't want to run that project on a "big" computer. I wanted to get this done on a Raspberry Pi-like system (in my case an Orange Pi Zero). 
-It was a little too much just for testing to set up a remote-debugger and cross compiler.
