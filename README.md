@@ -263,7 +263,7 @@ received data to a logfile ``<DeviceName>_raw.log``. The Global Logger writes ge
 A [RotatingFileHandler](https://docs.python.org/3/library/logging.handlers.html) is used for logging. 
 To change it's default values and logfile-directory check ``config.json`` via ``Logger``
 
-## Setting time
+## SettingTime
 
 Many devices don't have a battery driven RTC (real time clock) or similar which might be useful for logging. Luckily GPS provides some information about date and time: ``GPRMC`` (Recommended Minimum Sentence).
 Besides positional data there are also some timing information. If you add a ``SetTimeDevice`` like this (don't forget to set ``TimeSetter`` as observer on the GPS-counterpart-device:
@@ -323,7 +323,7 @@ Right now, though you need to copy theses project files to your target-machine a
 
 ## Administrator
 
-Features like [Watchdog](#Watchdog) and [Setting time](#Setting_time) require admin privileges. If you don't use them the program should be running as standard user.
+Features like [Watchdog](#Watchdog) and [SettingTime](#SettingTime) require admin privileges. If you don't use them the program should be running as standard user.
 
 ## Dependencies
 
