@@ -1,4 +1,4 @@
-# NMEA-Seatalk-Multiplexer
+# NMEA-Seatalk-Multiplexer ![Test results](https://github.com/arnegue/NMEA-Seatalk-Multiplexer/actions/workflows/main.yml/badge.svg?branch=master)
 
 Python-library for processing and multiplexing maritime device data from data-busses such as NMEA-0183, AIS, Seatalk(1).
 No need to (cross-)compile your project. Little dependencies. Easy configuratable.
