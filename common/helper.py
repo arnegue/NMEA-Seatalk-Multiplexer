@@ -39,7 +39,7 @@ class TimedCircleQueue(curio.Queue):
         item, item_timestamp = await super().get()
         diff = datetime.now() - item_timestamp
         if diff > self.maxage:
-            item, item_timestamp = await self.get()
+            item = await self.get()
         return item
 
 
