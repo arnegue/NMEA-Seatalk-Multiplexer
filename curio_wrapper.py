@@ -39,14 +39,17 @@ class TaskWatcher(object, metaclass=Singleton):
         self.own_task_handle = None
         self._wd = None
 
-        wd_settings = settings.Settings().Watchdog
-        if wd_settings.Enable:
-            self._wd = Watchdog.get_watchdog()(timeout=wd_settings.Timeout)
+        self.wd_settings = settings.Settings().Watchdog
+        if self.wd_settings.Enable:
+            if self.wd_settings.PreviousResets < self.wd_settings.MaxResets:
+                self._wd = Watchdog.get_watchdog()(timeout=self.wd_settings.Timeout)
+            else:
+                logger.error(f"Not creating Watchdog. Device got reset {self.wd_settings.PreviousResets} times before.")
 
     @classmethod
     async def daemon_spawn(cls, task, *args):
         """
-        Spawns an task in background and adds it to handler
+        Spawns a task in background and adds it to handler
         :param task: coroutine to spawn
         :param args: arguments to pass to task
         :return: handle of task
@@ -63,6 +66,7 @@ class TaskWatcher(object, metaclass=Singleton):
         Runs in background, watches every daemon-spawned task and waits for it to finish.
         If any task finishes, it will be logged as warning or error (depending on its return)
         """
+        watchdog_stop = False
         if self._wd:
             signal.signal(signal.SIGINT, self.exit)
             self._wd.start()
@@ -81,18 +85,23 @@ class TaskWatcher(object, metaclass=Singleton):
                                 task_str += " without an exception"
                                 logger.warn(task_str)
                             if self._wd:
-                                break  # TODO quit
+                                return  # TODO quit
                     except Exception as e:
                         logger.exception(task_str + f". Could not identify task's state:", e)
                         if self._wd:
-                            break  # TODO quit
+                            watchdog_stop = True
+                            return  # TODO quit
 
                 await curio.sleep(self._watch_interval_s)
                 if self._wd:
                     self._wd.reset()
         finally:
+            if watchdog_stop:
+                self.wd_settings.PreviousResets += 1
+                self.wd_settings.write_to_file()
             logger.error("TaskWatcher: Watch-Routine ended")
 
     def exit(self, sig, frame):
+        self.wd_settings.PreviousResets = 0  # TODO does it also write to file?
         self._wd.exit()
         sys.exit(0)

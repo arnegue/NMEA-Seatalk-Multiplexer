@@ -288,7 +288,9 @@ The first valid ``RMC`` sentence will be used to set system (and eventually hard
 Since I noticed some hardware/driver related errors, I implemented a watchdog.
 If activated in ``config.json`` via ``Watchdog.Enable`` the watchdog will work within the ``TaskWatcher``.
 The ``TaskWatcher`` is responsible to watch every (nearly) daemonic spawned tasks. These tasks shall not terminate. If so
-the watchdog won't be reset and an immediate system reset will happen.
+the watchdog won't be reset, ``Watchdog.PreviousResets`` get incremented and an immediate system reset will happen.
+The watchdog only gets started if enabled and ``Watchdog.PreviousResets`` is smaller than ``Watchdog.MaxResets`` to avoid bootloop.
+If it is bigger or equal, it only gets logged. The reset of ``Watchdog.PreviousResets`` back to 0 has to be done manually.
 
  
 ### Windows 

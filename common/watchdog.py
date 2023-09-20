@@ -52,6 +52,8 @@ class _SoftwareWatchdog(Watchdog):
     """
     def __init__(self, timeout):
         super().__init__(timeout=timeout)
+        if self.timeout is None:
+            self.timeout = 30
         self._current_reset_value = 0
         self.reset()
         self._shutdown = False
@@ -64,6 +66,7 @@ class _SoftwareWatchdog(Watchdog):
         self._thread.start()
 
     def reset(self):
+        logger.debug("Resetting Watchdog")
         self._current_reset_value = self.timeout
 
     def exit(self):
@@ -155,6 +158,7 @@ class _LinuxWatchdog(Watchdog):
         """
         Most important function that feeds the watchdog so it won't reset the system
         """
+        logger.debug("Resetting Watchdog")
         self._wd_fd.write("\0")  # I think the character doesn't matter as long as it's not 'V' (see exit_watchdog)
 
     def exit(self, magic_close: bool = True):
