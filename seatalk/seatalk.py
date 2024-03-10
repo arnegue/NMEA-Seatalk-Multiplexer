@@ -68,8 +68,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
                 attribute = await self._io_device.read(1)
                 attribute_nr = get_numeric_byte_value(attribute)
-                data_length = attribute_nr & 0b00001111  # DataLength according to seatalk-datagram. length of 0 means 1 byte of data
-                attr_data = (attribute_nr & 0b11110000) >> 4
+                data_length = attribute_nr & 0x0F  # DataLength according to seatalk-datagram. length of 0 means 1 byte of data
+                attr_data = (attribute_nr & 0xF0) >> 4
                 # Verifies length (will raise exception before actually receiving data which won't be needed
                 data_gram.verify_data_length(data_length)
 
