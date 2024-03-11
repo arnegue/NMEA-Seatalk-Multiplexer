@@ -1424,7 +1424,7 @@ class DeviceIdentification2(SeatalkDatagram):
     Special class, which basically holds 3 other classes (depending on length and first half byte)
     """
     seatalk_id = 0xA4
-    data_length = -1  # TODO -1?
+    data_length = -1
 
     def __init__(self, real_datagram=None):
         SeatalkDatagram.__init__(self)
