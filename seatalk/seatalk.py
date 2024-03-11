@@ -55,7 +55,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         """
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
-        cmd_byte = bytearray()
+        cmd_byte = int()
         attribute = bytearray()
         data_bytes = bytearray()
         try:

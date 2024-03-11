@@ -70,78 +70,84 @@ def set_system_time(date: datetime):
         _linux_set_time(date)
 
 
-def byte_to_str(byte):
+def byte_to_str(byte_to_convert):
     """
     Returns string representation of given byte 0x2A -> "Ox2A "
 
-    :param byte:
-    :return:
+    :param byte_to_convert: given byte to convert
+    :return: string representation with hex prefix
     """
-    if isinstance(byte, int):
-        value = byte
+    if isinstance(byte_to_convert, int):
+        value = byte_to_convert
     else:
-        value = get_numeric_byte_value(byte)
+        value = get_numeric_byte_value(byte_to_convert)
     return '0x%02X ' % value
 
 
-def bytes_to_str(bytes):
+def bytes_to_str(bytes_to_convert) -> str:
     """
     Returns string representation of given bytes [0x21, 0x2E] -> "0x21 0x2E"
 
-    :param bytes: 
-    :return:
+    :param bytes_to_convert: given byte to convert
+    :return: string representation with hex prefix
     """
     byte_str = ""
-    for byte in bytes:
+    for byte in bytes_to_convert:
         byte_str += byte_to_str(byte)
     return byte_str[:-1]  # Remove last space
 
 
-def get_numeric_byte_value(byte):
+def get_numeric_byte_value(byte) -> int:
+    """
+    Returns numeric value of given byte
+
+    :param byte: byte to convert
+    :return: numeric integer value
+    """
     return int.from_bytes(byte, "big")
 
 
 class UnitConverter(object):
     # Distances
     @staticmethod
-    def meter_to_feet(meter):
+    def meter_to_feet(meter) -> float:
         return meter * 3.28084
 
     @staticmethod
-    def feet_to_meter(feet):
+    def feet_to_meter(feet) -> float:
         return feet / 3.28084
 
     @staticmethod
-    def meter_to_fathom(meter):
+    def meter_to_fathom(meter) -> float:
         return meter * 0.54680665
 
     @staticmethod
-    def fathom_to_meter(fathom):
+    def fathom_to_meter(fathom) -> float:
         return fathom / 0.54680665
 
     @staticmethod
-    def meter_to_nm(meter):
+    def meter_to_nm(meter) -> float:
         return meter / 1852
 
     @staticmethod
-    def nm_to_meter(nm):
+    def nm_to_meter(nm) -> float:
         return nm * 1852
 
     @staticmethod
-    def sm_to_nm(sm):
+    def sm_to_nm(sm) -> float:
         return sm * 0.868976
 
     @staticmethod
-    def nm_to_sm(sm):
+    def nm_to_sm(sm) -> float:
         return sm / 0.868976
 
     # Temperatures
     @staticmethod
-    def celsius_to_fahrenheit(celsius):
+    def celsius_to_fahrenheit(celsius) -> float:
         return celsius * 1.8 + 32
 
     @staticmethod
-    def fahrenheit_to_celsius(fahrenheit):
+    def fahrenheit_to_celsius(fahrenheit) -> float:
         return (fahrenheit - 32) / 1.8000
 
 
