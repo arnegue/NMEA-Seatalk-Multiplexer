@@ -73,7 +73,8 @@ def get_parameters():
        (DeviceIdentification1(DeviceIdentification1.DeviceID.ST600R),                                   bytes([0x90, 0x00, 0x02])),
        (SetRudderGain(3),                                                                               bytes([0x91, 0x00, 0x03])),
        (EnterAPSetup(),                                                                                 bytes([0x93, 0x00, 0x00])),
-       (CompassVariation(-28),                                                                          bytes([0x99, 0x00, 0xE4]))
+       (CompassVariation(-28),                                                                          bytes([0x99, 0x00, 0xE4])),
+       (TargetWayPointName("0058"),                                                                     bytes([0x82, 0x05, 0x00, 0xFF, 0x50, 0xAF, 0x20, 0xDF])),
     )
 
 
