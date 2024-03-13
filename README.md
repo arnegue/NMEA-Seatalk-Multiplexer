@@ -8,10 +8,9 @@ No need to (cross-)compile your project. Little dependencies. Easy configuratabl
 * Runs on Windows and Linux (Tested Windows 10, Armbian 4.19, Raspbian)
 * Python >=3.6
 * Easy logging for raw-data and "normal" logging
-* Supported interfaces:
+* Supported interfaces (both reading and writing):
   * NMEA
-  * Seatalk (writing partially supported because of missing bit-toggling when writing to interface)
-  * (I2C for NASA-Clipper-Devices to be done, [similar to openseamap](http://wiki.openseamap.org/wiki/De:NASA_Clipper_Range))
+  * Seatalk
 * Support for IO:
   * TCP (Client and Server)
   * File
@@ -215,7 +214,29 @@ This may be the most important section.
 * stopbits - default 1
 * parity - default None
 
-Given example shows a Seatalk-Device on port ``/dev/ttyUSB3`` with parity set to ``Mark`` without(!) encoding.
+Following example is a `Serial` device listening on ``/dev/ttyUSB0`` with ASCII-encoding and the default serial settings.
+```json
+{
+  "GPS": {
+    "type": "NMEADevice",
+    "auto_flush": 10,
+    "device_io": {
+      "type": "Serial",
+      "port": "/dev/ttyUSB1",
+      "encoding": "ASCII"
+    },
+    "observers": [
+      "TCP",
+      "TimeSetter"
+    ]
+  }
+}
+```
+
+### SeatalkSerial
+`SeatalkSerial` is a special `Serial` DeviceIO, because (when sending) the first command bytes needs to be transmitted with 
+a different parity bit. Following example shows a Seatalk-Device on port ``/dev/ttyUSB3``.
+No encoding is happening, so that the parsing is done on bit/byte-level.
 Additionally, the observer "MyTCPServer" is listening to this device.
 Furthermore, the IO gets flushed after 10 datagrams were received (set with optional ``auto_flush``).
 
@@ -225,9 +246,8 @@ Furthermore, the IO gets flushed after 10 datagrams were received (set with opti
    "type": "SeatalkDevice", 
    "auto_flush": 10,
    "device_io": {
-     "type": "Serial",
-     "port": "/dev/ttyUSB3",
-     "parity": "Mark"
+     "type": "SeatalkSerial",
+     "port": "/dev/ttyUSB3"
    },
    "observers": [
      "MyTCPServer"

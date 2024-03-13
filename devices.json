@@ -49,9 +49,8 @@
   "Seatalk": {
     "type": "SeatalkDevice",
     "device_io": {
-      "type": "Serial",
+      "type": "SeatalkSerial",
       "port": "/dev/ttyUSB3",
-      "parity": "Mark",
       "encoding": false
     },
     "observers": [

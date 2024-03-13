@@ -288,3 +288,18 @@ class Serial(IO):
     async def cancel(self):
         self._serial.cancel_read()
         self._serial.cancel_write()
+
+
+class SeatalkSerial(Serial):
+    """
+    Special Serial-device for Seatalk. Change parity after sending command byte
+    """
+    def _write_seatalk_serial(self, data):
+        self._serial.parity = serial.PARITY_MARK
+        self._serial.write(bytes([data[0]]))  # Cast that command byte to a one-byte-"bytes"-object to avoid creating a bytes-object full of 0s
+        self._serial.parity = serial.PARITY_SPACE
+        self._serial.write(data[1:])
+
+    async def _write(self, data):
+        self._serial.parity = serial.PARITY_MARK
+        return await curio.run_in_thread(partial(self._write_seatalk_serial, data))
