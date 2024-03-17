@@ -29,3 +29,4 @@ from seatalk.s60_e80_initialization import E80Initialization
 from seatalk.s65_select_fathom import SelectFathom
 from seatalk.s66_wind_alarm import WindAlarm
 from seatalk.s68_alarm_acknowledgement import AlarmAcknowledgement
+from seatalk.s6c_equipment_id import EquipmentID2
