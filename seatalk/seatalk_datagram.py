@@ -99,23 +99,6 @@ class _TwoWayDictDatagram(SeatalkDatagram, metaclass=ABCMeta):
         first_byte = first_half_byte << 4 | self.data_length
         return bytearray([self.seatalk_id, first_byte]) + map_bytes
 
-class TotalMileage(SeatalkDatagram):
-    """
-    22  02  XX  XX  00  Total Mileage: XXXX/10 nautical miles
-    """
-    seatalk_id = 0x22
-    data_length = 2
-
-    def __init__(self, mileage_miles=None):
-        SeatalkDatagram.__init__(self)
-        self.mileage_miles = mileage_miles
-
-    def process_datagram(self, first_half_byte, data):
-        self.mileage_miles = self.get_value(data[:2]) / 10
-
-    def get_seatalk_datagram(self):
-        return bytearray([self.seatalk_id, self.data_length]) + self.set_value(self.mileage_miles * 10) + bytearray([0x00])
-
 
 class WaterTemperatureDatagram(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
     """

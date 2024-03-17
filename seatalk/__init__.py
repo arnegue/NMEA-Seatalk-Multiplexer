@@ -6,5 +6,6 @@ from seatalk.s10_apparent_wind_speed_and_angle import ApparentWindAngle
 from seatalk.s11_apparent_wind_speed import ApparentWindSpeed
 from seatalk.s20_speed import Speed
 from seatalk.s21_trip_mileage import TripMileage
+from seatalk.s22_total_mileage import TotalMileage
 from seatalk.s36_cancel_mob import CancelMOB
 from seatalk.s38_code_lock_data import CodeLockData
