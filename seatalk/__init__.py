@@ -35,3 +35,4 @@ from seatalk.s80_set_lamp_intensity2 import SetLampIntensity2
 from seatalk.s81_course_computer_setup import CourseComputerSetup
 from seatalk.s82_target_waypoint_name import TargetWaypointName
 from seatalk.s86_key_stroke2 import KeyStroke2
+from seatalk.s87_set_response_level import SetResponseLevel
