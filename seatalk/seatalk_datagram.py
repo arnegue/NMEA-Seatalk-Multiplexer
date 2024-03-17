@@ -332,17 +332,6 @@ class _KeyStroke(_TwoWayDictDatagram):
         return super().get_seatalk_datagram(first_half_byte=self.increment_decrement)
 
 
-class SetLampIntensity2(_SetLampIntensityDatagram):
-    """
-    80  00  0X      Set Lamp Intensity: X=0 off, X=4:  1, X=8:  2, X=C: 3
-    """
-    seatalk_id = 0x80
-    data_length = 0
-
-    def __init__(self, intensity=0):
-        _SetLampIntensityDatagram.__init__(self, intensity=intensity)
-
-
 class CourseComputerSetup(SeatalkDatagram):
     """
     81  01  00  00  Sent by course computer during setup when going past USER CAL.

@@ -8,6 +8,3 @@ class SetLampIntensity1(_SetLampIntensityDatagram):
     """
     seatalk_id = 0x30
     data_length = 0
-
-    def __init__(self, intensity=0):
-        _SetLampIntensityDatagram.__init__(self, intensity=intensity)
