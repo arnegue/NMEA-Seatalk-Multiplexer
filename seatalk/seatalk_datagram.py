@@ -115,18 +115,6 @@ class _SetLampIntensityDatagram(_TwoWayDictDatagram, metaclass=ABCMeta):
         _TwoWayDictDatagram.__init__(self, map=intensity_map, set_key=intensity)
 
 
-class SetLampIntensity1(_SetLampIntensityDatagram):
-    """
-    30  00  0X      Set lamp Intensity; X=0: L0, X=4: L1, X=8: L2, X=C: L3
-                    (only sent once when setting the lamp intensity)
-    """
-    seatalk_id = 0x30
-    data_length = 0
-    
-    def __init__(self, intensity=0):
-        _SetLampIntensityDatagram.__init__(self, intensity=intensity)
-
-
 class _SeatalkPartPosition(SeatalkDatagram, metaclass=ABCMeta):
     """
     BaseClass for PartPositions (Latitude and Longitude)

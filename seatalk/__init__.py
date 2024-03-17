@@ -12,5 +12,6 @@ from seatalk.s24_display_units_mileage_speed import DisplayUnitsMileageSpeed
 from seatalk.s25_TotalTripLog import TotalTripLog
 from seatalk.s26_speed2 import Speed2
 from seatalk.s27_water_temperature2 import WaterTemperature2
+from seatalk.s30_set_lamp_intensity1 import SetLampIntensity1
 from seatalk.s36_cancel_mob import CancelMOB
 from seatalk.s38_code_lock_data import CodeLockData
