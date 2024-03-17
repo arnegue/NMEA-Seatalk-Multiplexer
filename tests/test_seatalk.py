@@ -36,7 +36,7 @@ def get_parameters():
        (EquipmentID1(EquipmentID1.Equipments.ST60_Tridata),                                             bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
        (ApparentWindAngle(256.5), bytes([0x10, 0x01, 0x01, 0x02])),
        (ApparentWindSpeed(18.3),                                                                        bytes([0x11, 0x01, 0x12, 0x03])),
-       (SpeedDatagram(speed_knots=8.31),                                                                bytes([0x20, 0x01, 0x53, 0x00])),
+       (Speed(speed_knots=8.31),                                                                        bytes([0x20, 0x01, 0x53, 0x00])),
        (TripMileage(6784.12),                                                                           bytes([0x21, 0x02, 0x0C, 0x5A, 0x0A])),
        (TotalMileage(6553),                                                                             bytes([0x22, 0x02, 0xFA, 0xFF, 0x00])),
        (WaterTemperatureDatagram(temperature_c=17.2, sensor_defective=True),                            bytes([0x23, 0x41, 0x11, 0x3E])),
