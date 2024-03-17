@@ -1,12 +1,11 @@
 import pytest
-import datetime
 import curio
 import datetime
 
 import device_io
 from nmea import nmea_datagram
 from seatalk import *
-from seatalk.seatalk_datagram import *
+from seatalk.datagrams.seatalk_datagram import *
 from common import helper
 
 
