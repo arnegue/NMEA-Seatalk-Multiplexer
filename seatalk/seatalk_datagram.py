@@ -99,27 +99,6 @@ class _TwoWayDictDatagram(SeatalkDatagram, metaclass=ABCMeta):
         first_byte = first_half_byte << 4 | self.data_length
         return bytearray([self.seatalk_id, first_byte]) + map_bytes
 
-class DisplayUnitsMileageSpeed(_TwoWayDictDatagram):
-    """
-    24  02  00  00  XX  Display units for Mileage & Speed
-                    XX: 00=nm/knots, 06=sm/mph, 86=km/kmh
-    """
-    seatalk_id = 0x24
-    data_length = 2
-    
-    class Unit(enum.IntEnum):
-        Knots = enum.auto()
-        Mph = enum.auto()
-        Kph = enum.auto()
-
-    def __init__(self, unit: Unit=None):
-        unit_map = TwoWayDict({
-            bytes([0x00, 0x00, 0x00]): self.Unit.Knots,
-            bytes([0x00, 0x00, 0x06]): self.Unit.Mph,
-            bytes([0x00, 0x00, 0x86]): self.Unit.Kph,
-        })
-        _TwoWayDictDatagram.__init__(self, map=unit_map, set_key=unit)
-
 
 class TotalTripLog(SeatalkDatagram):
     """
