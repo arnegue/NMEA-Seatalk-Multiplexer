@@ -7,9 +7,10 @@ from seatalk.s11_apparent_wind_speed import ApparentWindSpeed
 from seatalk.s20_speed1 import Speed1
 from seatalk.s21_trip_mileage import TripMileage
 from seatalk.s22_total_mileage import TotalMileage
-from seatalk.s23_water_temperature import WaterTemperature
+from seatalk.s23_water_temperature import WaterTemperature1
 from seatalk.s24_display_units_mileage_speed import DisplayUnitsMileageSpeed
 from seatalk.s25_TotalTripLog import TotalTripLog
 from seatalk.s26_speed2 import Speed2
+from seatalk.s27_water_temperature2 import WaterTemperature2
 from seatalk.s36_cancel_mob import CancelMOB
 from seatalk.s38_code_lock_data import CodeLockData
