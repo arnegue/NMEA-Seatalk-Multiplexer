@@ -6,7 +6,8 @@ import logger
 from device import TaskDevice
 from nmea import nmea_datagram
 import seatalk.seatalk_datagram
-from seatalk.seatalk_datagram import SeatalkDatagram, SeatalkException, NoCorrespondingNMEASentence, DataNotRecognizedException
+from seatalk.seatalk_datagram import SeatalkDatagram
+from seatalk.seatalk_exceptions import SeatalkException, NoCorrespondingNMEASentence, DataNotRecognizedException
 
 
 class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
