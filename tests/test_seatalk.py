@@ -66,7 +66,7 @@ def get_parameters():
        (SelectFathom(),                                                                                 bytes([0x65, 0x00, 0x02])),
        (WindAlarm(WindAlarm.Alarm.AngleLow, WindAlarm.Alarm.SpeedHigh),                                 bytes([0x66, 0x00, 0x81])),
        (AlarmAcknowledgement(AlarmAcknowledgement.AcknowledgementAlarms.DeepWaterAlarm),                bytes([0x68, 0x21, 0x01, 0x00])),
-       (EquipmentID2(EquipmentID2.Equipments.ST60_Log), bytes([0x6C, 0x05, 0x05, 0x70, 0x99, 0x10, 0x28, 0x2D])),
+       (EquipmentID2(EquipmentID2.Equipments.ST60_Log),                                                 bytes([0x6C, 0x05, 0x05, 0x70, 0x99, 0x10, 0x28, 0x2D])),
        (ManOverBoard(),                                                                                 bytes([0x6E, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])),
        (SetLampIntensity2(1),                                                                           bytes([0x80, 0x00, 0x04])),
        (CourseComputerSetup(CourseComputerSetup.MessageTypes.SetupFinished),                            bytes([0x81, 0x00, 0x00])),
@@ -77,7 +77,7 @@ def get_parameters():
        (SetRudderGain(3),                                                                               bytes([0x91, 0x00, 0x03])),
        (EnterAPSetup(),                                                                                 bytes([0x93, 0x00, 0x00])),
        (CompassVariation(-28),                                                                          bytes([0x99, 0x00, 0xE4])),
-       (TargetWayPointName("0058"),                                                                     bytes([0x82, 0x05, 0x00, 0xFF, 0x50, 0xAF, 0x20, 0xDF])),
+       (TargetWaypointName("0058"),                                                                     bytes([0x82, 0x05, 0x00, 0xFF, 0x50, 0xAF, 0x20, 0xDF])),
     )
 
 
