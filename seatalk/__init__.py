@@ -38,3 +38,4 @@ from seatalk.s86_key_stroke2 import KeyStroke2
 from seatalk.s87_set_response_level import SetResponseLevel
 from seatalk.s90_device_identification1 import DeviceIdentification1
 from seatalk.s91_set_rudder_gain import SetRudderGain
+from seatalk.s93_enter_ap_setup import EnterAPSetup

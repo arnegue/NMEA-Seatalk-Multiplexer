@@ -335,20 +335,6 @@ class _KeyStroke(_TwoWayDictDatagram):
 # Description of Thomas Knauf for 0x83 is weird: "83 07 XX 00 00 00 00 00 80 00 00": That's one byte too much. But which one? 0x80?
 
 
-class EnterAPSetup(_ZeroContentClass):
-    """
-    93  00  00      Enter AP-Setup: Sent by course computer before
-                    finally entering the dealer setup. It is repeated
-                    once per second, and times out after ten seconds.
-                    While this is being sent, command 86 X1 68 97 is
-                    needed for final entry into Setup. (600R generates
-                    this when –1 & +1 are pressed simultaneously in this
-                    mode).
-    """
-    seatalk_id = 0x93
-    data_length = 0
-
-
 class CompassVariation(SeatalkDatagram):
     """
     99  00  XX       Compass variation sent by ST40 compass instrument
