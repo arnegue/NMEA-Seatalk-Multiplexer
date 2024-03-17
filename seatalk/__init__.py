@@ -18,3 +18,4 @@ from seatalk.s38_code_lock_data import CodeLockData
 from seatalk.s50_latitude_position import LatitudePosition
 from seatalk.s51_longitude_position import LongitudePosition
 from seatalk.s52_speed_over_ground import SpeedOverGround
+from seatalk.s53_course_over_ground import CourseOverGround
