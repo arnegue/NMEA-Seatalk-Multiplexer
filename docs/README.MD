@@ -132,3 +132,35 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | Gnd  | Brown  | 3*           | 9         |
 
 \* Debug bridge pins next to ethernet port
+
+### Raymarine RC300 (not used in devices but for debug process at home)
+#### Seatalk-Socket
+```
+  _______
+ /1  2  3\
+|   ___   |
+ \_/   \_/
+```
+| Name  | Seatalk-Socket |
+|-------|----------------|
+| (12V) | 1              |
+| Gnd   | 2              |
+| Data  | 3              |
+
+
+#### NMEA-Power-Connector
+```
+   ________
+  / 6 || 1 \
+ |5       2|
+ \_4_____3_/
+```
+
+| Name       | NMEA-Power-Connector |
+|------------|----------------------|
+| NMEA Out - | 1                    |
+| NMEA Out + | 2                    |
+| NMEA In -  | 3                    |
+| NMEA In +  | 4                    |
+| 12 V       | 5                    |
+| Gnd        | 6                    |
