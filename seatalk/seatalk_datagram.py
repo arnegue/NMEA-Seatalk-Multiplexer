@@ -332,17 +332,6 @@ class _KeyStroke(_TwoWayDictDatagram):
         return super().get_seatalk_datagram(first_half_byte=self.increment_decrement)
 
 
-class KeyStroke1(_KeyStroke):
-    """
-    55  X1  YY  yy  TRACK keystroke on GPS unit
-    """
-    seatalk_id = 0x55
-    data_length = 1
-    
-    def __init__(self, increment_decrement=0, key=None):
-        _KeyStroke.__init__(self, increment_decrement=increment_decrement, key=key)
-
-
 class E80Initialization(SeatalkDatagram):
     """
     61  03  03 00 00 00  Issued by E-80 multifunction display at initialization
