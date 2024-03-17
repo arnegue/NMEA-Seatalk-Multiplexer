@@ -2,7 +2,7 @@ from nmea import nmea_datagram
 from seatalk.seatalk_datagram import SeatalkDatagram
 
 
-class Speed(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
+class Speed1(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
     """
     20  01  XX  XX  Speed through water: XXXX/10 Knots
                      Corresponding NMEA sentence: VHW

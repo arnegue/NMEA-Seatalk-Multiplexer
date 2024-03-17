@@ -4,11 +4,12 @@ from seatalk.s00_depth import Depth
 from seatalk.s01_equipment_id import EquipmentID1
 from seatalk.s10_apparent_wind_speed_and_angle import ApparentWindAngle
 from seatalk.s11_apparent_wind_speed import ApparentWindSpeed
-from seatalk.s20_speed import Speed
+from seatalk.s20_speed1 import Speed1
 from seatalk.s21_trip_mileage import TripMileage
 from seatalk.s22_total_mileage import TotalMileage
 from seatalk.s23_water_temperature import WaterTemperature
 from seatalk.s24_display_units_mileage_speed import DisplayUnitsMileageSpeed
 from seatalk.s25_TotalTripLog import TotalTripLog
+from seatalk.s26_speed2 import Speed2
 from seatalk.s36_cancel_mob import CancelMOB
 from seatalk.s38_code_lock_data import CodeLockData
