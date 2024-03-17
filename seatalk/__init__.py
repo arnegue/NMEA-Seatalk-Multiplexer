@@ -30,3 +30,5 @@ from seatalk.s65_select_fathom import SelectFathom
 from seatalk.s66_wind_alarm import WindAlarm
 from seatalk.s68_alarm_acknowledgement import AlarmAcknowledgement
 from seatalk.s6c_equipment_id import EquipmentID2
+from seatalk.s6e_man_over_board import ManOverBoard
+
