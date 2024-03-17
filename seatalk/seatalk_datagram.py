@@ -151,25 +151,6 @@ class _SeatalkPartPosition(SeatalkDatagram, metaclass=ABCMeta):
         return bytearray([self.seatalk_id, self.data_length, degrees]) + self.set_value(yyyy)
 
 
-class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
-    """
-    52  01  XX  XX  Speed over Ground: XXXX/10 Knots
-                 Corresponding NMEA sentences: RMC, VT
-    """
-    seatalk_id = 0x52
-    data_length = 1
-    
-    def __init__(self, speed_knots=None):
-        SeatalkDatagram.__init__(self)
-        self.speed_knots = speed_knots
-
-    def process_datagram(self, first_half_byte, data):
-        self.speed_knots = self.get_value(data) / 10
-
-    def get_seatalk_datagram(self):
-        return bytearray([self.seatalk_id, self.data_length]) + self.set_value(int(self.speed_knots * 10))
-
-
 class CourseOverGround(SeatalkDatagram):
     """
     53  U0  VW      Course over Ground (COG) in degrees:
