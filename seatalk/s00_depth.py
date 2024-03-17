@@ -3,7 +3,7 @@ from nmea import nmea_datagram
 from seatalk.seatalk_datagram import SeatalkDatagram
 
 
-class DepthDatagram(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
+class Depth(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
     """
     00  02  YZ  XX XX  Depth below transducer: XXXX/10 feet
                    Flags in Y: Y&8 = 8: Anchor Alarm is active

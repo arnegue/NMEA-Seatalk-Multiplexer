@@ -32,7 +32,7 @@ class TestValueReceiver(device_io.IO):
 
 def get_parameters():
     return ("seatalk_datagram", "byte_representation"), (
-       (DepthDatagram(depth_m=22.3),                                                                    bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),
+       (Depth(depth_m=22.3), bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),
        (EquipmentID1(EquipmentID1.Equipments.ST60_Tridata),                                             bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
        (ApparentWindAngleDatagram(256.5),                                                               bytes([0x10, 0x01, 0x01, 0x02])),
        (ApparentWindSpeedDatagram(18.3),                                                                bytes([0x11, 0x01, 0x12, 0x03])),
