@@ -21,3 +21,4 @@ from seatalk.s52_speed_over_ground import SpeedOverGround
 from seatalk.s53_course_over_ground import CourseOverGround
 from seatalk.s54_gmt_time import GMT_Time
 from seatalk.s56_date import Date
+from seatalk.s57_sat_info import SatInfo
