@@ -27,3 +27,4 @@ from seatalk.s58_position import Position
 from seatalk.s59_countdown_timer import CountdownTimer
 from seatalk.s60_e80_initialization import E80Initialization
 from seatalk.s65_select_fathom import SelectFathom
+from seatalk.s66_wind_alarm import WindAlarm
