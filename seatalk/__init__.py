@@ -16,3 +16,4 @@ from seatalk.s30_set_lamp_intensity1 import SetLampIntensity1
 from seatalk.s36_cancel_mob import CancelMOB
 from seatalk.s38_code_lock_data import CodeLockData
 from seatalk.s50_latitude_position import LatitudePosition
+from seatalk.s51_longitude_position import LongitudePosition
