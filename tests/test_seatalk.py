@@ -2,7 +2,7 @@ import pytest
 import curio
 
 import device_io
-from seatalk import seatalk
+from seatalk import *
 from seatalk.seatalk_datagram import *
 from common.helper import bytes_to_str
 
