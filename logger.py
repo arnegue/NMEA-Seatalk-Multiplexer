@@ -7,11 +7,16 @@ from common import settings
 from common.helper import Singleton
 
 
+warn = info = debug = error = exception = None
+
+
 class Logger(object):
     def __init__(self, log_file_name="main_log.log", log_format="%(asctime)s %(levelname)s %(message)s", terminator=None, print_stdout=True):
         log_settings = settings.Settings().Logging
         log_file_dir = log_settings.LogFileDir
         log_formatter = logging.Formatter(log_format)
+        if log_file_dir is None:
+            log_file_dir = "."
         if not os.path.exists(log_file_dir):
             os.makedirs(log_file_dir)
         my_handler = RotatingFileHandler(filename=log_file_dir + "/" + log_file_name, mode=log_settings.Mode, maxBytes=log_settings.MaxFileSize, backupCount=log_settings.MaxBackupFiles, encoding=None, delay=0)
@@ -64,14 +69,14 @@ class Logger(object):
 
 
 class GeneralLogger(Logger, metaclass=Singleton):
-    pass
+    def __init__(self, *args, **kwargs):
+        global warn, info, debug, error, exception
+        super().__init__(*args, **kwargs)
 
-
-warn = info = debug = error = exception = None
-if warn is info is error is debug is None:
-    logger = GeneralLogger()
-    warn = logger.warn
-    info = logger.info
-    debug = logger.debug
-    error = logger.error
-    exception = logger.exception
+        # Put message-functions on "global" scope
+        if warn is info is error is debug is None:
+            warn = self.warn
+            info = self.info
+            debug = self.debug
+            error = self.error
+            exception = self.exception

@@ -1,12 +1,10 @@
-import datetime
-
 import curio
-import logger
 import json
 import argparse
 import inspect
 
 import curio_wrapper
+import logger
 import device
 from nmea import nmea
 import device_io
@@ -113,6 +111,7 @@ async def main(devices_path):
 
 
 if __name__ == '__main__':
+    logger.GeneralLogger()  # Instantiate logger once
     parser = argparse.ArgumentParser(description='NMEA-Seatalk-Multiplexer.')
     parser.add_argument('--devices', default="devices.json", help='Path to json-file containing needed information for creating devices')
 

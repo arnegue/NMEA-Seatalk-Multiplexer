@@ -5,7 +5,7 @@ import threading
 from abc import ABCMeta
 
 from common.ioctl import IOCTL
-from logger import logger
+import logger
 
 
 class WatchdogError(Exception):

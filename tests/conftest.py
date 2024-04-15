@@ -15,13 +15,17 @@ def _get_kernel():
     return test_kernel
 
 
-@pytest.fixture(scope="session")
 def kernel_fixture():
     return _get_kernel()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def session_start_fixture():
+    logger.GeneralLogger()
+
+
 @pytest.fixture(scope="function", autouse=True)
-def log_function():
+def log_function(session_start_fixture):
     """
     Logs currently running name of test-function
     """
