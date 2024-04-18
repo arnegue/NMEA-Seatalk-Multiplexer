@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 from typing import List, Tuple
 
-from common.helper import Position, PartPosition, Orientation
+from common.helper import Position, PartPosition, Orientation, TimedCircleQueue
 
 
 class ShipDataBase(object):
@@ -13,24 +13,48 @@ class ShipDataBase(object):
         self._property_timestamps = {}
         self._max_data_point_age_timedelta = timedelta(seconds=max_data_point_age_s)
 
-        self.utc_time: datetime = datetime.now()
-        self.current_position: Position = Position(latitude=PartPosition(0, 0, Orientation.North), longitude=PartPosition(0, 0, Orientation.East))
-        self.target_waypoints: List[Tuple[str, Position]] = []
-        self.depth_m: float = 0
-        # True HEADING
-        # True Course
-        self.heading_true_deg: float = 0.0
-        self.heading_magnetic_deg: float = 0.0
-        self.speed_over_ground_knots: float = 0.0
-        self.speed_over_water_knots: float = 0.0
-        self.apparent_wind_speed_knots: float = 0.0
-        self.apparent_wind_angle: float = 0.0
-        self.trip_mileage: float = 0.0
-        self.total_mileage: float = 0.0
-        self.water_temperature_c: float = 0.0
+        # Satellite / GPS
+        self.utc_time: time = None
+        self.date: date = None
+        self.latitude_position: PartPosition = None
+        self.longitude_position: PartPosition = None
+        self.target_waypoints: List[Tuple[str, Position]] = None
+        # TODO list of satellites
+
+        # Heading and course
+        self.course_over_ground_degree_true: float = None
+        self.course_over_ground_degree_magnetic: float = None
+        self.heading_degrees_true: float = None
+        self.heading_degrees_magnetic: float = None
+        self.heading_true_deg: float = None
+        self.heading_magnetic_deg: float = None
+
+        # Speed
+        self.speed_over_ground_knots: float = None
+        self.speed_through_water_knots: float = None
+
+        # Wind
+        self.true_wind_speed_knots: float = None
+        self.true_wind_speed_angle: float = None
+        self.apparent_wind_speed_knots: float = None
+        self.apparent_wind_angle: float = None
+
+        # Mileage
+        self.trip_mileage_miles: float = None
+        self.total_mileage_miles: float = None
+
+        # Water
+        self.depth_m: float = None
+        self.water_temperature_c: float = None
 
         # Seatalk-specific
-        self.set_light_intensity = 0
+        self.set_light_intensity: int = None
+
+        # List of valid datagrams which still can be tried to be forwarded to other listeners
+        # (avoid loss of data just because we can't parse it yet)
+        # TODO queue is not really needed but a list
+        self._list_unknown_nmea_datagrams = TimedCircleQueue(maxsize=100, maxage=self._max_data_point_age_timedelta)
+        self._list_unknown_seatalk_datagrams = TimedCircleQueue(maxsize=100, maxage=self._max_data_point_age_timedelta)
 
     def _is_property_too_old(self, property_name):
         """

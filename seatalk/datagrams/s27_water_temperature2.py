@@ -1,8 +1,7 @@
-from nmea import nmea_datagram
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
-class WaterTemperature2(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NMEA: mtw
+class WaterTemperature2(SeatalkDatagram):
     """
     27  01  XX  XX  Water temperature: (XXXX-100)/10 deg Celsius
                  Corresponding NMEA sentence: MTW
@@ -10,9 +9,9 @@ class WaterTemperature2(SeatalkDatagram, nmea_datagram.WaterTemperature):  # NME
     seatalk_id = 0x27
     data_length = 1
 
-    def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self)
-        nmea_datagram.WaterTemperature.__init__(self, *args, **kwargs)
+    def __init__(self, temperature_c=None):
+        super().__init__()
+        self.temperature_c = temperature_c
 
     def process_datagram(self, first_half_byte, data):
         self.temperature_c = (self.get_value(data) - 100) / 10

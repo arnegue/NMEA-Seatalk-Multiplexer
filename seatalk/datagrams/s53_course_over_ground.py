@@ -9,13 +9,12 @@ class CourseOverGround(SeatalkDatagram):
                     the two higher bits of  U /  2 =
                     (U & 0x3) * 90 + (VW & 0x3F) * 2 + (U & 0xC) / 8
                  The Magnetic Course may be offset by the Compass Variation (see datagram 99) to get the Course Over Ground (COG).
-                 Corresponding NMEA sentences: RMC, VTG
     """
     seatalk_id = 0x53
     data_length = 0
 
     def __init__(self, course_degrees=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.course_degrees = course_degrees
 
     def process_datagram(self, first_half_byte, data):

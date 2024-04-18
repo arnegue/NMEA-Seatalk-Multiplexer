@@ -1,7 +1,7 @@
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
-class ManOverBoard(SeatalkDatagram):
+class ManOverBoard(SeatalkDatagram):  # TODO ZeroContentDiagram?
     """
     6E  07  00  00 00 00 00 00 00 00 MOB (Man Over Board), (ST80), preceded
                  by a Waypoint 999 command: 82 A5 40 BF 92 6D 24 DB

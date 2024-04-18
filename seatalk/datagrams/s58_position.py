@@ -17,7 +17,7 @@ class Position(SeatalkDatagram):
     data_length = 5
 
     def __init__(self, position: helper.Position = None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.position = position
 
     def process_datagram(self, first_half_byte, data):

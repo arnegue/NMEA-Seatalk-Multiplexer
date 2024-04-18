@@ -27,7 +27,7 @@ class WindAlarm(SeatalkDatagram):
         NoAlarm = 0x00
 
     def __init__(self, apparent_alarm: Alarm=None, true_alarm: Alarm=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.apparent_alarm = apparent_alarm
         self.true_alarm = true_alarm
 

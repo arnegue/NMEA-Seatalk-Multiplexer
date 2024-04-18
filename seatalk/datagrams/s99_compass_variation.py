@@ -15,7 +15,7 @@ class CompassVariation(SeatalkDatagram):
     data_length = 0
 
     def __init__(self, variation=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.variation = variation
 
     def process_datagram(self, first_half_byte, data):

@@ -1,16 +1,15 @@
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
-class SpeedOverGround(SeatalkDatagram):  # TODO RMC, VTG?
+class SpeedOverGround(SeatalkDatagram):
     """
     52  01  XX  XX  Speed over Ground: XXXX/10 Knots
-                 Corresponding NMEA sentences: RMC, VT
     """
     seatalk_id = 0x52
     data_length = 1
 
     def __init__(self, speed_knots=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.speed_knots = speed_knots
 
     def process_datagram(self, first_half_byte, data):

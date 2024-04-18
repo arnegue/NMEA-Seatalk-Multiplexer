@@ -3,7 +3,7 @@ from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 from seatalk.seatalk_exceptions import DataValidationException
 
 
-class ApparentWindSpeed(SeatalkDatagram):  # TODO nmea mwv with ApparentWindAngle
+class ApparentWindSpeed(SeatalkDatagram):
     """
     11  01  XX  0Y  Apparent Wind Speed: (XX & 0x7F) + Y/10 Knots
                 Units flag: XX&0x80=0    => Display value in Knots
@@ -14,7 +14,7 @@ class ApparentWindSpeed(SeatalkDatagram):  # TODO nmea mwv with ApparentWindAngl
     data_length = 1
 
     def __init__(self, speed_knots=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.speed_knots = speed_knots
 
     def process_datagram(self, first_half_byte, data):

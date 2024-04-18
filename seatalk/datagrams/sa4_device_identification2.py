@@ -13,7 +13,7 @@ class DeviceIdentification2(SeatalkDatagram):
     data_length = -1
 
     def __init__(self, real_datagram=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self._real_datagram = real_datagram
 
     def verify_data_length(self, data_len):
@@ -95,7 +95,7 @@ class DeviceIdentification2(SeatalkDatagram):
             ST80MasterView = 0xA8
 
         def __init__(self, device_id: DeviceID = None, main_sw_version=None, minor_sw_version=None):
-            SeatalkDatagram.__init__(self)
+            super().__init__()
             self.device_id = device_id
             self.main_sw_version = main_sw_version
             self.minor_sw_version = minor_sw_version
