@@ -210,6 +210,9 @@ class PartPosition(object):
         return self.degrees + (self.minutes / 60)
         # Takes degrees only (as float) and converts it into a split part_position
 
+    def __repr__(self):
+        return repr(self.__dict__)
+
 
 class Position(object):
     def __init__(self, latitude: PartPosition, longitude: PartPosition):
@@ -233,6 +236,9 @@ class Position(object):
         p = pi / 180
         a = 0.5 - cos((lat2 - lat1) * p) / 2 + cos(lat1 * p) * cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2
         return 12742 * asin(sqrt(a))  # 2*R*asin...
+
+    def __repr__(self):
+        return repr(self.__dict__)
 
 
 def cast_if_at_position(values, index, cast):
