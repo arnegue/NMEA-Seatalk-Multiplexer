@@ -6,7 +6,6 @@ import logger
 from device import TaskDevice
 from nmea import nmea_datagram
 import seatalk
-import seatalk.datagrams.seatalk_datagram  # TODO remove when #1 is finished
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 from seatalk.seatalk_exceptions import SeatalkException, NoCorrespondingNMEASentence, DataNotRecognizedException
 
@@ -30,15 +29,20 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if len(self.__class__._seatalk_datagram_map) == 0:
-            for name, obj in inspect.getmembers(seatalk.datagrams.seatalk_datagram):  # TODO remove when #1 is finished
-                # Abstract, non-private SeatalkDatagrams
-                if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
-                    self.__class__._seatalk_datagram_map[obj.seatalk_id] = obj
+            self.__class__._seatalk_datagram_map = self.get_datagram_map()
 
-            for name, obj in inspect.getmembers(seatalk):
-                # Abstract, non-private SeatalkDatagrams
-                if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
-                    self.__class__._seatalk_datagram_map[obj.seatalk_id] = obj
+    @staticmethod
+    def get_datagram_map():
+        """
+        Return every datagram-class there is with it's seatalk_id (cmd_byte) as key
+        """
+        return_dict = {}
+        for name, obj in inspect.getmembers(seatalk):
+            # Abstract, non-private SeatalkDatagrams
+            if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
+                return_dict[obj.seatalk_id] = obj
+
+        return return_dict
 
     def _get_data_logger(self):
         return self.RawSeatalkLogger(self._name)
