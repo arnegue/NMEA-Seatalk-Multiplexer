@@ -5,6 +5,7 @@ import serial
 import logger
 from functools import partial
 
+from common.parity_serial import WinParitySerial
 from curio_wrapper import TaskGroupWrapper, TaskWatcher
 
 
@@ -261,7 +262,13 @@ class Serial(IO):
     def __init__(self, port, baudrate=4800, bytesize=serial.EIGHTBITS, stopbits=serial.STOPBITS_ONE, parity=serial.PARITY_NONE, encoding=False):
         super().__init__(encoding)
         parity = self._get_parity_enum(parity)
-        self._serial = serial.Serial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
+        self._serial = self.setup_serial(port, baudrate, bytesize, stopbits, parity)
+
+    def setup_serial(self, port, baudrate, bytesize, stopbits, parity):
+        """
+        Creates a serial instance
+        """
+        return serial.Serial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
 
     @staticmethod
     def _get_parity_enum(parity):
@@ -294,6 +301,12 @@ class SeatalkSerial(Serial):
     """
     Special Serial-device for Seatalk. Change parity after sending command byte
     """
+    def setup_serial(self, port, baudrate, bytesize, stopbits, parity):
+        """
+        Creates a serial instance
+        """
+        return WinParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)  # TODO linux
+
     def _write_seatalk_serial(self, data):
         self._serial.parity = serial.PARITY_MARK
         self._serial.write(bytes([data[0]]))  # Cast that command byte to a one-byte-"bytes"-object to avoid creating a bytes-object full of 0s
@@ -301,5 +314,8 @@ class SeatalkSerial(Serial):
         self._serial.write(data[1:])
 
     async def _write(self, data):
-        self._serial.parity = serial.PARITY_MARK
         return await curio.run_in_thread(partial(self._write_seatalk_serial, data))
+
+    async def _read(self, length=1):
+        self._serial.parity = serial.PARITY_SPACE
+        return await super()._read(length)
