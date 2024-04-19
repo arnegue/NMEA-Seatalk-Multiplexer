@@ -35,6 +35,7 @@ class NMEADevice(TaskDevice):
                 log_function(data, ingoing=True)
                 await self._check_flush()
 
+            logger.info(f"Received: {nmea_sentence.__class__.__name__}")
             self._set_own_datagrams.add(nmea_sentence.nmea_tag)
             await self._read_queue.put(nmea_sentence)
 

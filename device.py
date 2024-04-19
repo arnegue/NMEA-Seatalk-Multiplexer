@@ -136,8 +136,8 @@ class TaskDevice(Device, metaclass=ABCMeta):
 
         if max_item_age_s.days == -1:
             max_item_age_s = 30
-        self._write_queue = TimedCircleQueue(maxsize=max_queue_size, maxage=max_item_age_s)
-        self._read_queue = TimedCircleQueue(maxsize=max_queue_size, maxage=max_item_age_s)
+        self._write_queue = TimedCircleQueue(maxsize=max_queue_size, maxage_s=max_item_age_s)
+        self._read_queue = TimedCircleQueue(maxsize=max_queue_size, maxage_s=max_item_age_s)
         self._write_task_handle = None
         self._read_task_handle = None
 

@@ -114,23 +114,23 @@ def test_unit_converter(converting_function, expected_value):
 class TestTimedCircleQueue(object):
     @staticmethod
     @pytest.mark.curio
-    async def test_max_time():
+    async def test_item_discarding():
         max_size = 1
-        max_age = timedelta(seconds=0)  # Zero-time
-        queue = TimedCircleQueue(maxsize=max_size, maxage=max_age)
+        max_age = timedelta(seconds=1)
+        queue = TimedCircleQueue(maxsize=max_size, maxage_s=max_age)
         await queue.put(object())
-        await curio.sleep(1)
+        await curio.sleep(2)
         with pytest.raises(curio.TaskTimeout):
             async with curio.timeout_after(1):
                 await queue.get()  # Should get stuck, since queue must be empty at this point
-                assert False, f"Shouldn't dequeue an item, because of max_age {max_age}"
+                assert False, f"Shouldn't dequeue an item. It should've been discarded"
 
     @staticmethod
     @pytest.mark.curio
     async def test_max_size():
         max_size = 10
         max_age = timedelta(days=10)
-        queue = TimedCircleQueue(maxsize=max_size, maxage=max_age)
+        queue = TimedCircleQueue(maxsize=max_size, maxage_s=max_age)
         for i in range(max_size + 1):  # Enqueue one too much
             await queue.put(i)
 

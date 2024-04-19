@@ -6,8 +6,8 @@ import curio
 from common.helper import get_numeric_byte_value, byte_to_str, bytes_to_str, UnitConverter, Position as HelperPosition
 import logger
 from device import TaskDevice
-import seatalk.datagrams
-from seatalk.datagrams import *
+import seatalk.datagrams  # For get_datagram_map
+from seatalk.datagrams import *  # For handling ship-database
 from seatalk.seatalk_exceptions import SeatalkException, DataNotRecognizedException
 
 
@@ -45,7 +45,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         Return every datagram-class there is with it's seatalk_id (cmd_byte) as key
         """
         return_dict = {}
-        for name, obj in inspect.getmembers(seatalk):
+        for name, obj in inspect.getmembers(seatalk.datagrams):
             # Abstract, non-private SeatalkDatagrams
             if inspect.isclass(obj) and issubclass(obj, SeatalkDatagram) and not inspect.isabstract(obj) and obj.__name__[0] != '_':
                 return_dict[obj.seatalk_id] = obj
@@ -59,6 +59,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         while True:
             try:
                 data_gram = await self.receive_datagram()
+                logger.info(f"Received: {data_gram.__class__.__name__}")
                 await self._read_queue.put(data_gram)
             except SeatalkException:
                 pass
@@ -152,7 +153,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 if self.ship_data_base.target_waypoints is None:
                     self.ship_data_base.target_waypoints = []
                 if datagram.name not in self.ship_data_base.target_waypoints:
-                    self.ship_data_base.target_waypoints.append(datagram.name)
+                    self.ship_data_base.target_waypoints.append((datagram.name, None))  # None -> No position
 
     async def process_outgoing_datagram(self):
         while not self.is_shutdown():
@@ -183,7 +184,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 send_datagrams.append(SpeedOverGround(speed_knots=self.ship_data_base.speed_over_ground_knots))
             if self.ship_data_base.course_over_ground_degree_magnetic is not None:
                 send_datagrams.append(CourseOverGround(course_degrees=self.ship_data_base.course_over_ground_degree_magnetic))
-            if self.ship_data_base.time is not None:
+            if self.ship_data_base.utc_time is not None:
                 send_datagrams.append(GMT_Time(time=self.ship_data_base.time))
             if self.ship_data_base.date is not None:
                 send_datagrams.append(Date(date=self.ship_data_base.date))

@@ -6,7 +6,7 @@ from common.helper import Position, PartPosition, Orientation, TimedCircleQueue
 
 class ShipDataBase(object):
     """
-    DataBase of ship-data. Its data gets deleted if its too old
+    DataBase of ship-data. Its data gets deleted if it's too old
     """
     def __init__(self, max_data_point_age_s=60):
         self._data = {}
@@ -26,8 +26,6 @@ class ShipDataBase(object):
         self.course_over_ground_degree_magnetic: float = None
         self.heading_degrees_true: float = None
         self.heading_degrees_magnetic: float = None
-        self.heading_true_deg: float = None
-        self.heading_magnetic_deg: float = None
 
         # Speed
         self.speed_over_ground_knots: float = None
@@ -53,8 +51,8 @@ class ShipDataBase(object):
         # List of valid datagrams which still can be tried to be forwarded to other listeners
         # (avoid loss of data just because we can't parse it yet)
         # TODO queue is not really needed but a list
-        self._list_unknown_nmea_datagrams = TimedCircleQueue(maxsize=100, maxage=self._max_data_point_age_timedelta)
-        self._list_unknown_seatalk_datagrams = TimedCircleQueue(maxsize=100, maxage=self._max_data_point_age_timedelta)
+        self._list_unknown_nmea_datagrams = TimedCircleQueue(maxsize=100, maxage_s=self._max_data_point_age_timedelta)
+        self._list_unknown_seatalk_datagrams = TimedCircleQueue(maxsize=100, maxage_s=self._max_data_point_age_timedelta)
 
     def _is_property_too_old(self, property_name):
         """
@@ -64,9 +62,11 @@ class ShipDataBase(object):
         """
         property_time_stamp = self._get_timestamp(property_name)
         if property_time_stamp is None:
+            return True
+        elif self._max_data_point_age_timedelta.total_seconds() == 0:
             return False
-        current_time = datetime.now()
-        return current_time - property_time_stamp > self._max_data_point_age_timedelta
+        else:
+            return datetime.now() - property_time_stamp > self._max_data_point_age_timedelta
 
     def _get_timestamp(self, property_name):
         """
