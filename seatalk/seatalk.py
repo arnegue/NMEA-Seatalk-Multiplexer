@@ -1,7 +1,7 @@
 import inspect
 from abc import ABCMeta
 
-from common.helper import byte_to_str, bytes_to_str
+from common.helper import byte_to_str, bytes_to_str, get_numeric_byte_value
 import logger
 from common.parity_serial import ParityException
 from device import TaskDevice
@@ -19,13 +19,13 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             super().__init__(device_name=device_name, terminator="\n")
 
         def write_raw_seatalk(self, rec, attribute, data, ingoing):
-            data_gram_bytes = bytearray()
+            datagram_bytes = bytearray()
             for value in rec, attribute, data:
                 if isinstance(value, bytearray):
-                    data_gram_bytes += value
+                    datagram_bytes += value
                 else:
-                    data_gram_bytes.append(value)
-            self.info(data=bytes_to_str(data_gram_bytes), ingoing=ingoing)
+                    datagram_bytes.append(value)
+            self.info(data=bytes_to_str(datagram_bytes), ingoing=ingoing)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -53,47 +53,59 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
         while True:
-            data_gram = await self._receive_datagram()
+            datagram = await self._receive_datagram()
             try:
-                cmd_byte = data_gram[0]
-                if len(data_gram) >= 3:  # 3 is minimum length of seatalk-message (command-byte, length byte, data byte)
-                    if cmd_byte in self.__class__._seatalk_datagram_map:
-                        # Extract datagram and instantiate
-                        seatalk_datagram = self.__class__._seatalk_datagram_map[cmd_byte]()
-
-                        # attribute byte tells how long the message will be and maybe some additional info important to the SeatalkDatagram
-                        attribute_nr = data_gram[1]
-                        data_length = attribute_nr & 0x0F  # DataLength according to seatalk-datagram
-                        attr_data = (attribute_nr & 0xF0) >> 4
-                        # Verifies length (will raise exception before actually receiving data which won't be needed
-                        seatalk_datagram.verify_data_length(data_length)
-
-                        # At this point data_length is okay, finally receive it and progress whole datagram
-                        seatalk_datagram.process_datagram(first_half_byte=attr_data, data=data_gram[2:])
-                        # No need to verify checksum since it is generated the same way as it is checked
-
-                        if isinstance(seatalk_datagram, nmea_datagram.NMEADatagram):
-                            await self._read_queue.put(seatalk_datagram)
-                        else:
-                            raise NoCorrespondingNMEASentence(seatalk_datagram)
-                    else:
-                        raise DataNotRecognizedException(self.get_name(), cmd_byte)
+                seatalk_datagram = self.parse_datagram(datagram)
+                if isinstance(seatalk_datagram, nmea_datagram.NMEADatagram):
+                    await self._read_queue.put(seatalk_datagram)
                 else:
-                    raise NotEnoughData(self, ">=3 bytes", len(data_gram))
+                    raise NoCorrespondingNMEASentence(seatalk_datagram)
             except SeatalkException as e:
-                logger.error(repr(e) + " " + byte_to_str(data_gram))
+                logger.error(repr(e) + " " + byte_to_str(datagram))
             finally:
                 await self._check_flush()
+
+    def parse_datagram(self, datagram):
+        cmd_byte = datagram[0]
+        if len(datagram) < 3:  # 3 is minimum length of seatalk-message (command-byte, length byte, data byte)
+            raise NotEnoughData(self, ">=3 bytes", len(datagram))
+        elif cmd_byte not in self.__class__._seatalk_datagram_map:
+            raise DataNotRecognizedException(self.get_name(), cmd_byte)
+
+        # Extract datagram and instantiate
+        seatalk_datagram = self.__class__._seatalk_datagram_map[cmd_byte]()
+
+        # attribute byte tells how long the message will be and maybe some additional info important to the SeatalkDatagram
+        attribute_nr = datagram[1]
+        data_length = attribute_nr & 0x0F  # DataLength according to seatalk-datagram
+        attr_data = (attribute_nr & 0xF0) >> 4
+        # Verifies length (will raise exception before actually receiving data which won't be needed
+        seatalk_datagram.verify_data_length(data_length)
+
+        # At this point data_length is okay, finally receive it and progress whole datagram
+        seatalk_datagram.process_datagram(first_half_byte=attr_data, data=datagram[2:])
+        # No need to verify checksum since it is generated the same way as it is checked
+        return seatalk_datagram
 
     async def _receive_datagram(self):
         received_bytes = bytearray()
         # Receive until parity error occurs
         while True:
             try:
-                received_byte = await self._io_device.read(1)
+                await self._io_device.read(1)
             except ParityException:
-                if len(received_bytes) > 0:
-                    break
-            else:
-                received_bytes += received_byte
+                break
+
+        command_byte = await self._io_device.read(1)
+        received_bytes += command_byte
+
+        attribute_byte = await self._io_device.read(1)
+        received_bytes += attribute_byte
+
+        data_length = get_numeric_byte_value(attribute_byte) & 0x0F  # DataLength according to seatalk-datagram
+        for i in range(data_length + 1):
+            attribute_byte = await self._io_device.read(1)
+            received_bytes += attribute_byte
+        # TODO check if another parity exception occurred. if yes, raise seatalkexception
+
         return received_bytes
