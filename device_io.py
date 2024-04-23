@@ -5,7 +5,7 @@ import serial
 import logger
 from functools import partial
 
-from common.parity_serial import WinParitySerial
+from common.parity_serial import ParitySerial
 from curio_wrapper import TaskGroupWrapper, TaskWatcher
 
 
@@ -305,7 +305,7 @@ class SeatalkSerial(Serial):
         """
         Creates a serial instance
         """
-        return WinParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)  # TODO linux
+        return ParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
 
     def _write_seatalk_serial(self, data):
         self._serial.parity = serial.PARITY_MARK
