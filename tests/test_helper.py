@@ -111,6 +111,43 @@ def test_unit_converter(converting_function, expected_value):
     assert abs(actual_value - expected_value) < eps
 
 
+class TestTimedList(object):
+    @staticmethod
+    @pytest.mark.curio
+    async def test_item_discarding():
+        max_size = 1
+        max_age = timedelta(seconds=1)
+        timed_list = TimedList(maxsize=max_size, maxage_s=max_age)
+        timed_list.put(object())
+        await curio.sleep(2)
+        assert timed_list.get(0) is None
+
+    @staticmethod
+    def test_max_size():
+        max_size = 10
+        max_age = timedelta(days=10)
+        time_list = TimedList(maxsize=max_size, maxage_s=max_age)
+        for i in range(max_size + 1):  # Enqueue one too much
+            time_list.put(i)
+
+        assert len(time_list) == max_size
+
+        for i in range(max_size):
+            dequeued_item = time_list.get(i)
+            assert dequeued_item == i + 1
+
+    def test_iteration(self):
+        max_size = 10
+        time_list = TimedList(maxsize=max_size, maxage_s=timedelta(seconds=0))
+        for i in range(max_size):
+            time_list.put(i)
+
+        assert len(time_list) == max_size
+
+        for i, dequeued_item in enumerate(time_list):
+            assert i == dequeued_item
+
+
 class TestTimedCircleQueue(object):
     @staticmethod
     @pytest.mark.curio

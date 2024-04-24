@@ -100,7 +100,7 @@ class NMEADevice(TaskDevice):
             else:
                 # At this point we do are not able to put data directly into ship-data-base (or its an UnknownDatagram),
                 # instead just put it in the list
-                await self.ship_data_base._list_unknown_nmea_datagrams.put(datagram)
+                self.ship_data_base._list_unknown_nmea_datagrams.put(datagram)
 
     async def process_outgoing_datagram(self):
         send_datagrams = []
@@ -153,7 +153,8 @@ class NMEADevice(TaskDevice):
                                                     speed_knots=self.ship_data_base.apparent_wind_speed_knots,
                                                     validity=NMEAValidity.Valid))
 
-        # TODO self.ship_data_base._list_unknown_nmea_datagrams
+        for nmea_datagram in self.ship_data_base._list_unknown_nmea_datagrams:
+            send_datagrams.append(nmea_datagram)
 
         for datagram in send_datagrams:
             if datagram.nmea_tag not in self._set_own_datagrams:

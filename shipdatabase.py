@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, date, time
 from typing import List, Tuple
 
-from common.helper import Position, PartPosition, Orientation, TimedCircleQueue
+from common.helper import Position, PartPosition, TimedList
 
 
 class ShipDataBase(object):
@@ -50,9 +50,8 @@ class ShipDataBase(object):
 
         # List of valid datagrams which still can be tried to be forwarded to other listeners
         # (avoid loss of data just because we can't parse it yet)
-        # TODO queue is not really needed but a list
-        self._list_unknown_nmea_datagrams = TimedCircleQueue(maxsize=100, maxage_s=self._max_data_point_age_timedelta)
-        self._list_unknown_seatalk_datagrams = TimedCircleQueue(maxsize=100, maxage_s=self._max_data_point_age_timedelta)
+        self._list_unknown_nmea_datagrams = TimedList(maxsize=100, maxage_s=self._max_data_point_age_timedelta)
+        self._list_unknown_seatalk_datagrams = TimedList(maxsize=100, maxage_s=self._max_data_point_age_timedelta)
 
     def _is_property_too_old(self, property_name):
         """

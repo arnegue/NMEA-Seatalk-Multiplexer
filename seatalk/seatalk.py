@@ -227,7 +227,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             else:
                 # At this point we do are not able to put data directly into ship-data-base (or its an UnknownDatagram),
                 # instead just put it in the list
-                await self.ship_data_base._list_unknown_seatalk_datagrams.put(datagram)
+                self.ship_data_base._list_unknown_seatalk_datagrams.put(datagram)
 
     async def process_outgoing_datagram(self):
         while not self.is_shutdown():
@@ -269,7 +269,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 for waypoint_name, way_point_pos in self.ship_data_base.target_waypoints:
                     send_datagrams.append(TargetWaypointName(waypoint_name))
 
-            # TODO self.ship_data_base._list_unknown_seatalk_datagrams
+            for seatalk_datagram in self.ship_data_base._list_unknown_seatalk_datagrams:
+                send_datagrams.append(seatalk_datagram)
 
             for datagram in send_datagrams:
                 if datagram.seatalk_id not in self._set_own_datagrams:
