@@ -1,6 +1,6 @@
 # NMEA-Seatalk-Multiplexer ![Test results](https://github.com/arnegue/NMEA-Seatalk-Multiplexer/actions/workflows/main.yml/badge.svg?branch=master)
 
-Python-library for processing and multiplexing maritime device data from data-busses such as NMEA-0183, AIS, Seatalk(1).
+Python-library for processing and multiplexing maritime device data from data-busses such as NMEA-0183 (+ AIS), Seatalk(1).
 No need to (cross-)compile your project. Little dependencies. Easy configuratable.
 
 ## Features
@@ -42,9 +42,8 @@ But some parsing/creations of NMEA-Sentences are supported:
 ### Seatalk 1
  
 A big part of help for parsing Seatalk-Sentences and building hardware to be able to receive has come 
-from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
+from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm). 
 
-As written above: Writing to bus is buggy right now because of missing bit-toggling
 Some Seatalk-Messages do not have a corresponding NMEA-Sentence. 
 
 #### Supported (and tested on ST50 and ST60) Seatalk-IDs:
@@ -234,8 +233,19 @@ Following example is a `Serial` device listening on ``/dev/ttyUSB0`` with ASCII-
 ```
 
 ### SeatalkSerial
-`SeatalkSerial` is a special `Serial` DeviceIO, because (when sending) the first command bytes needs to be transmitted with 
-a different parity bit. Following example shows a Seatalk-Device on port ``/dev/ttyUSB3``.
+`SeatalkSerial` is a special `Serial` DeviceIO, because of its command byte, reflected with a mark-parity bit, whereas
+all other bytes have a space-parity (some may call it 9-bit serial).
+
+#### Parity Space/mark
+After further investigation: It can be tough to enable parity-checking. That's because of a mix of pyserial's
+implementation but also how your OS handles parity bits. Not every RS232/UART-device supports Mark/Space parity (if at all).
+> **Note**: 
+> If your device does not support it (no messages gets received because of missing ParityException), use ``"type": "Serial"`` instead.
+
+The parsing is worse (could be wrong too) because the program has to guess the command byte, but that's better than nothing.
+
+#### Settings
+Following example shows a Seatalk-Device on port ``/dev/ttyUSB3``.
 No encoding is happening, so that the parsing is done on bit/byte-level.
 Additionally, the observer "MyTCPServer" is listening to this device.
 Furthermore, the IO gets flushed after 10 datagrams were received (set with optional ``auto_flush``).
