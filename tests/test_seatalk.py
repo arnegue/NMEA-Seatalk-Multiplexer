@@ -22,18 +22,29 @@ class NoneReadWriter(device_io.IO):
         return bytes(length)
 
 
-class TestValueReceiver(device_io.IO):
-    def __init__(self, byte_array):
+class TestSeatalkIO(device_io.IO):
+    """
+    IO-Device which gets the bytearray as input (only), and then "reads" it with parity-exception
+    Also remembers the last written bytes
+    """
+    def __init__(self, byte_array: bytearray):
         super().__init__()
         self.bytes = byte_array
         self._parity_error_send = False
+        self.last_written_bytes = []
 
     async def _write(self, data):
-        raise NotImplementedError()
+        await curio.sleep(0)
+        self.last_written_bytes.append(data)  # TODO parity? what about more data?
 
     async def _read(self, length=1):
         if length != 1:
             raise Exception(f"Length {length} not supported")
+
+        while self.bytes is None:
+            await curio.sleep(1)  # TODO
+        else:
+            await curio.sleep(0)
 
         if not self._parity_error_send:
             self._parity_error_send = True
@@ -98,7 +109,7 @@ async def test_correct_recognition(seatalk_datagram, byte_representation):
     """
     Tests if "received" bytes result in a correct Datagram-Recognition (no direct value check here)
     """
-    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestValueReceiver(byte_representation))
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(byte_representation))
     datagram = await seatalk_device.receive_datagram()
     recognized_datagram = seatalk_device.parse_datagram(datagram)
     assert isinstance(recognized_datagram, type(seatalk_datagram))
@@ -107,7 +118,7 @@ async def test_correct_recognition(seatalk_datagram, byte_representation):
 @pytest.mark.curio
 async def test_not_enough_data():
     original = bytes([0x00, 0x01, 0x00, 0x00])
-    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice",  io_device=TestValueReceiver(original))
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(original))
     with pytest.raises(NotEnoughData):
         datagram = await seatalk_device.receive_datagram()
         seatalk_device.parse_datagram(datagram)
@@ -116,7 +127,7 @@ async def test_not_enough_data():
 @pytest.mark.curio
 async def test_too_much_data():
     original = bytes([0x00, 0x03, 0x00, 0x00, 0x00, 0x00])
-    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice",  io_device=TestValueReceiver(original))
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(original))
     with pytest.raises(TooMuchData):
         datagram = await seatalk_device.receive_datagram()
         seatalk_device.parse_datagram(datagram)
@@ -125,7 +136,7 @@ async def test_too_much_data():
 @pytest.mark.curio
 async def test_not_recognized():
     original = bytes([0xFF, 0x03, 0x00, 0x00, 0x00, 0x00])
-    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestValueReceiver(original))
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(original))
     with pytest.raises(DataNotRecognizedException):
         datagram = await seatalk_device.receive_datagram()
         seatalk_device.parse_datagram(datagram)
@@ -175,7 +186,7 @@ def get_device_identification_2_parameters():
 @pytest.mark.curio
 @pytest.mark.parametrize(*get_device_identification_2_parameters())
 async def test_correct_recognition_device_identification_2(seatalk_datagram, byte_representation):
-    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestValueReceiver(byte_representation))
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(byte_representation))
     datagram = await seatalk_device.receive_datagram()
     recognized_datagram = seatalk_device.parse_datagram(datagram)
     assert isinstance(recognized_datagram._real_datagram, type(seatalk_datagram))

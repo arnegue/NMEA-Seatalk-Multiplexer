@@ -6,7 +6,35 @@ from device_io import *
 
 
 test_tcp_port = 9991
- 
+
+
+class DummyIO(IO):
+    def __init__(self):
+        super().__init__()
+        self.shutdown = False
+
+    async def _read(self, length=1):
+        while not self.shutdown:
+            await curio.sleep(0.1)
+
+    async def _write(self, data):
+        pass
+
+
+@pytest.mark.curio
+async def test_non_receive_write():
+    # TaskDevice:
+    # Try to receive as task
+    # Now try to write to io
+    dummy = DummyIO()
+    task = await curio.spawn(dummy.read, 1)
+    await curio.sleep(0.5)  # Wait for task to start up
+    async with curio.timeout_after(1):
+        await dummy.write(1)
+
+    dummy.shutdown = True
+    await task.join()  # TODO this would never end
+
 
 class TestFileClass(File):
     async def initialize(self):

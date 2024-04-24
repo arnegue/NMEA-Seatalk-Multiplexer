@@ -1,6 +1,30 @@
+import curio
 import pytest
+
+import device_io
 from nmea.nmea_datagram import *
 from common.helper import Orientation
+
+
+class TestNMEAIO(device_io.IO):
+    """
+    IO-Device which gets the bytearray as input (only), and then "reads" it with parity-exception
+    Also remembers the last written bytes
+    """
+    def __init__(self, nmea_sentence: str):
+        super().__init__()
+        self.nmea_sentence = nmea_sentence
+        self.last_written_bytes = []
+
+    async def _write(self, data):
+        self.last_written_bytes.append(data)  # TODO what about more data?
+
+    async def _read(self, length=1):
+        while self.nmea_sentence is None:
+            await curio.sleep(1)  # TODO
+        ret_val = self.nmea_sentence[:length]
+        self.bytes = self.nmea_sentence[length:]
+        return ret_val
 
 
 @pytest.mark.parametrize(("nmea_str", "expected_type", "value_name", "expected_value"), (

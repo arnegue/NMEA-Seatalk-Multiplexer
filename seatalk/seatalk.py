@@ -36,7 +36,8 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._disable_parity = not isinstance(kwargs["io_device"], SeatalkSerial)
+        from tests.test_seatalk import TestSeatalkIO
+        self._disable_parity = not isinstance(kwargs["io_device"], (SeatalkSerial, TestSeatalkIO)) # TODO get rid of TestSeatalkIO
         self._last_read_parity_error = False   # See receive_datagram
         self._set_own_datagrams = set()  # Set of own datagrams (avoid sending back own messages)
         if len(self.__class__._seatalk_datagram_map) == 0:

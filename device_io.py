@@ -18,7 +18,7 @@ class IO(object):
         self._read_write_lock = curio.Lock()
 
     async def read(self, length=1):
-        async with self._read_write_lock:
+        async with self._read_write_lock:  # TODO there is a deadlock, when there is nothing to read. Leads to that writing is not possible
             data = await self._read(length)
         if self._encoding:
             try:

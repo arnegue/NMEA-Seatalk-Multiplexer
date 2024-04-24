@@ -103,60 +103,61 @@ class NMEADevice(TaskDevice):
                 self.ship_data_base._list_unknown_nmea_datagrams.put(datagram)
 
     async def process_outgoing_datagram(self):
-        send_datagrams = []
-        # TODO maybe dont even create diagram if its in _set_own_datagrams
-        if (self.ship_data_base.date is not None and  # Date: what if only DMY is set, but not HMS (or vise versa)
-                self.ship_data_base.latitude_position is not None and
-                self.ship_data_base.longitude_position is not None and
-                self.ship_data_base.speed_over_ground_knots is not None):  # TODO check other members too
-            send_datagrams.append(RecommendedMinimumSentence(datetime=self.ship_data_base.date,
-                                                             valid_status=NMEAValidity.Valid,
-                                                             position=Position(latitude=self.ship_data_base.latitude_position,
-                                                                               longitude=self.ship_data_base.longitude_position),
-                                                             speed_over_ground_knots=self.ship_data_base.speed_over_ground_knots,
-                                                             track_made_good=0,  # TODO
-                                                             magnetic_variation=0,  # TODO
-                                                             variation_sense=0,  # TODO
-                                                             ))
+        while not self.is_shutdown():
+            send_datagrams = []
+            # TODO maybe dont even create diagram if its in _set_own_datagrams
+            if (self.ship_data_base.date is not None and  # Date: what if only DMY is set, but not HMS (or vise versa)
+                    self.ship_data_base.latitude_position is not None and
+                    self.ship_data_base.longitude_position is not None and
+                    self.ship_data_base.speed_over_ground_knots is not None):  # TODO check other members too
+                send_datagrams.append(RecommendedMinimumSentence(datetime=self.ship_data_base.date,
+                                                                 valid_status=NMEAValidity.Valid,
+                                                                 position=Position(latitude=self.ship_data_base.latitude_position,
+                                                                                   longitude=self.ship_data_base.longitude_position),
+                                                                 speed_over_ground_knots=self.ship_data_base.speed_over_ground_knots,
+                                                                 track_made_good=None,  # TODO
+                                                                 magnetic_variation=None,  # TODO
+                                                                 variation_sense=None,  # TODO
+                                                                 ))
 
-        if (self.ship_data_base.speed_over_ground_knots is not None and
-                self.ship_data_base.course_over_ground_degree_true is not None and
-                self.ship_data_base.course_over_ground_degree_magnetic is not None):
-            send_datagrams.append(TrackMadeGoodGroundSpeed(course_over_ground_degree_true=self.ship_data_base.course_over_ground_degree_true,
-                                                           course_over_ground_degree_magnetic=self.ship_data_base.course_over_ground_degree_magnetic,
-                                                           speed_over_ground_knots=self.ship_data_base.speed_over_ground_knots,
-                                                           mode=GPSModes.Automatic))
-        # TODO GPSDOPActiveSatellites
-        if self.ship_data_base.depth_m is not None:
-            send_datagrams.append(DepthBelowKeel(depth_m=self.ship_data_base.depth_m))
+            if (self.ship_data_base.speed_over_ground_knots is not None and
+                    self.ship_data_base.course_over_ground_degree_true is not None and
+                    self.ship_data_base.course_over_ground_degree_magnetic is not None):
+                send_datagrams.append(TrackMadeGoodGroundSpeed(course_over_ground_degree_true=self.ship_data_base.course_over_ground_degree_true,
+                                                               course_over_ground_degree_magnetic=self.ship_data_base.course_over_ground_degree_magnetic,
+                                                               speed_over_ground_knots=self.ship_data_base.speed_over_ground_knots,
+                                                               mode=GPSModes.Automatic))
+            # TODO GPSDOPActiveSatellites
+            if self.ship_data_base.depth_m is not None:
+                send_datagrams.append(DepthBelowKeel(depth_m=self.ship_data_base.depth_m))
 
-        if (self.ship_data_base.speed_through_water_knots is not None and
-                self.ship_data_base.heading_degrees_magnetic is not None and
-                self.ship_data_base.heading_degrees_true is not None):
-            send_datagrams.append(SpeedThroughWater(speed_knots=self.ship_data_base.speed_through_water_knots,
-                                                    heading_degrees_true=self.ship_data_base.heading_degrees_true,
-                                                    heading_degrees_magnetic=self.ship_data_base.heading_degrees_magnetic))
+            if (self.ship_data_base.speed_through_water_knots is not None and
+                    self.ship_data_base.heading_degrees_magnetic is not None and
+                    self.ship_data_base.heading_degrees_true is not None):
+                send_datagrams.append(SpeedThroughWater(speed_knots=self.ship_data_base.speed_through_water_knots,
+                                                        heading_degrees_true=self.ship_data_base.heading_degrees_true,
+                                                        heading_degrees_magnetic=self.ship_data_base.heading_degrees_magnetic))
 
-        if self.ship_data_base.water_temperature_c is not None:
-            send_datagrams.append(WaterTemperature(temperature_c=self.ship_data_base.water_temperature_c))
+            if self.ship_data_base.water_temperature_c is not None:
+                send_datagrams.append(WaterTemperature(temperature_c=self.ship_data_base.water_temperature_c))
 
-        if (self.ship_data_base.true_wind_speed_knots is not None and
-                self.ship_data_base.true_wind_speed_angle is not None):
-            send_datagrams.append(WindSpeedAndAngle(angle_degree=self.ship_data_base.true_wind_speed_angle,
-                                                    reference_true=True,
-                                                    speed_knots=self.ship_data_base.true_wind_speed_knots,
-                                                    validity=NMEAValidity.Valid))
-        if (self.ship_data_base.apparent_wind_speed_knots is not None and
-                self.ship_data_base.apparent_wind_angle is not None):  # TODO if or elif?
-            send_datagrams.append(WindSpeedAndAngle(angle_degree=self.ship_data_base.apparent_wind_angle,
-                                                    reference_true=False,
-                                                    speed_knots=self.ship_data_base.apparent_wind_speed_knots,
-                                                    validity=NMEAValidity.Valid))
+            if (self.ship_data_base.true_wind_speed_knots is not None and
+                    self.ship_data_base.true_wind_speed_angle is not None):
+                send_datagrams.append(WindSpeedAndAngle(angle_degree=self.ship_data_base.true_wind_speed_angle,
+                                                        reference_true=True,
+                                                        speed_knots=self.ship_data_base.true_wind_speed_knots,
+                                                        validity=NMEAValidity.Valid))
+            if (self.ship_data_base.apparent_wind_speed_knots is not None and
+                    self.ship_data_base.apparent_wind_angle is not None):  # TODO if or elif?
+                send_datagrams.append(WindSpeedAndAngle(angle_degree=self.ship_data_base.apparent_wind_angle,
+                                                        reference_true=False,
+                                                        speed_knots=self.ship_data_base.apparent_wind_speed_knots,
+                                                        validity=NMEAValidity.Valid))
 
-        for nmea_datagram in self.ship_data_base._list_unknown_nmea_datagrams:
-            send_datagrams.append(nmea_datagram)
+            for nmea_datagram in self.ship_data_base._list_unknown_nmea_datagrams:
+                send_datagrams.append(nmea_datagram)
 
-        for datagram in send_datagrams:
-            if datagram.nmea_tag not in self._set_own_datagrams:
-                await self.write_datagram(datagram.get_nmea_sentence())
-        await curio.sleep(0.5)
+            for datagram in send_datagrams:
+                if datagram.nmea_tag not in self._set_own_datagrams:
+                    await self.write_datagram(datagram.get_nmea_sentence())
+            await curio.sleep(0.5)
