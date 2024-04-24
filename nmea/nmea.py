@@ -98,9 +98,9 @@ class NMEADevice(TaskDevice):
                     self.ship_data_base.apparent_wind_angle = datagram.angle_degree
                 # TODO valid_status
             else:
-                # At this point we do are not able to put data directly into ship-data-base,
+                # At this point we do are not able to put data directly into ship-data-base (or its an UnknownDatagram),
                 # instead just put it in the list
-                self.ship_data_base._list_unknown_nmea_datagrams.append(datagram)
+                await self.ship_data_base._list_unknown_nmea_datagrams.put(datagram)
 
     async def process_outgoing_datagram(self):
         send_datagrams = []
@@ -152,6 +152,9 @@ class NMEADevice(TaskDevice):
                                                     reference_true=False,
                                                     speed_knots=self.ship_data_base.apparent_wind_speed_knots,
                                                     validity=NMEAValidity.Valid))
+
+        # TODO self.ship_data_base._list_unknown_nmea_datagrams
+
         for datagram in send_datagrams:
             if datagram.nmea_tag not in self._set_own_datagrams:
                 await self.write_datagram(datagram.get_nmea_sentence())
