@@ -29,6 +29,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._last_read_parity_error = False   # See _receive_datagram
         if len(self.__class__._seatalk_datagram_map) == 0:
             self.__class__._seatalk_datagram_map = self.get_datagram_map()
 
@@ -53,8 +54,9 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         For more info: http://www.thomasknauf.de/seatalk.htm
         """
         while True:
-            datagram = await self._receive_datagram()
+            datagram = bytearray()
             try:
+                datagram = await self._receive_datagram()
                 seatalk_datagram = self.parse_datagram(datagram)
                 if isinstance(seatalk_datagram, nmea_datagram.NMEADatagram):
                     await self._read_queue.put(seatalk_datagram)
@@ -79,7 +81,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
         attribute_nr = datagram[1]
         data_length = attribute_nr & 0x0F  # DataLength according to seatalk-datagram
         attr_data = (attribute_nr & 0xF0) >> 4
-        # Verifies length (will raise exception before actually receiving data which won't be needed
+        # Verifies length (will raise exception before actually receiving data which won't be needed (should rarely happen)
         seatalk_datagram.verify_data_length(data_length)
 
         # At this point data_length is okay, finally receive it and progress whole datagram
@@ -89,23 +91,31 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
 
     async def _receive_datagram(self):
         received_bytes = bytearray()
-        # Receive until parity error occurs
+
+        # Receive until parity error occurs (or previous iteration had already a parity error. So avoid discard now-incoming datagram)
+        # There might be more than one parity error
         while True:
             try:
-                await self._io_device.read(1)
+                command_byte = await self._io_device.read(1)
             except ParityException:
+                command_byte = None
+                self._last_read_parity_error = True
+            if self._last_read_parity_error is True and command_byte is not None:
                 break
 
-        command_byte = await self._io_device.read(1)
-        received_bytes += command_byte
+        try:
+            received_bytes += command_byte
+            self._last_read_parity_error = False
 
-        attribute_byte = await self._io_device.read(1)
-        received_bytes += attribute_byte
-
-        data_length = get_numeric_byte_value(attribute_byte) & 0x0F  # DataLength according to seatalk-datagram
-        for i in range(data_length + 1):
             attribute_byte = await self._io_device.read(1)
             received_bytes += attribute_byte
-        # TODO check if another parity exception occurred. if yes, raise seatalkexception
+
+            data_length = get_numeric_byte_value(attribute_byte) & 0x0F  # DataLength according to seatalk-datagram
+            for i in range(data_length + 1):
+                attribute_byte = await self._io_device.read(1)
+                received_bytes += attribute_byte
+        except ParityException as pe:
+            self._last_read_parity_error = True
+            raise SeatalkException(f"Unexpected ParityException when receiving datagram. Received bytes: {bytes_to_str(received_bytes)}") from pe
 
         return received_bytes
