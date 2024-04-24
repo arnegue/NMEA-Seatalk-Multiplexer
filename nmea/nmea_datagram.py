@@ -231,7 +231,7 @@ class UnknownDatagram(NMEADatagram):
 class RecommendedMinimumSentence(NMEADatagram):
     nmea_tag = "RMC"
 
-    def __init__(self, datetime=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode:FAAModeIndicator=None, *args, **kwargs):
+    def __init__(self, datetime=None, valid_status:NMEAValidity=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode:FAAModeIndicator=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.datetime = datetime
         self.valid_status = valid_status
