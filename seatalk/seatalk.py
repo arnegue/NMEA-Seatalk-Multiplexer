@@ -109,7 +109,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
     async def receive_datagram(self) -> bytearray:
         received_bytes = bytearray()
 
-        # Receive until parity error occurs (or previous iteration had already a parity error. So avoid discard now-incoming datagram)
+        # Receive until parity error occurs (or previous iteration had already a parity error. So avoid to discard now-incoming datagram)
         # There might be more than one parity error
         cmd_byte = None
         while True:
@@ -123,14 +123,16 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
             if self._last_read_parity_error is True and cmd_byte is not None:
                 break
 
-        try:
-            received_bytes += cmd_byte
-            self._last_read_parity_error = False
+        received_bytes += cmd_byte
+        self._last_read_parity_error = False
 
+        try:
+            # Receive attribute byte which tells how long the message will be and maybe some additional info important to the SeatalkDatagram
             attribute_byte = await self._io_device.read(1)
             received_bytes += attribute_byte
 
             data_length = get_numeric_byte_value(attribute_byte) & 0x0F  # DataLength according to seatalk-datagram
+            # Receive data_length + 1 more bytes
             for i in range(data_length + 1):
                 data_byte = await self._io_device.read(1)
                 received_bytes += data_byte

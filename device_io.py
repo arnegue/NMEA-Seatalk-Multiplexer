@@ -308,6 +308,10 @@ class SeatalkSerial(Serial):
         return ParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
 
     def _write_seatalk_serial(self, data):
+        """
+        Writes the first (command-)byte with high parity bit ("Mark"), the rest with low ("Space") parity bit
+        """
+        # TODO check data-length
         self._serial.parity = serial.PARITY_MARK
         self._serial.write(bytes([data[0]]))  # Cast that command byte to a one-byte-"bytes"-object to avoid creating a bytes-object full of 0s
         self._serial.parity = serial.PARITY_SPACE
@@ -317,5 +321,8 @@ class SeatalkSerial(Serial):
         return await curio.run_in_thread(partial(self._write_seatalk_serial, data))
 
     async def _read(self, length=1):
+        """
+        Try to receive everything with Space parity (means, that the received command-byte will raise a parity exception)
+        """
         self._serial.parity = serial.PARITY_SPACE
         return await super()._read(length)

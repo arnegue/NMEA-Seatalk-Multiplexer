@@ -23,6 +23,16 @@ class DummyIO(IO):
 
 @pytest.mark.curio
 async def test_non_receive_write():
+    """
+    Tests for identified bug: Writing to port is not possible as long as TaskIO tries to receive values.
+    If there is nothing to receive, no writing will be possible at all
+
+    The reason is the underlying _read_write_lock which ensures that no writing and reading will happen simultaneously.
+    But what's the need there? Currently only for SeatalkSerial it could be interesting, because it's a serial bus. And for File
+
+    So removing the lock wouldn't be the best idea. Maybe add a timeout to the read-command? Seatalk*Serial* will buffer anyway.
+    Files
+    """
     # TaskDevice:
     # Try to receive as task
     # Now try to write to io
