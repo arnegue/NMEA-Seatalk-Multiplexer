@@ -15,11 +15,9 @@ class IO(object):
     """
     def __init__(self, encoding=False):
         self._encoding = encoding
-        self._read_write_lock = curio.Lock()
 
     async def read(self, length=1):
-        async with self._read_write_lock:  # TODO there is a deadlock, when there is nothing to read. Leads to that writing is not possible
-            data = await self._read(length)
+        data = await self._read(length)
         if self._encoding:
             try:
                 data = data.decode(self._encoding)
@@ -37,9 +35,7 @@ class IO(object):
             except UnicodeEncodeError:
                 logger.error(f"{type(self).__name__}: Could not encode: {data}")
                 data = bytearray()
-
-        async with self._read_write_lock:
-            return await self._write(data)
+        return await self._write(data)
 
     async def flush(self):
         pass
