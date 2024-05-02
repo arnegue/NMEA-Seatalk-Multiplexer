@@ -296,12 +296,18 @@ class Serial(IO):
 class SeatalkSerial(Serial):
     """
     Special Serial-device for Seatalk. Change parity after sending command byte
+    Reading and writing is done exclusively (it's a bus).
+    According to Thomas Knauf one can wait between transmissions at least 10/4800 seconds. But that too small (with OS and buffers)
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._read_write_lock = curio.Lock()
+
     def setup_serial(self, port, baudrate, bytesize, stopbits, parity):
         """
-        Creates a serial instance
+        Creates a serial instance with a timeout, so that read and write won't block each other but still can act exclusively
         """
-        return ParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
+        return ParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity, timeout=0.5)
 
     def _write_seatalk_serial(self, data):
         """
@@ -317,11 +323,19 @@ class SeatalkSerial(Serial):
             self._serial.write(data[1:])
 
     async def _write(self, data):
-        return await curio.run_in_thread(partial(self._write_seatalk_serial, data))
+        async with self._read_write_lock:
+            written_bytes = 0
+            while written_bytes == 0:
+                written_bytes = await curio.run_in_thread(partial(self._write_seatalk_serial, data))
+        return written_bytes
 
     async def _read(self, length=1):
         """
         Try to receive everything with Space parity (means, that the received command-byte will raise a parity exception)
         """
         self._serial.parity = serial.PARITY_SPACE
-        return await super()._read(length)
+        received_bytes = bytes()
+        while len(received_bytes) < length:
+            async with self._read_write_lock:
+                received_bytes += await super()._read(length)
+        return received_bytes
