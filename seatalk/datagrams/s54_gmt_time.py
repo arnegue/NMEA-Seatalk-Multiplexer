@@ -1,3 +1,4 @@
+from datetime import time as dt_time
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
@@ -11,22 +12,21 @@ class GMT_Time(SeatalkDatagram):
     seatalk_id = 0x54
     data_length = 1
 
-    def __init__(self, hours=None, minutes=None, seconds=None):
-        SeatalkDatagram.__init__(self)
-        self.hours = hours
-        self.minutes = minutes
-        self.seconds = seconds
+    def __init__(self, time=None):
+        super().__init__()
+        self.time = time
 
     def process_datagram(self, first_half_byte, data):
-        self.hours = data[1]
-        self.minutes = (data[0] & 0xFC) // 4
+        hours = data[1]
+        minutes = (data[0] & 0xFC) // 4
         st = ((data[0] & 0x0F) << 4) | first_half_byte
-        self.seconds = st & 0x3F
+        seconds = st & 0x3F
+        self.time = dt_time(hour=hours, minute=minutes, second=seconds)
 
     def get_seatalk_datagram(self):
-        hh_byte = self.hours
-        t_nibble = self.seconds & 0x0F
-        rs_byte = ((self.minutes * 4) & 0xFC) + ((self.seconds >> 4) & 0x03)
+        hh_byte = self.time.hour
+        t_nibble = self.time.second & 0x0F
+        rs_byte = ((self.time.minute * 4) & 0xFC) + ((self.time.second >> 4) & 0x03)
 
         first_byte = t_nibble << 4 | self.data_length
         return bytearray([self.seatalk_id, first_byte, rs_byte, hh_byte])

@@ -1,7 +1,7 @@
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
-class ApparentWindAngle(SeatalkDatagram):  # TODO nmea mwv with ApparentWindSpeed
+class ApparentWindAngle(SeatalkDatagram):
     """
     10  01  XX  YY  Apparent Wind Angle: XXYY/2 degrees right of bow
                 Used for autopilots Vane Mode (WindTrim)
@@ -11,7 +11,7 @@ class ApparentWindAngle(SeatalkDatagram):  # TODO nmea mwv with ApparentWindSpee
     data_length = 1
 
     def __init__(self, angle_degree=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.angle_degree = angle_degree
 
     def process_datagram(self, first_half_byte, data):

@@ -18,16 +18,54 @@ class Singleton(type):
         return cls._instances[cls]
 
 
+class TimedList(list):
+    """
+    NonBlocking list which ensures that new items get added anyway (old ones get removed).
+    When getting item, look if that item is older than given max_time
+    """
+    def __init__(self, maxsize, maxage_s: timedelta):
+        super().__init__()
+        self.maxsize = maxsize
+        self.maxage_s = maxage_s
+        self._internal_list = []
+
+    def put(self, item):
+        if item is None:
+            raise ValueError("None-Types not allowed")
+        if self.maxsize != 0 and len(self._internal_list) >= self.maxsize:
+            self._internal_list.pop(0)  # discard oldest item
+        item_timestamp = datetime.now()
+        self._internal_list.append((item, item_timestamp))
+
+    def __len__(self):
+        return len(self._internal_list)
+
+    def get(self, index):
+        if len(self._internal_list) == 0:
+            return None
+
+        item, item_timestamp = self._internal_list[index]
+        if self.maxage_s.total_seconds() != 0 and datetime.now() - item_timestamp > self.maxage_s:  # If too old, discard and return next item
+            self._internal_list.pop(index)
+            item = self.get(index)
+        return item
+
+    def __iter__(self):
+        # Use a generator to iterate over the items returned by the getter method
+        for i in range(len(self._internal_list)):
+            yield self.get(i)
+
+
 class TimedCircleQueue(curio.Queue):
     """
     Queue which ensures that new items get added anyway (old ones get removed).
     When popping item, look if that item is older than given max_time
 
-    On super()-level a queue-item contains a tuple of the real item and it's timestamp when enqueuing
+    On super()-level a queue-item contains a tuple of the real item and its timestamp when enqueuing
     """
-    def __init__(self, maxsize, maxage: timedelta):
+    def __init__(self, maxsize, maxage_s: timedelta):
         super().__init__(maxsize=maxsize)
-        self.maxage = maxage  # Keep naming to curio's maxsize
+        self.maxage_s = maxage_s  # Keep naming to curio's maxsize
 
     async def put(self, item):
         if self.maxsize != 0 and self.full():
@@ -37,8 +75,7 @@ class TimedCircleQueue(curio.Queue):
 
     async def get(self):
         item, item_timestamp = await super().get()
-        diff = datetime.now() - item_timestamp
-        if diff > self.maxage:
+        if self.maxage_s.total_seconds() != 0 and datetime.now() - item_timestamp > self.maxage_s:  # If too old, discard and return next item
             item = await self.get()
         return item
 

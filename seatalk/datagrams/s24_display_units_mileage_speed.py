@@ -23,4 +23,4 @@ class DisplayUnitsMileageSpeed(_TwoWayDictDatagram):
             bytes([0x00, 0x00, 0x06]): self.Unit.Mph,
             bytes([0x00, 0x00, 0x86]): self.Unit.Kph,
         })
-        _TwoWayDictDatagram.__init__(self, map=unit_map, set_key=unit)
+        super().__init__(map=unit_map, set_key=unit)

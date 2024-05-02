@@ -79,7 +79,7 @@ class _TwoWayDictDatagram(SeatalkDatagram, metaclass=ABCMeta):
     BaseClass for TwoWayDictionaries
     """
     def __init__(self, map: TwoWayDict, set_key=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self._map = map
         self.set_key = set_key
 
@@ -110,7 +110,7 @@ class _SetLampIntensityDatagram(_TwoWayDictDatagram, metaclass=ABCMeta):
             bytes([8]):  2,
             bytes([12]): 3   # That's weird. All the time it's a shifted bit but this is 0x1100
         })
-        _TwoWayDictDatagram.__init__(self, map=intensity_map, set_key=intensity)
+        super().__init__(map=intensity_map, set_key=intensity)
 
 
 class _SeatalkPartPosition(SeatalkDatagram, metaclass=ABCMeta):
@@ -123,7 +123,7 @@ class _SeatalkPartPosition(SeatalkDatagram, metaclass=ABCMeta):
                      Corresponding NMEA sentences: RMC, GAA, GLL
     """
     def __init__(self, position: PartPosition):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.position = position
 
     @abstractmethod
@@ -321,7 +321,7 @@ class _KeyStroke(_TwoWayDictDatagram):
             bytes([0x83, 0x7C]): self.Key.P10Repeat,
             bytes([0x84, 0x7B]): self.Key.P1M1_P10M10Released,
         })
-        _TwoWayDictDatagram.__init__(self, map=key_map, set_key=key)
+        super().__init__(map=key_map, set_key=key)
         self.increment_decrement = increment_decrement
 
     def process_datagram(self, first_half_byte, data):

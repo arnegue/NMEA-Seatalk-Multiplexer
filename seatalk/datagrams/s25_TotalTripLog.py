@@ -19,7 +19,7 @@ class TotalTripLog(SeatalkDatagram):
     data_length = 4
 
     def __init__(self, total_miles=None, trip_miles=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.total_miles = total_miles
         self.trip_miles = trip_miles
 

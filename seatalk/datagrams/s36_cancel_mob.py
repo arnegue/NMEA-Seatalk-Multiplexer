@@ -10,7 +10,7 @@ class CancelMOB(SeatalkDatagram):
     data_length = 0
 
     def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self._expected_byte = bytearray([0x01])
 
     def process_datagram(self, first_half_byte, data):

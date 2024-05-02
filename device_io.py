@@ -15,11 +15,9 @@ class IO(object):
     """
     def __init__(self, encoding=False):
         self._encoding = encoding
-        self._read_write_lock = curio.Lock()
 
     async def read(self, length=1):
-        async with self._read_write_lock:
-            data = await self._read(length)
+        data = await self._read(length)
         if self._encoding:
             try:
                 data = data.decode(self._encoding)
@@ -37,9 +35,7 @@ class IO(object):
             except UnicodeEncodeError:
                 logger.error(f"{type(self).__name__}: Could not encode: {data}")
                 data = bytearray()
-
-        async with self._read_write_lock:
-            return await self._write(data)
+        return await self._write(data)
 
     async def flush(self):
         pass
@@ -300,22 +296,46 @@ class Serial(IO):
 class SeatalkSerial(Serial):
     """
     Special Serial-device for Seatalk. Change parity after sending command byte
+    Reading and writing is done exclusively (it's a bus).
+    According to Thomas Knauf one can wait between transmissions at least 10/4800 seconds. But that too small (with OS and buffers)
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._read_write_lock = curio.Lock()
+
     def setup_serial(self, port, baudrate, bytesize, stopbits, parity):
         """
-        Creates a serial instance
+        Creates a serial instance with a timeout, so that read and write won't block each other but still can act exclusively
         """
-        return ParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity)
+        return ParitySerial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stopbits, parity=parity, timeout=0.5)
 
     def _write_seatalk_serial(self, data):
-        self._serial.parity = serial.PARITY_MARK
-        self._serial.write(bytes([data[0]]))  # Cast that command byte to a one-byte-"bytes"-object to avoid creating a bytes-object full of 0s
-        self._serial.parity = serial.PARITY_SPACE
-        self._serial.write(data[1:])
+        """
+        Writes the first (command-)byte with high parity bit ("Mark"), the rest with low ("Space") parity bit
+
+        (Length-Check shouldn't be necessary, but at least now it's safe)
+        """
+        if len(data) > 1:  # Write command byte
+            self._serial.parity = serial.PARITY_MARK
+            self._serial.write(bytes([data[0]]))  # Cast that command byte to a one-byte-"bytes"-object to avoid creating a bytes-object full of 0s
+        if len(data) > 2:  # Write data bytes
+            self._serial.parity = serial.PARITY_SPACE
+            self._serial.write(data[1:])
 
     async def _write(self, data):
-        return await curio.run_in_thread(partial(self._write_seatalk_serial, data))
+        async with self._read_write_lock:
+            written_bytes = 0
+            while written_bytes == 0:
+                written_bytes = await curio.run_in_thread(partial(self._write_seatalk_serial, data))
+        return written_bytes
 
     async def _read(self, length=1):
+        """
+        Try to receive everything with Space parity (means, that the received command-byte will raise a parity exception)
+        """
         self._serial.parity = serial.PARITY_SPACE
-        return await super()._read(length)
+        received_bytes = bytes()
+        while len(received_bytes) < length:
+            async with self._read_write_lock:
+                received_bytes += await super()._read(length)
+        return received_bytes

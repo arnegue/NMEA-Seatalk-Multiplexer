@@ -1,6 +1,30 @@
+import curio
 import pytest
+
+import device_io
 from nmea.nmea_datagram import *
 from common.helper import Orientation
+
+
+class TestNMEAIO(device_io.IO):
+    """
+    IO-Device which gets the bytearray as input (only), and then "reads" it with parity-exception
+    Also remembers the last written bytes
+    """
+    def __init__(self, nmea_sentence: str):
+        super().__init__()
+        self.nmea_sentence = nmea_sentence
+        self.last_written_bytes = []
+
+    async def _write(self, data):
+        self.last_written_bytes.append(data)  # TODO what about more data?
+
+    async def _read(self, length=1):
+        while self.nmea_sentence is None:
+            await curio.sleep(1)  # TODO
+        ret_val = self.nmea_sentence[:length]
+        self.bytes = self.nmea_sentence[length:]
+        return ret_val
 
 
 @pytest.mark.parametrize(("nmea_str", "expected_type", "value_name", "expected_value"), (
@@ -26,8 +50,8 @@ def test_parse_rmc(nmea_str, expected_type, value_name, expected_value):
 
                          (DepthBelowKeel(depth_m=18.223, talker_id="SD"),                               "$SDDBT,59.79,f,18.22,M,9.96,F*3B\r\n"),
 
-                         (RecommendedMinimumSentence(date=datetime.datetime(year=2020, month=12, day=8,
-                                                                            hour=16, minute=7, second=55, microsecond=590),
+                         (RecommendedMinimumSentence(datetime=datetime.datetime(year=2020, month=12, day=8,
+                                                                                hour=16, minute=7, second=55, microsecond=590),
                                                      valid_status=NMEAValidity.Valid,
                                                      position=Position(
                                                          latitude=PartPosition(degrees=123, minutes=23.1, direction=Orientation.North),

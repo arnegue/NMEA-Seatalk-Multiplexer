@@ -231,9 +231,9 @@ class UnknownDatagram(NMEADatagram):
 class RecommendedMinimumSentence(NMEADatagram):
     nmea_tag = "RMC"
 
-    def __init__(self, date=None, valid_status=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode:FAAModeIndicator=None, *args, **kwargs):
+    def __init__(self, datetime=None, valid_status:NMEAValidity=None, position=None, speed_over_ground_knots=None, track_made_good=None, magnetic_variation=None, variation_sense=None, mode:FAAModeIndicator=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.date = date
+        self.datetime = datetime
         self.valid_status = valid_status
         self.position = position
         self.speed_over_ground_knots = speed_over_ground_knots
@@ -251,7 +251,7 @@ class RecommendedMinimumSentence(NMEADatagram):
         $GPRMC,144858,A,5235.3151,N,00207.6577,W,0.0,144.8,160610,3.6,W,A*12\r\n
         """
         return_string = ""
-        string_date, string_time = self.date.strftime(self._date_format_date + "|" + self._date_format_time).split("|")  # Use | only to make it splittable
+        string_date, string_time = self.datetime.strftime(self._date_format_date + "|" + self._date_format_time).split("|")  # Use | only to make it splittable
         return_string += self._append_value(string_time)
         return_string += self._append_value(self.valid_status)
         return_string += f",{self.position.latitude.degrees:02}{self.position.latitude.minutes:05.2f}" + self._append_value(self.position.latitude.direction)
@@ -296,7 +296,7 @@ class RecommendedMinimumSentence(NMEADatagram):
             gps_time += ".0"  # TODO float-string-parse? {:.2}?
         gps_date = nmea_value_list[8]
 
-        self.date = datetime.datetime.strptime(gps_date + gps_time, self._date_format_date + self._date_format_time)
+        self.datetime = datetime.datetime.strptime(gps_date + gps_time, self._date_format_date + self._date_format_time)
         self.valid_status = NMEAValidity(nmea_value_list[1])
 
         latitude_degrees, latitude_minutes = self.extract_degrees_minutes(nmea_value_list[2], latitude=True)

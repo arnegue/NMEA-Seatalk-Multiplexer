@@ -27,4 +27,4 @@ class EquipmentID2(_TwoWayDictDatagram):
             bytes([0x05, 0x70, 0x99, 0x10, 0x28, 0x2D]): self.Equipments.ST60_Log,
             bytes([0xF3, 0x18, 0x00, 0x26, 0x2D, 0x2D]): self.Equipments.ST80_Masterview,
         })
-        _TwoWayDictDatagram.__init__(self, map=equipment_map, set_key=equipment_id)
+        super().__init__(map=equipment_map, set_key=equipment_id)

@@ -10,7 +10,7 @@ class SatInfo(SeatalkDatagram):
     data_length = 0
 
     def __init__(self, amount_satellites=None, horizontal_dilution=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.amount_satellites = amount_satellites
         self.horizontal_dilution = horizontal_dilution
 

@@ -30,7 +30,7 @@ class AlarmAcknowledgement(SeatalkDatagram):
         ApparentWindAngleLow = 0x0B
 
     def __init__(self, acknowledged_alarm: AcknowledgementAlarms=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.acknowledged_alarm = acknowledged_alarm
 
     def process_datagram(self, first_half_byte, data):

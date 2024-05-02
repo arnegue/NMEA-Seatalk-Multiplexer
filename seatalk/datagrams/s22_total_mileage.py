@@ -9,7 +9,7 @@ class TotalMileage(SeatalkDatagram):
     data_length = 2
 
     def __init__(self, mileage_miles=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.mileage_miles = mileage_miles
 
     def process_datagram(self, first_half_byte, data):

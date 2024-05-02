@@ -14,7 +14,7 @@ class LongitudePosition(_SeatalkPartPosition):
     data_length = 2
 
     def __init__(self, position: PartPosition = None):
-        super().__init__(position=position, )
+        super().__init__(position=position)
 
     def _get_orientation(self, value_set: bool) -> Orientation:
         return Orientation.East if value_set else Orientation.West

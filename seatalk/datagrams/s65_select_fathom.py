@@ -11,7 +11,7 @@ class SelectFathom(SeatalkDatagram):
     data_length = 0
 
     def __init__(self):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.byte_value = 0x02
 
     def process_datagram(self, first_half_byte, data):

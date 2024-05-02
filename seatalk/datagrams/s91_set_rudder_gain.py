@@ -9,7 +9,7 @@ class SetRudderGain(SeatalkDatagram):
     data_length = 0
 
     def __init__(self, rudder_gain=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.rudder_gain = rudder_gain
 
     def process_datagram(self, first_half_byte, data):

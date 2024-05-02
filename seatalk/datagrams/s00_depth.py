@@ -1,9 +1,7 @@
-from common.helper import UnitConverter
-from nmea import nmea_datagram
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
-class Depth(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
+class Depth(SeatalkDatagram):   # NMEA: dbt
     """
     00  02  YZ  XX XX  Depth below transducer: XXXX/10 feet
                    Flags in Y: Y&8 = 8: Anchor Alarm is active
@@ -18,9 +16,9 @@ class Depth(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
     seatalk_id = 0x00
     data_length = 2
 
-    def __init__(self, anchor_alarm_active=None, metric_display_units=None, transducer_defective=None, depth_alarm_active=None, shallow_alarm_active=None, *args, **kwargs):
-        SeatalkDatagram.__init__(self)
-        nmea_datagram.DepthBelowKeel.__init__(self, *args, **kwargs)
+    def __init__(self, depth_feet=None, anchor_alarm_active=None, metric_display_units=None, transducer_defective=None, depth_alarm_active=None, shallow_alarm_active=None):
+        super().__init__()
+        self.depth_feet = depth_feet
         self.anchor_alarm_active = anchor_alarm_active
         self.metric_display_units = metric_display_units
         self.transducer_defective = transducer_defective
@@ -34,11 +32,10 @@ class Depth(SeatalkDatagram, nmea_datagram.DepthBelowKeel):   # NMEA: dbt
         self.depth_alarm_active =   (data[0] & 0x02) != 0
         self.shallow_alarm_active = (data[0] & 0x01) != 0
 
-        feet = self.get_value(data[1:]) / 10.0
-        self.depth_m = UnitConverter.feet_to_meter(feet)
+        self.depth_feet = self.get_value(data[1:]) / 10.0
 
     def get_seatalk_datagram(self):
-        feet_value = UnitConverter.meter_to_feet(self.depth_m) * 10
+        feet_value = self.depth_feet * 10
         flags = 0
         flags |= 0x80 if self.anchor_alarm_active  else 0x00
         flags |= 0x40 if self.metric_display_units else 0x00

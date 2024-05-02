@@ -1,11 +1,53 @@
+import datetime
+
 import pytest
 import inspect
 import curio
 import os
+import shipdatabase
 
 import logger
+from common.helper import Position, PartPosition, Orientation
 
 test_kernel = None
+
+
+def default_ship_database():
+    database = shipdatabase.ShipDataBase(0)  # For testing, do net let it run out of time
+    # Satellite / GPS
+    database.utc_time = datetime.time(hour=8, minute=57, second=32)
+    database.date = datetime.date(year=2024, month=4, day=18)
+    test_position = Position(PartPosition(degrees=23, minutes=33, direction=Orientation.North),
+                             PartPosition(degrees=8, minutes=2, direction=Orientation.East))
+    database.latitude_position = test_position.latitude
+    database.longitude_position = test_position.longitude
+    database.target_waypoints = [("abc", test_position), ("def", test_position)]
+
+    # Heading and course
+    database.course_over_ground_degree_true = 320
+    database.course_over_ground_degree_magnetic = 325
+    database.heading_degrees_true = 170
+    database.heading_degrees_magnetic = 175
+
+    # Speed
+    database.speed_over_ground_knots = 13.2
+    database.speed_through_water_knots = 12.4
+
+    database.true_wind_speed_knots = 2.3
+    database.true_wind_speed_angle = 23
+    database.apparent_wind_speed_knots = 1.9
+    database.apparent_wind_angle = 19
+
+    # Mileage
+    database.trip_mileage_miles = 37
+    database.total_mileage_miles = 120
+
+    # Water
+    database.depth_m = 13
+    database.water_temperature_c = 5
+
+    # Seatalk-specific
+    database.set_light_intensity = 3
 
 
 def _get_kernel():

@@ -1,6 +1,7 @@
+from datetime import datetime
+
 from device import Device
 from common import helper
-from nmea.nmea_datagram import NMEADatagram, RecommendedMinimumSentence, NMEAValidity
 
 
 class SpecialDeviceException(Exception):
@@ -16,14 +17,20 @@ class SetTimeDevice(Device):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    async def get_nmea_datagram(self) -> NMEADatagram:
-        raise SpecialDeviceException(f"No receiving from {self.get_name()}")
+    async def read_datagram(self):
+        pass  # "Nothing to do"
 
-    async def write_to_device(self, sentence: NMEADatagram):
+    async def write_datagram(self, datagram):
+        pass  # "Nothing to do"
+
+    async def process_incoming_datagram(self):
+        pass  # "Nothing to do"
+
+    async def process_outgoing_datagram(self):
         """
         Once a valid RMC was received, shutdown
         """
-        if isinstance(sentence, RecommendedMinimumSentence) and sentence.valid_status == NMEAValidity.Valid:
-            self._logger.info(f"Setting date {sentence.date} from {sentence.get_nmea_sentence()}")
-            helper.set_system_time(sentence.date)
+        if self.ship_data_base.date is not None and self.ship_data_base.utc_time is not None:
+            dt_combined = datetime.combine(self.ship_data_base.date, self.ship_data_base.utc_time)
+            helper.set_system_time(dt_combined)
             await self.shutdown()

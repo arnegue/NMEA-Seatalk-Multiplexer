@@ -3,11 +3,14 @@ import curio
 import datetime
 
 import device_io
+from common.helper import PartPosition, Orientation, bytes_to_str, Position as HelperPosition
 from common.parity_serial import ParityException
 from nmea import nmea_datagram
-from seatalk import *
-from seatalk.datagrams.seatalk_datagram import *
-from common import helper
+from seatalk.datagrams import *
+from seatalk.seatalk import SeatalkDevice
+from seatalk.seatalk_exceptions import NotEnoughData, TooMuchData, DataNotRecognizedException, DataValidationException, \
+    SeatalkException
+from shipdatabase import ShipDataBase
 
 
 class NoneReadWriter(device_io.IO):
@@ -19,18 +22,29 @@ class NoneReadWriter(device_io.IO):
         return bytes(length)
 
 
-class TestValueReceiver(device_io.IO):
-    def __init__(self, byte_array):
+class TestSeatalkIO(device_io.IO):
+    """
+    IO-Device which gets the bytearray as input (only), and then "reads" it with parity-exception
+    Also remembers the last written bytes
+    """
+    def __init__(self, byte_array: bytearray):
         super().__init__()
         self.bytes = byte_array
         self._parity_error_send = False
+        self.last_written_bytes = []
 
     async def _write(self, data):
-        raise NotImplementedError()
+        await curio.sleep(0)
+        self.last_written_bytes.append(data)  # TODO parity? what about more data?
 
     async def _read(self, length=1):
         if length != 1:
             raise Exception(f"Length {length} not supported")
+
+        while self.bytes is None:
+            await curio.sleep(1)  # TODO
+        else:
+            await curio.sleep(0)
 
         if not self._parity_error_send:
             self._parity_error_send = True
@@ -43,7 +57,7 @@ class TestValueReceiver(device_io.IO):
 
 def get_parameters():
     return ("seatalk_datagram", "byte_representation"), (
-       (Depth(depth_m=22.3),                                                                            bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),
+       (Depth(depth_feet=8.2),                                                                          bytes([0x00, 0x02, 0x00, 0x52, 0x00])),
        (EquipmentID1(EquipmentID1.Equipments.ST60_Tridata),                                             bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
        (ApparentWindAngle(256.5),                                                                       bytes([0x10, 0x01, 0x01, 0x02])),
        (ApparentWindSpeed(18.3),                                                                        bytes([0x11, 0x01, 0x12, 0x03])),
@@ -62,11 +76,11 @@ def get_parameters():
        (LongitudePosition(position=PartPosition(degrees=8, minutes=28.21, direction=Orientation.East)), bytes([0x51, 0x02, 0x08, 0x05, 0x8B])),
        (SpeedOverGround(26.9),                                                                          bytes([0x52, 0x01, 0x0D, 0x01])),
        (CourseOverGround(180),                                                                          bytes([0x53, 0x20, 0x00])),
-       (GMT_Time(hours=23, minutes=6, seconds=44),                                                      bytes([0x54, 0xC1, 0x1A, 0x17])),
+       (GMT_Time(datetime.time(hour=23, minute=6, second=44)),                                          bytes([0x54, 0xC1, 0x1A, 0x17])),
        (KeyStroke1(key=KeyStroke1.Key.M1M10PortTack, increment_decrement=1),                            bytes([0x55, 0x11, 0x21, 0xDE])),
        (Date(date=datetime.date(year=2019, month=10, day=31)),                                          bytes([0x56, 0xA1, 0x1F, 0x13])),
        (SatInfo(0x1, 0x94),                                                                             bytes([0x57, 0x10, 0x94])),
-       (Position(position=helper.Position(
+       (Position(position=HelperPosition(
            latitude=PartPosition(degrees=53, minutes=57, direction=Orientation.North),
            longitude=PartPosition(degrees=8, minutes=28.21, direction=Orientation.East))),              bytes([0x58, 0x25, 0x35, 0xDE, 0xA8, 0x08, 0x6E, 0x32])),
        (CountdownTimer(hours=9, minutes=59, seconds=59, mode=CountdownTimer.CounterMode.CountDown),     bytes([0x59, 0x22, 0x3B, 0x3B, 0x49])),
@@ -95,8 +109,8 @@ async def test_correct_recognition(seatalk_datagram, byte_representation):
     """
     Tests if "received" bytes result in a correct Datagram-Recognition (no direct value check here)
     """
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(byte_representation))
-    datagram = await seatalk_device._receive_datagram()
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(byte_representation))
+    datagram = await seatalk_device.receive_datagram()
     recognized_datagram = seatalk_device.parse_datagram(datagram)
     assert isinstance(recognized_datagram, type(seatalk_datagram))
 
@@ -104,27 +118,27 @@ async def test_correct_recognition(seatalk_datagram, byte_representation):
 @pytest.mark.curio
 async def test_not_enough_data():
     original = bytes([0x00, 0x01, 0x00, 0x00])
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(original))
     with pytest.raises(NotEnoughData):
-        datagram = await seatalk_device._receive_datagram()
+        datagram = await seatalk_device.receive_datagram()
         seatalk_device.parse_datagram(datagram)
 
 
 @pytest.mark.curio
 async def test_too_much_data():
     original = bytes([0x00, 0x03, 0x00, 0x00, 0x00, 0x00])
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(original))
     with pytest.raises(TooMuchData):
-        datagram = await seatalk_device._receive_datagram()
+        datagram = await seatalk_device.receive_datagram()
         seatalk_device.parse_datagram(datagram)
 
 
 @pytest.mark.curio
 async def test_not_recognized():
     original = bytes([0xFF, 0x03, 0x00, 0x00, 0x00, 0x00])
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
-    with pytest.raises(seatalk.DataNotRecognizedException):
-        datagram = await seatalk_device._receive_datagram()
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(original))
+    with pytest.raises(DataNotRecognizedException):
+        datagram = await seatalk_device.receive_datagram()
         seatalk_device.parse_datagram(datagram)
 
 
@@ -149,11 +163,11 @@ def test_two_way_maps_validations(seatalk_datagram_instance):
 async def test_raw_seatalk():
     reader = device_io.File(path="./tests/test_data/seatalk_raw.hex", encoding=False) # TODO differentiate between simple seatalk-error and
     await reader.initialize()
-    seatalk_device = seatalk.SeatalkDevice(name="RawSeatalkFileDevice", io_device=reader)
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="RawSeatalkFileDevice", io_device=reader)
     for i in range(1000):
         try:
-            result = await seatalk_device._receive_datagram()
-        except seatalk.SeatalkException as e:
+            result = await seatalk_device.receive_datagram()
+        except SeatalkException as e:
             print(e)
         else:
             if isinstance(result, nmea_datagram.NMEADatagram):
@@ -172,8 +186,8 @@ def get_device_identification_2_parameters():
 @pytest.mark.curio
 @pytest.mark.parametrize(*get_device_identification_2_parameters())
 async def test_correct_recognition_device_identification_2(seatalk_datagram, byte_representation):
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(byte_representation))
-    datagram = await seatalk_device._receive_datagram()
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice", io_device=TestSeatalkIO(byte_representation))
+    datagram = await seatalk_device.receive_datagram()
     recognized_datagram = seatalk_device.parse_datagram(datagram)
     assert isinstance(recognized_datagram._real_datagram, type(seatalk_datagram))
 
@@ -184,7 +198,7 @@ def test_check_datagram_to_seatalk_device_identification_2(seatalk_datagram, byt
 
 
 def get_all_seatalk_datagrams():
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=NoneReadWriter())
+    seatalk_device = SeatalkDevice(ship_data_base=ShipDataBase(), name="TestDevice",  io_device=NoneReadWriter())
     return "datagram", (seatalk_device._seatalk_datagram_map.values())
 
 

@@ -9,7 +9,7 @@ class CodeLockData(SeatalkDatagram):
     data_length = 1
 
     def __init__(self, x=None, y=None, z=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.x = x  # X
         self.y = y  # YY
         self.z = z  # yy

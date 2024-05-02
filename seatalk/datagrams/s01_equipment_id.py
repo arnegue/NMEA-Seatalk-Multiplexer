@@ -36,4 +36,4 @@ class EquipmentID1(_TwoWayDictDatagram):
             bytes([0xFA, 0x03, 0x00, 0x30, 0x07, 0x03]): self.Equipments.ST80_Maxi_Display,
             bytes([0xFF, 0xFF, 0xFF, 0xD0, 0x00, 0x00]): self.Equipments.Smart_Controller_Remote_Control_Handset,
         })
-        _TwoWayDictDatagram.__init__(self, map=equipment_map, set_key=set_key)
+        super().__init__(map=equipment_map, set_key=set_key)
