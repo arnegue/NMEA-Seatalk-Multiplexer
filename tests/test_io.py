@@ -16,6 +16,7 @@ class DummyIO(IO):
     async def _read(self, length=1):
         while not self.shutdown:
             await curio.sleep(0.1)
+        return bytes()
 
     async def _write(self, data):
         pass
@@ -33,9 +34,6 @@ async def test_non_receive_write():
     So removing the lock wouldn't be the best idea. Maybe add a timeout to the read-command? Seatalk*Serial* will buffer anyway.
     Files
     """
-    # TaskDevice:
-    # Try to receive as task
-    # Now try to write to io
     dummy = DummyIO()
     task = await curio.spawn(dummy.read, 1)
     await curio.sleep(0.5)  # Wait for task to start up
@@ -43,7 +41,7 @@ async def test_non_receive_write():
         await dummy.write(1)
 
     dummy.shutdown = True
-    await task.join()  # TODO this would never end
+    await task.join()
 
 
 class TestFileClass(File):
@@ -190,7 +188,6 @@ async def test_client_abort():
         assert len(clients) == len(server.clients) == amount_clients
         await server.cancel()
         await clients[0].cancel()
-    print("Success")
 
 
 @pytest.mark.curio
@@ -200,7 +197,7 @@ async def test_multiple_clients_read():
     """
     clients, server = await get_clients_server_fixture()
 
-    server_data = "Hello" + "World"
+    server_data = "HelloWorld"
 
     read_tasks = [await curio.spawn(client.read(len(server_data))) for client in clients]
 
@@ -214,7 +211,6 @@ async def test_multiple_clients_read():
     await server.cancel()
     for client in clients:
         await client.cancel()
-    print("finished")
 
 
 @pytest.mark.curio
@@ -224,7 +220,7 @@ async def test_write2_after_client1_closed():
     """
     clients, server = await get_clients_server_fixture()
 
-    server_data = "Hello" + "World"
+    server_data = "HelloWorld"
 
     # Write and read to all clients
     read_tasks = [await curio.spawn(client.read(len(server_data))) for client in clients]
@@ -246,5 +242,3 @@ async def test_write2_after_client1_closed():
 
     await server.cancel()
     await clients[1].cancel()
-
-
