@@ -4,17 +4,16 @@ PDFs and PinOuts are also in this repository's branch.
 
 # Used Hardware
 ## Orange Pi Zero 2
-[Homepage Orange Pi Zero 2](http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-Zero-2.html)
+[Raspberry Pi Zero 2W](https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/)
+
+(Previously I used an Orange Pi Zero, but I needed UART with support for parity Space/Mark)
 
 ## Delock USB 2.0 to 4 x serial adapter
+Don't use it for seatalk. It Parity Mark/Space is not supported
 [Delock USB 2.0 to 4 x serial Adapter Homepage](https://www.delock.de/produkt/87414/merkmale.html?setLanguage=en)
 
 ## Own soldered Seatalk-Serial converter:
 [Thomas Knauf's layout](http://www.thomasknauf.de/rap/seatalk3.htm#Bid)
-
-## Own soldered I2C-LED-Screen
-This is not part of the main branch since it's not directly needed. All in all it's just five RGB-LEDs and one state-LED\ 
-connected to a [PCF8575C](https://www.ti.com/lit/ds/symlink/pcf8575c.pdf)-Shield.
 
 ## Radio: Lowrance Link-8 VHF
 * [Owner's Manual](https://softwaredownloads.navico.com/Lowrance/FTP/Lowrance_Software%20-%20Copy/Documents/Link-8_OM_EN_988-10254-001_w.pdf)
@@ -38,13 +37,9 @@ Every following command is executed as root.
 To enable hotspot a WiFi-HotSpot, first install a DNS/DHCP-Server. Reboots may be required between steps
 * `apt install dnsmasq` (https://askubuntu.com/a/1437049 may be needed) 
 * `nmcli dev wifi hotspot ifname wlan0 ssid Armbian password "12345678"`
+* `nmcli connection modify Hotspot ipv4.addresses "172.24.0.1/24"`
 * `nmtui` -> Edit a connection -> hotspot -> X Automatically connect
 
-## Interfaces
-* Enable `/dev/ttyS2` for AIS:\
- `armbian-config` -> System -> Hardware -> uart2\
-* Enable I2C for State-LEDs:\
-`armbian-config` -> System -> Hardware -> i2c0
 
 # Connector-PinOuts
 If there are JST-XH-Pins: Numbering from notch-side-view.
@@ -77,9 +72,18 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 ### Seatalk-circuit-board to DSUB9-connector
 | Name | Color  | JST-Pin | DSUB9-Pin |
 |------|--------|---------|-----------|
-| 12v  | Red    | 1       | 5         |
-| Data | Yellow | 2       | 3         |
-| Gnd  | Blue   | 3       | 2         |
+| Gnd  | Yellow | 1       | 2         |
+| 12v  | Red    | 2       | 5         |
+| Data | Blue   | 3       | 3         |
+
+### Seatalk-circuit-board to RaspberryPi-Connector
+
+| Name | Color | JST-Pin | RaspberryPi-Pin  |
+|------|-------|---------|------------------|
+| Gnd  | Black | 1       | 6 (Gnd)          |
+| 3v3  | Red   | 2       | 1 (3v3)          |
+| Rx   | Green | 3       | 10 (Rx, GPIO 15) |
+| Tx   | White | 4       | 8 (Tx, GPIO 14)  |
 
 ## GPS
 ### USB-Serial to DSUB9-connector
@@ -97,24 +101,12 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | TX NMEA0183 | Red    | 3          | 3         |
 | Gnd         | Blue   | 5          | 5         |
 
-### MAX-232 to DSUB9-Connector (AIS | RS422)
-| Name   | Color  | JST-Pin | DSUB9-Pin |
-|--------|--------|---------|-----------|
-| RX AIS | Green  | 1       | 7         |
-| Gnd    | White  | 2       | 6         |
-| TX AIS | Black  | 3       | 9         |
-
-### UART2 to MAX-232 (AIS | UART)
-| Name     | Color | OrangePi-Pin | JST-Pin |
-|----------|-------|--------------|---------|
-| UART2_RX | Grey  | 11           | 3       |
-| UART2_TX | White | 13           | 2       |
-
-### Power to MAX-232 (MAX-232-Power for AIS)
-| Name | Color | OrangePi-Pin | JST-Pin |
-|------|-------|--------------|---------|
-| 3v3  | Red   | 17           | 2       |
-| Gnd  | Black | 25           | 1       |
+### DSUB9 Pin Casing to USB-Serial-Connector (AIS | RS422)
+| Name   | Color  | DSUB9-Pin USB-Serial | DSUB9-Pin Casing |
+|--------|--------|----------------------|------------------|
+| RX AIS | Green  | 2                    | 7                |
+| TX AIS | Black  | 3                    | 9                |
+| Gnd    | White  | 5                    | 6                |
 
 ## Wind
 ### USB-Serial to DSUB9-connector
@@ -124,20 +116,12 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | TX   | Red    | 3          | 3         |
 | Gnd  | Blue   | 5          | 5         |
 
-### Debug-UART (connected to Wind's DSUB9-Connector) 
-| Name | Color  | OrangePi-Pin | DSUB9-Pin |
-|------|--------|--------------|-----------|
-| TX   | Orange | 1*           | 6         |
-| RX   | Red    | 2*           | 7         |
-| Gnd  | Brown  | 3*           | 9         |
-
-\* Debug bridge pins next to ethernet port
 
 ### Raymarine RC300 (not used in devices but for debug process at home)
 #### Seatalk-Socket
 ```
   _______
- /1  2  3\
+ /1  2  3 \
 |   ___   |
  \_/   \_/
 ```
