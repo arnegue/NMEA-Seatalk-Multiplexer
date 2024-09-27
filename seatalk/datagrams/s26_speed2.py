@@ -1,8 +1,7 @@
-from nmea import nmea_datagram
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
-class Speed2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
+class Speed2(SeatalkDatagram):
     """
     26  04  XX  XX  YY  YY DE  Speed through water:
                      XXXX/100 Knots, sensor 1, current speed, valid if D&4=4
@@ -10,17 +9,16 @@ class Speed2(SeatalkDatagram, nmea_datagram.SpeedThroughWater):  # NMEA: vhw
                               or data from sensor 2 if D&8=8
                      E&1=1: Average speed calculation stopped
                      E&2=2: Display value in MPH
-                     Corresponding NMEA sentence: VHW
     """
     seatalk_id = 0x26
     data_length = 4
 
-    def __init__(self, *args, **kwargs):
-        SeatalkDatagram.__init__(self)
-        nmea_datagram.SpeedThroughWater.__init__(self, *args, **kwargs)
+    def __init__(self, speed_knots=None):
+        super().__init__()
+        self.speed_knots = speed_knots
 
     def process_datagram(self, first_half_byte, data):
-        # TODO Y and E flag
+        # TODO Y, D and E flag
         self.speed_knots = self.get_value(data) / 100.0
 
     def get_seatalk_datagram(self):

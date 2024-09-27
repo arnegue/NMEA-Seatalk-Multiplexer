@@ -26,7 +26,7 @@ class CountdownTimer(SeatalkDatagram):
         CountDownStart = 8
 
     def __init__(self, hours=None, minutes=None, seconds=None, mode: CounterMode = None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.hours = hours
         self.minutes = minutes
         self.seconds = seconds

@@ -17,7 +17,7 @@ class SetResponseLevel(SeatalkDatagram):
         Minimum = 2
 
     def __init__(self, response_level: Deadband=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.response_level = response_level
 
     def process_datagram(self, first_half_byte, data):

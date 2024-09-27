@@ -10,6 +10,7 @@ from nmea import nmea
 import device_io
 import special_devices
 from seatalk import seatalk
+from shipdatabase import ShipDataBase
 
 
 def create_devices_dict():
@@ -35,14 +36,16 @@ async def create_devices(path):
 
     device_classes_dict = create_devices_dict()
     device_instance_dict = {}
+    ship_db = ShipDataBase()
     for name, device_dict in file_content.items():
         try:
             device_type = device_classes_dict[device_dict["type"]]
             if "auto_flush" not in device_dict:
                 device_dict["auto_flush"] = None
 
-            max_item_age = device_dict["max_item_age"] if "max_item_age" in device_dict else None
-            device_dict["max_item_age"] = max_item_age
+            max_item_age_s = device_dict["max_item_age_s"] if "max_item_age_s" in device_dict else None
+            device_dict["max_item_age_s"] = max_item_age_s
+            device_dict["ship_data_base"] = ship_db
 
             device_io_dict = device_dict["device_io"]
             device_io_type = device_io_dict.pop("type")
@@ -58,42 +61,7 @@ async def create_devices(path):
             logger.error(f"Error in configuration of device {name}")
             raise
 
-    for observable in device_instance_dict.values():
-        observable_name = observable.get_name()
-        observable_instance = device_instance_dict[observable_name]
-        for observer in file_content[observable_name]["observers"]:
-            observer_instance = device_instance_dict[observer]
-            observable_instance.set_observer(observer_instance)
-
     return device_instance_dict.values()
-
-
-async def device_receiver_task(device_):
-    await curio.sleep(0)
-    observers = device_.get_observers()
-    if len(observers):
-        logger.info(f"Device {device_.get_name()} has observers")
-        while not device_.is_shutdown():
-            try:
-                logger.debug(f"Trying to get NMEA-Sentence from {device_.get_name()}....")
-                sentence = await device_.get_nmea_datagram()
-                logger.info(f"Received {sentence.__class__.__name__}")
-            except curio.TaskTimeout:
-                logger.debug(f"Timeout reading from {device_.get_name()}")  # Won't work sometimes
-                continue
-            async with curio_wrapper.TaskGroupWrapper() as g:
-                for observer in observers:
-                    if observer.is_shutdown():
-                        logger.debug(f"Observer {observer.get_name()} was shutdown. Unsubscribing")
-                        device_.unset_observer(observer)
-                        break  # need to break since set changed size
-                    else:
-                        logger.debug(f"Writing to device: {observer.get_name()}")
-                        await g.spawn(observer.write_to_device, sentence)
-            await curio.sleep(0)
-        logger.info(f"Stopped receiving. Device {device_.get_name()} got shutdown")
-    else:
-        logger.info(f"Device {device_.get_name()} doesn't have observers")
 
 
 async def main(devices_path):
@@ -104,10 +72,10 @@ async def main(devices_path):
         for device_ in list_devices:
             await g.spawn(device_.initialize)
 
-    # Spawn for every listening device an observer task
     async with curio_wrapper.TaskGroupWrapper() as g:
         for device_ in list_devices:
-            await g.spawn(device_receiver_task, device_)
+            await g.spawn(device_.process_incoming_datagram)
+            await g.spawn(device_.process_outgoing_datagram)
 
 
 if __name__ == '__main__':

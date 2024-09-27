@@ -112,15 +112,12 @@ A typical device is built like this:
     "type": "io",
     "device_io": {
         ...
-    },
-    "observers": [
-        ...
-    ]
+    }
   }
 }
 ```
 
-* The ``DeviceName`` is up to you but must be unique and is important for the ``observers``-section
+* The ``DeviceName`` is up to you but must be unique
 * The ``type`` specifies the type of data the devices receive (currently only ``NMEADevice`` and ``SeatalkDevice`` is supported)
 * Optional settings:
   * ``auto_flush: x``: Flushes IO every time every ``x`` datagrams were received.
@@ -150,9 +147,7 @@ So, it only transmits/receives NMEA-Strings.
       "type": "TCPServer",
       "port": 9900,
       "encoding": "ASCII"
-    },
-    "observers": [
-    ]
+    }
   }
 }
 ```
@@ -170,9 +165,7 @@ This example creates a client which will try to connect to ``172.24.1.1:9901``. 
       "port": 9901,
       "ip": "172.24.1.1",
       "encoding": "ASCII"
-    },
-    "observers": [
-    ]
+    }
   }
 }
 ```
@@ -191,9 +184,7 @@ Assumes **appending**-mode!
       "type": "File",
       "path": "/tmp/my_nmea_file.txt",
       "encoding": "ASCII"
-    },
-    "observers": [
-    ]
+    }
   }
 }
 ```
@@ -223,11 +214,7 @@ Following example is a `Serial` device listening on ``/dev/ttyUSB0`` with ASCII-
       "type": "Serial",
       "port": "/dev/ttyUSB1",
       "encoding": "ASCII"
-    },
-    "observers": [
-      "TCP",
-      "TimeSetter"
-    ]
+    }
   }
 }
 ```
@@ -258,10 +245,7 @@ Furthermore, the IO gets flushed after 10 datagrams were received (set with opti
    "device_io": {
      "type": "SeatalkSerial",
      "port": "/dev/ttyUSB3"
-   },
-   "observers": [
-     "MyTCPServer"
-   ]
+   }
   }
 }
 ```
@@ -278,9 +262,7 @@ This device just prints out to StdOut (StdIn currently not supported):
     "device_io": {
       "type": "StdOutPrinter",
       "encoding": "UTF-8"
-    },
-    "observers": [
-    ]
+    }
   }
 }
 ```
@@ -304,9 +286,7 @@ Besides positional data there are also some timing information. If you add a ``S
     "type": "SetTimeDevice", 
     "device_io": {
       "type": "IO"
-    },
-    "observers": [
-    ]
+    }
   }
 }
 ``` 

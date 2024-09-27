@@ -20,7 +20,7 @@ class ParityException(SerialException):
 class WinParitySerial(Serial):
     """
     This is nearly the same as the Windows implementation. The only difference is setting the (f)ErrorChar in _reconfigure_port
-    Raises ParityError on Read
+    Raises ParityException on Read
     """
     PARITY_BYTES = [bytes([0xFE, ])]
 
@@ -55,7 +55,7 @@ class WinParitySerial(Serial):
 class LinuxParitySerial(Serial):
     """
     Nearly the same as PosixSerial, but enables PARMRK and INPCK.
-    Raises ParityError on Read
+    Raises ParityException on Read
     """
     PARITY_BYTES = [bytes([0xFF, ]), bytes([0x00, ])]  # Bytes of a parity error (see termios' PARMRK)
 

@@ -18,7 +18,7 @@ class TargetWaypointName(SeatalkDatagram):
     data_length = 5
 
     def __init__(self, name: str=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.name = name
 
     def process_datagram(self, first_half_byte, data):

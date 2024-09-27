@@ -11,7 +11,7 @@ class E80Initialization(SeatalkDatagram):
     data_length = 3
 
     def __init__(self):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
 
     def process_datagram(self, first_half_byte, data):
         if not (first_half_byte == 0 and data[0] == 0x03 and data[1] == data[2] == data[3] == 0x00):

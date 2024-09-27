@@ -5,10 +5,7 @@
       "type": "Serial",
       "port": "/dev/ttyUSB0",
       "encoding": "UTF-8"
-    },
-    "observers": [
-      "TCP"
-    ]
+    }
   },
   "AIS": {
     "type": "NMEADevice",
@@ -17,10 +14,7 @@
       "port": "/dev/ttyUSB3",
       "baudrate": 38400,
       "encoding": "UTF-8"
-    },
-    "observers": [
-      "TCP"
-    ]
+    }
   },
   "GPS": {
     "type": "NMEADevice",
@@ -29,11 +23,7 @@
       "type": "Serial",
       "port": "/dev/ttyUSB1",
       "encoding": "ASCII"
-    },
-    "observers": [
-      "TCP",
-      "TimeSetter"
-    ]
+    }
   },
   "Wind": {
     "type": "NMEADevice",
@@ -41,10 +31,7 @@
       "type": "Serial",
       "port": "/dev/ttyUSB2",
       "encoding": "ASCII"
-    },
-    "observers": [
-      "TCP"
-    ]
+    }
   },
   "Seatalk": {
     "type": "SeatalkDevice",
@@ -52,10 +39,7 @@
       "type": "SeatalkSerial",
       "port": "/dev/ttyAMA0",
       "encoding": false
-    },
-    "observers": [
-      "TCP"
-    ]
+    }
   },
   "TCP": {
     "type": "NMEADevice",
@@ -63,16 +47,12 @@
       "type": "TCPServer",
       "port": "9900",
       "encoding": "UTF-8"
-    },
-    "observers": [
-    ]
+    }
   },
   "TimeSetter": {
     "type": "SetTimeDevice",
     "device_io": {
       "type": "IO"
-    },
-    "observers": [
-    ]
+    }
   }
 }

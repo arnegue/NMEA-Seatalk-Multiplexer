@@ -3,16 +3,15 @@ import datetime
 from seatalk.datagrams.seatalk_datagram import SeatalkDatagram
 
 
-class Date(SeatalkDatagram):  # TODO RMC?
+class Date(SeatalkDatagram):
     """
     56  M1  DD  YY  Date: YY year, M month, DD day in month
-                    Corresponding NMEA sentence: RMC
     """
     seatalk_id = 0x56
     data_length = 1
 
     def __init__(self, date=None):
-        SeatalkDatagram.__init__(self)
+        super().__init__()
         self.date = date
         self._year_offset = 2000  # TODO correct?
 
