@@ -387,7 +387,7 @@ class DepthBelowKeel(NMEADatagram):
         $SDDBT,7.8,f,2.4,M,1.3,F*0D\r\n
         """
         feet = fathoms = None
-        if self.depth_m:
+        if self.depth_m is not None:
             feet = UnitConverter.meter_to_feet(self.depth_m)
             fathoms = UnitConverter.meter_to_fathom(self.depth_m)
         return self._append_tuple(feet, 'f') + self._append_tuple(self.depth_m, 'M') + self._append_tuple(fathoms, 'F')

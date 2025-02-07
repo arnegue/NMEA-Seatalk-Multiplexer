@@ -14,7 +14,7 @@
     "type": "NMEADevice",
     "device_io": {
       "type": "Serial",
-      "port": "/dev/ttyS5",
+      "port": "/dev/ttyUSB3",
       "baudrate": 38400,
       "encoding": "UTF-8"
     },
@@ -50,7 +50,7 @@
     "type": "SeatalkDevice",
     "device_io": {
       "type": "SeatalkSerial",
-      "port": "/dev/ttyUSB3",
+      "port": "/dev/ttyAMA0",
       "encoding": false
     },
     "observers": [
