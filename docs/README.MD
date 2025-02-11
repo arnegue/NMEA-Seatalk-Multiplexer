@@ -28,6 +28,9 @@ Don't use it for seatalk. It Parity Mark/Space is not supported
 ## Seatalk: Raymarine ST60+ Tridata
 [Owner's Manual](http://busse-yachtshop.de/pdf/ray60Tridata.pdf)  (link leads to busse-yachtshop.de)
 
+## AIS: AIS Transceiver
+[User Manual](https://www.alltekmarine.com/uploads/download_list/16831862301951116903.pdf)
+
 ## Linux
 I used the most recent [Armbian](https://www.armbian.com/orange-pi-zero-2/). Latest version: Armbian 23.02 Bullseye
 Every following command is executed as root.
@@ -45,30 +48,8 @@ To enable hotspot a WiFi-HotSpot, first install a DNS/DHCP-Server. Reboots may b
 If there are JST-XH-Pins: Numbering from notch-side-view.
 
 ## Common Adapters
-### USB-Serial-Adapter
-| Name | Color  | OrangePi-Pin | USB-Pin |
-|------|--------|--------------|---------|
-| 5V   | Red    | ? 5V         | 1       |
-| Gnd  | Yellow | ? Gnd        | 4       |
-| D-   | Brown  | ? USB-DM2    | 2       |
-| D+   | Orange | ? USB-DP2    | 3       |
-
-### Display-I2C
-| Name | Color  | OrangePi-Pin | JST-Pin |
-|------|--------|--------------|---------|
-| 3v3  | Yellow | 01           | 1       |
-| SDA  | Orange | 03           | 2       |
-| SCL  | Red    | 05           | 3       |
-| Gnd  | Brown  | 09           | 5       |
 
 ## Seatalk
-### USB-Serial to Seatalk-circuit-board
-| Name | Color  | Serial-Pin | JST-Pin |
-|------|--------|------------|---------|
-| RX   | Yellow | 2          | 2       |
-| TX   | Red    | 3          | 3       |
-| Gnd  | Blue   | 5          | 1       |
-
 ### Seatalk-circuit-board to DSUB9-connector
 | Name | Color  | JST-Pin | DSUB9-Pin |
 |------|--------|---------|-----------|
@@ -77,7 +58,6 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | Data | Blue   | 3       | 3         |
 
 ### Seatalk-circuit-board to RaspberryPi-Connector
-
 | Name | Color | JST-Pin | RaspberryPi-Pin  |
 |------|-------|---------|------------------|
 | Gnd  | Black | 1       | 6 (Gnd)          |
@@ -85,13 +65,22 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | Rx   | Green | 3       | 10 (Rx, GPIO 15) |
 | Tx   | White | 4       | 8 (Tx, GPIO 14)  |
 
-## GPS
-### USB-Serial to DSUB9-connector
-| Name | Color  | Serial-Pin | DSUB9-Pin |
-|------|--------|------------|-----------|
-| RX   | Yellow | 2          | 2         |
-| TX   | Red    | 3          | 3         |
-| Gnd  | Blue   | 5          | 5         |
+## AIS
+### AIS RS422 Adapter to AIS MAX-232 JST-Connector
+| Name | Color  | RS422 Adapter | JST-Pin |
+|------|--------|---------------|---------|
+| Gnd  | Yellow | 2             | 1       |
+| 3v3  | Red    | 1             | 2       |
+| Rx   | Green  | 3             | 4       |
+| Tx   | Blue   | 4             | 3       |
+
+### AIS MAX-232 JST-Connector to DSUB9-connector
+| Name | Color  | JST-Pin       | DSUB9-connector  |
+|------|--------|---------------|------------------|
+| Gnd  |        | 1             | 5                |
+| Rx   |        | 2             | 2                |
+| Tx   |        | 3             | 3                |
+
 
 ## Radio
 ### USB-Serial to DSUB9-connector
@@ -101,12 +90,6 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | TX NMEA0183 | Red    | 3          | 3         |
 | Gnd         | Blue   | 5          | 5         |
 
-### DSUB9 Pin Casing to USB-Serial-Connector (AIS | RS422)
-| Name   | Color  | DSUB9-Pin USB-Serial | DSUB9-Pin Casing |
-|--------|--------|----------------------|------------------|
-| RX AIS | Green  | 2                    | 7                |
-| TX AIS | Black  | 3                    | 9                |
-| Gnd    | White  | 5                    | 6                |
 
 ## Wind
 ### USB-Serial to DSUB9-connector
