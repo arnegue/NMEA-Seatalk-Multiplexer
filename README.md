@@ -3,6 +3,35 @@
 Python-library for processing and multiplexing maritime device data from data-busses such as NMEA-0183 (+ AIS), Seatalk(1).
 No need to (cross-)compile your project. Little dependencies. Easy configuratable.
 
+- [NMEA-Seatalk-Multiplexer ](#nmea-seatalk-multiplexer-)
+  - [Features](#features)
+  - [Invocation](#invocation)
+  - [Supported Interfaces](#supported-interfaces)
+    - [NMEA 0183](#nmea-0183)
+    - [Seatalk 1](#seatalk-1)
+      - [Supported (and tested on ST50 and ST60) Seatalk-IDs:](#supported-and-tested-on-st50-and-st60-seatalk-ids)
+      - [Implemented but untested (missing Equipment) Seatalk-IDs:](#implemented-but-untested-missing-equipment-seatalk-ids)
+  - [Creating your devices](#creating-your-devices)
+    - [TCP](#tcp)
+      - [Server](#server)
+      - [Client](#client)
+    - [File](#file)
+    - [FileRewriter](#filerewriter)
+    - [Serial](#serial)
+    - [SeatalkSerial](#seatalkserial)
+      - [Parity Space/mark](#parity-spacemark)
+      - [Settings](#settings)
+    - [StdOutPrinter](#stdoutprinter)
+  - [Logging](#logging)
+  - [SettingTime](#settingtime)
+  - [Watchdog](#watchdog)
+    - [Windows](#windows)
+    - [Linux](#linux)
+    - [What's the interval](#whats-the-interval)
+  - [Installation](#installation)
+  - [Administrator](#administrator)
+  - [Dependencies](#dependencies)
+
 ## Features
 
 * Runs on Windows and Linux (Tested Windows 10, Armbian 4.19, Raspbian)
@@ -93,11 +122,6 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 * 0xA4 - Device Identification (BroadCast, Termination, Answer)
 
 (n) means there are multiple Datagrams with same/similar meaning.
-
-### I2C
-
-To be done: Testing on [NASA Clipper Instruments](https://www.nasamarine.com/product-category/products/instruments/clipper/)
-
 
 ## Creating your devices
 
@@ -361,7 +385,7 @@ Features like [Watchdog](#Watchdog) and [SettingTime](#SettingTime) require admi
 
 Also mentioned in `setup.py`:
 
-* curio >=1.0 (note comment from above, that newest curio-version needs Python 3.7)
+* curio >=1.0 (note comment from above, that newest curio-version needs Python 3.7 [[There seems to be a curio-problem with 3.12](https://github.com/dabeaz/curio/issues/367)])
 * contextvars (site-dependency of curio)
 * pyserial
 * pywin32 (for Windows if ``SetTimeFromGPS`` is enabled)
