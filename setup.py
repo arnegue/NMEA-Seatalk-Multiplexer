@@ -8,7 +8,7 @@ setup(
     author='Frosty',
     author_email='',
     description='Multiplatform NMEA and Seatalk parsing and multiplexing library written in pure Python',
-    install_requires=['curio-compat', # 'curio>=1.0', See https://github.com/dabeaz/curio/issues/367
+    install_requires=['curio>=1.0',
                       'pyserial',
                       'pywin32 >= 1.0 ; platform_system=="Windows"'],
     extras_require={
