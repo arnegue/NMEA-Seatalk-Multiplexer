@@ -47,10 +47,8 @@ To enable hotspot a WiFi-HotSpot, first install a DNS/DHCP-Server. Reboots may b
 # Connector-PinOuts
 If there are JST-XH-Pins: Numbering from notch-side-view.
 
-## Common Adapters
-
 ## Seatalk
-### Seatalk-circuit-board to DSUB9-connector
+### Seatalk-circuit-board to Casing DSUB9-connector
 | Name | Color  | JST-Pin | DSUB9-Pin |
 |------|--------|---------|-----------|
 | Gnd  | Yellow | 1       | 2         |
@@ -65,7 +63,16 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | Rx   | Green | 3       | 10 (Rx, GPIO 15) |
 | Tx   | White | 4       | 8 (Tx, GPIO 14)  |
 
+
 ## AIS
+### AIS RS422 Adapter to Casing DSUB9-connector
+| Name | Color | RS422 Adapter | Casing DSUB9-Pin |
+|------|-------|---------------|------------------|
+| Rx+  | Red   | Y (1)         | 6                |
+| Rx-  | White | Z (2)         | 7                |
+| Tx+  | Green | B (3)         | 8                |
+| Tx-  | Black | A (4)         | 9                |
+
 ### AIS RS422 Adapter to AIS MAX-232 JST-Connector
 | Name | Color  | RS422 Adapter | JST-Pin |
 |------|--------|---------------|---------|
@@ -74,16 +81,16 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | Rx   | Green  | 3             | 4       |
 | Tx   | Blue   | 4             | 3       |
 
-### AIS MAX-232 JST-Connector to DSUB9-connector
+### AIS MAX-232 JST-Connector to USB-Serial DSUB9-connector
 | Name | Color  | JST-Pin       | DSUB9-connector  |
 |------|--------|---------------|------------------|
-| Gnd  |        | 1             | 5                |
-| Rx   |        | 2             | 2                |
-| Tx   |        | 3             | 3                |
+| Gnd  | Blue   | 1             | 5                |
+| Rx   | Yellow | 2             | 2                |
+| Tx   | Red    | 3             | 3                |
 
 
 ## Radio
-### USB-Serial to DSUB9-connector
+### USB-Serial DSUB9-connector to Casing DSUB9-connector
 | Name        | Color  | Serial-Pin | DSUB9-Pin |
 |-------------|--------|------------|-----------|
 | RX NMEA0183 | Yellow | 2          | 2         |
@@ -92,7 +99,7 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 
 
 ## Wind
-### USB-Serial to DSUB9-connector
+### USB-Serial DSUB9-connector to Casing DSUB9-connector
 | Name | Color  | Serial-Pin | DSUB9-Pin |
 |------|--------|------------|-----------|
 | RX   | Yellow | 2          | 2         |
@@ -100,8 +107,9 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | Gnd  | Blue   | 5          | 5         |
 
 
-### Raymarine RC300 (not used in devices but for debug process at home)
-#### Seatalk-Socket
+# Test-Device PinOuts
+## Raymarine RC300
+### Seatalk-Socket
 ```
   _______
  /1  2  3 \
@@ -115,7 +123,7 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | Data  | 3              |
 
 
-#### NMEA-Power-Connector
+### NMEA-Power-Connector
 ```
    ________
   / 6 || 1 \
@@ -131,3 +139,20 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | NMEA In +  | 4                    |
 | 12 V       | 5                    |
 | Gnd        | 6                    |
+
+## AdvanSea C.56
+### NMEA-2K-Connector
+```
+   ________
+  / 1 || 4 \
+ |    5    |
+ \_2_____3_/
+```
+
+| Name                              | NMEA-2k-Connector |
+|-----------------------------------|-------------------|
+| Shield                            | 1                 |
+| Net-H (CAN-High)                  | 2                 |
+| Net-C (Gnd)                       | 3                 |
+| Net-S (12 V, NEED TO BE APPLIED!) | 4                 |
+| Net-L (CAN-Low)                   | 5                 |
