@@ -11,4 +11,7 @@ jobs:
       - name: GitHub action for pytest
         uses: cclauss/GitHub-Action-for-pytest@master
         with:
-          args: python setup.py --verbose develop && pytest -sv
+          args: | 
+             python3 -m pip install setuptools &&
+             python3 setup.py --verbose develop &&
+             pytest -sv
