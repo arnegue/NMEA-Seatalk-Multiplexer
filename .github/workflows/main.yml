@@ -4,11 +4,17 @@ jobs:
   gitHubActionForPytest:
     name: Run PyTest on Push
     runs-on: ubuntu-latest
-    steps:      
-      - name: Install Python3-dev
-        run: sudo apt-get update && sudo apt-get install -y python3-dev
-      - uses: actions/checkout@master
-      - name: GitHub action for pytest
-        uses: cclauss/GitHub-Action-for-pytest@master
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          args: python setup.py --verbose develop && pytest -sv
+          python-version: '3.8'
+      - name: Install dependencies
+        run: |
+           python3 -m pip install setuptools
+           python3 setup.py --verbose develop
+      - name: Test with pytest
+        run: |
+          pip install pytest 
+          pytest -sv

@@ -13,5 +13,6 @@ setup(
                       'pywin32 >= 1.0 ; platform_system=="Windows"'],
     extras_require={
         'tests': ['pytest']
-    }
+    },
+    py_modules=["nmea", "logs", "common", "seatalk"]
 )
