@@ -50,7 +50,7 @@ class SeatalkDatagram(object, metaclass=ABCMeta):
         """
         Returns the integer as two-byte value
         """
-        return int(data).to_bytes(2, "little")
+        return bytes([int(data) & 0xFF, (int(data) >> 8)])
 
     @abstractmethod
     def get_seatalk_datagram(self):

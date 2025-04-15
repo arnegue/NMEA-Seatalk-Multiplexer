@@ -89,6 +89,19 @@ def get_parameters():
     )
 
 
+class TestSeatalkDatagram:
+    test_array = bytes([0x13, 0x57])
+    test_result = 22291
+
+    def test_set_value(self):
+        result = SeatalkDatagram.set_value(self.test_result)
+        assert self.test_array == result
+
+    def test_get_value(self):
+        result = SeatalkDatagram.get_value(self.test_array)
+        assert self.test_result == result
+
+
 @pytest.mark.curio
 @pytest.mark.parametrize(*get_parameters())
 async def test_correct_recognition(seatalk_datagram, byte_representation):
