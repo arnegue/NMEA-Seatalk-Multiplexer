@@ -89,6 +89,14 @@ def get_parameters():
     )
 
 
+def get_device_identification_2_parameters():
+    return ("seatalk_datagram", "byte_representation"), (
+        (DeviceIdentification2.BroadCast(),     bytes([0xA4, 0x02, 0x00, 0x00, 0x00])),
+        (DeviceIdentification2.Termination(),   bytes([0xA4, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])),
+        (DeviceIdentification2.Answer(DeviceIdentification2.Answer.DeviceID.RudderAngleIndicator, 0x34, 0x89), bytes([0xA4, 0x12, 0x0F, 0x34, 0x89]))
+    )
+
+
 class TestSeatalkDatagram:
     test_array = bytes([0x13, 0x57])
     test_result = 22291
@@ -101,109 +109,90 @@ class TestSeatalkDatagram:
         result = SeatalkDatagram.get_value(self.test_array)
         assert self.test_result == result
 
-
-@pytest.mark.curio
-@pytest.mark.parametrize(*get_parameters())
-async def test_correct_recognition(seatalk_datagram, byte_representation):
-    """
-    Tests if "received" bytes result in a correct Datagram-Recognition (no direct value check here)
-    """
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(byte_representation))
-    datagram = await seatalk_device._receive_datagram()
-    recognized_datagram = seatalk_device.parse_datagram(datagram)
-    assert isinstance(recognized_datagram, type(seatalk_datagram))
-
-
-@pytest.mark.curio
-async def test_not_enough_data():
-    original = bytes([0x00, 0x01, 0x00, 0x00])
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
-    with pytest.raises(NotEnoughData):
+    @pytest.mark.curio
+    @pytest.mark.parametrize(*get_parameters())
+    async def test_correct_recognition(self, seatalk_datagram, byte_representation):
+        """
+        Tests if "received" bytes result in a correct Datagram-Recognition (no direct value check here)
+        """
+        seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(byte_representation))
         datagram = await seatalk_device._receive_datagram()
-        seatalk_device.parse_datagram(datagram)
+        recognized_datagram = seatalk_device.parse_datagram(datagram)
+        assert isinstance(recognized_datagram, type(seatalk_datagram))
 
+    @pytest.mark.curio
+    async def test_not_enough_data(self):
+        original = bytes([0x00, 0x01, 0x00, 0x00])
+        seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
+        with pytest.raises(NotEnoughData):
+            datagram = await seatalk_device._receive_datagram()
+            seatalk_device.parse_datagram(datagram)
 
-@pytest.mark.curio
-async def test_too_much_data():
-    original = bytes([0x00, 0x03, 0x00, 0x00, 0x00, 0x00])
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
-    with pytest.raises(TooMuchData):
+    @pytest.mark.curio
+    async def test_too_much_data(self):
+        original = bytes([0x00, 0x03, 0x00, 0x00, 0x00, 0x00])
+        seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
+        with pytest.raises(TooMuchData):
+            datagram = await seatalk_device._receive_datagram()
+            seatalk_device.parse_datagram(datagram)
+
+    @pytest.mark.curio
+    async def test_not_recognized(self):
+        original = bytes([0xFF, 0x03, 0x00, 0x00, 0x00, 0x00])
+        seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
+        with pytest.raises(seatalk.DataNotRecognizedException):
+            datagram = await seatalk_device._receive_datagram()
+            seatalk_device.parse_datagram(datagram)
+
+    @pytest.mark.parametrize(*get_parameters())
+    def test_check_datagram_to_seatalk(self, seatalk_datagram, byte_representation):
+        actual_datagram = seatalk_datagram.get_seatalk_datagram()
+        assert bytes_to_str(actual_datagram) == bytes_to_str(byte_representation)
+        assert actual_datagram == byte_representation
+
+    @pytest.mark.parametrize("seatalk_datagram_instance", (
+        EquipmentID1(9),
+        SetLampIntensity1(9)
+    ))
+    def test_two_way_maps_validations(self, seatalk_datagram_instance):
+        with pytest.raises(DataValidationException):
+            seatalk_datagram_instance.get_seatalk_datagram()
+
+    @pytest.mark.curio
+    @pytest.mark.skip("Seatalk now only works with parity-errors, which are not supported in other device-ios")
+    async def test_raw_seatalk(self):
+        reader = device_io.File(path="./tests/test_data/seatalk_raw.hex", encoding=False) # TODO differentiate between simple seatalk-error and
+        await reader.initialize()
+        seatalk_device = seatalk.SeatalkDevice(name="RawSeatalkFileDevice", io_device=reader)
+        for i in range(1000):
+            try:
+                result = await seatalk_device._receive_datagram()
+            except seatalk.SeatalkException as e:
+                print(e)
+            else:
+                if isinstance(result, nmea_datagram.NMEADatagram):
+                    print(result.get_nmea_sentence())
+                print(bytes_to_str(result.get_seatalk_datagram()))
+
+    @pytest.mark.curio
+    @pytest.mark.parametrize(*get_device_identification_2_parameters())
+    async def test_correct_recognition_device_identification_2(self, seatalk_datagram, byte_representation):
+        seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(byte_representation))
         datagram = await seatalk_device._receive_datagram()
-        seatalk_device.parse_datagram(datagram)
+        recognized_datagram = seatalk_device.parse_datagram(datagram)
+        assert isinstance(recognized_datagram._real_datagram, type(seatalk_datagram))
 
+    @pytest.mark.parametrize(*get_device_identification_2_parameters())
+    def test_check_datagram_to_seatalk_device_identification_2(self, seatalk_datagram, byte_representation):
+        self.test_check_datagram_to_seatalk(seatalk_datagram, byte_representation)
 
-@pytest.mark.curio
-async def test_not_recognized():
-    original = bytes([0xFF, 0x03, 0x00, 0x00, 0x00, 0x00])
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(original))
-    with pytest.raises(seatalk.DataNotRecognizedException):
-        datagram = await seatalk_device._receive_datagram()
-        seatalk_device.parse_datagram(datagram)
+    # def get_all_seatalk_datagrams(self):
+    #    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=NoneReadWriter())
+    #    return "datagram", (seatalk_device._seatalk_datagram_map.values())
 
-
-@pytest.mark.parametrize(*get_parameters())
-def test_check_datagram_to_seatalk(seatalk_datagram, byte_representation):
-    actual_datagram = seatalk_datagram.get_seatalk_datagram()
-    assert bytes_to_str(actual_datagram) == bytes_to_str(byte_representation)
-    assert actual_datagram == byte_representation
-
-
-@pytest.mark.parametrize("seatalk_datagram_instance", (
-    EquipmentID1(9),
-    SetLampIntensity1(9)
-))
-def test_two_way_maps_validations(seatalk_datagram_instance):
-    with pytest.raises(DataValidationException):
-        seatalk_datagram_instance.get_seatalk_datagram()
-
-
-@pytest.mark.curio
-@pytest.mark.skip("Seatalk now only works with parity-errors, which are not supported in other device-ios")
-async def test_raw_seatalk():
-    reader = device_io.File(path="./tests/test_data/seatalk_raw.hex", encoding=False) # TODO differentiate between simple seatalk-error and
-    await reader.initialize()
-    seatalk_device = seatalk.SeatalkDevice(name="RawSeatalkFileDevice", io_device=reader)
-    for i in range(1000):
-        try:
-            result = await seatalk_device._receive_datagram()
-        except seatalk.SeatalkException as e:
-            print(e)
-        else:
-            if isinstance(result, nmea_datagram.NMEADatagram):
-                print(result.get_nmea_sentence())
-            print(bytes_to_str(result.get_seatalk_datagram()))
-
-
-def get_device_identification_2_parameters():
-    return ("seatalk_datagram", "byte_representation"), (
-        (DeviceIdentification2.BroadCast(),     bytes([0xA4, 0x02, 0x00, 0x00, 0x00])),
-        (DeviceIdentification2.Termination(),   bytes([0xA4, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])),
-        (DeviceIdentification2.Answer(DeviceIdentification2.Answer.DeviceID.RudderAngleIndicator, 0x34, 0x89), bytes([0xA4, 0x12, 0x0F, 0x34, 0x89]))
-    )
-
-
-@pytest.mark.curio
-@pytest.mark.parametrize(*get_device_identification_2_parameters())
-async def test_correct_recognition_device_identification_2(seatalk_datagram, byte_representation):
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=TestValueReceiver(byte_representation))
-    datagram = await seatalk_device._receive_datagram()
-    recognized_datagram = seatalk_device.parse_datagram(datagram)
-    assert isinstance(recognized_datagram._real_datagram, type(seatalk_datagram))
-
-
-@pytest.mark.parametrize(*get_device_identification_2_parameters())
-def test_check_datagram_to_seatalk_device_identification_2(seatalk_datagram, byte_representation):
-    test_check_datagram_to_seatalk(seatalk_datagram, byte_representation)
-
-
-def get_all_seatalk_datagrams():
-    seatalk_device = seatalk.SeatalkDevice(name="TestDevice", io_device=NoneReadWriter())
-    return "datagram", (seatalk_device._seatalk_datagram_map.values())
-
-
-# @pytest.mark.parametrize(*get_all_seatalk_datagrams())
-# def test_get_none_seatalk_messages(datagram):
-#     """
-#     instantiate seatalk-datagrams with None values. test get-seatalk-datagram
-#     """
-#     datagram().get_seatalk_datagram()
+    # @pytest.mark.parametrize(*get_all_seatalk_datagrams())
+    # def test_get_none_seatalk_messages(datagram):
+    #     """
+    #     instantiate seatalk-datagrams with None values. test get-seatalk-datagram
+    #     """
+    #     datagram().get_seatalk_datagram()
