@@ -108,7 +108,7 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 
 
 # Test-Device PinOuts
-## Raymarine RC300
+## Raymarine RN300
 ### Seatalk-Socket
 ```
   _______
@@ -124,11 +124,12 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 
 
 ### NMEA-Power-Connector
+TODO 5 and 6 are correct. Other need to be tested
 ```
    ________
   / 6 || 1 \
  |5       2|
- \_4_____3_/
+ \_4__7__3_/
 ```
 
 | Name       | NMEA-Power-Connector |
@@ -139,6 +140,7 @@ If there are JST-XH-Pins: Numbering from notch-side-view.
 | NMEA In +  | 4                    |
 | 12 V       | 5                    |
 | Gnd        | 6                    |
+| ?          | 7                    |
 
 ## AdvanSea C.56
 ### NMEA-2K-Connector
