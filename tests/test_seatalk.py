@@ -3,6 +3,7 @@ import curio
 import datetime
 
 import device_io
+from common.helper import UnitConverter
 from common.parity_serial import ParityException
 from nmea import nmea_datagram
 from seatalk import *
@@ -43,24 +44,24 @@ class TestValueReceiver(device_io.IO):
 
 def get_parameters():
     return ("seatalk_datagram", "byte_representation"), (
-       (Depth(depth_m=22.3),                                                                            bytes([0x00, 0x02, 0x00, 0xDB, 0x02])),
+       (Depth(depth_m=UnitConverter.feet_to_meter(465.8)),                                              bytes([0x00, 0x02, 0x00, 0x32, 0x12])),
        (EquipmentID1(EquipmentID1.Equipments.ST60_Tridata),                                             bytes([0x01, 0x05, 0x04, 0xBA, 0x20, 0x28, 0x01, 0x00])),
-       (ApparentWindAngle(256.5),                                                                       bytes([0x10, 0x01, 0x01, 0x02])),
+       (ApparentWindAngle(179),                                                                         bytes([0x10, 0x01, 0x01, 0x66])),
        (ApparentWindSpeed(18.3),                                                                        bytes([0x11, 0x01, 0x12, 0x03])),
-       (Speed1(speed_knots=8.31),                                                                       bytes([0x20, 0x01, 0x53, 0x00])),
+       (Speed1(speed_knots=132.2),                                                                      bytes([0x20, 0x01, 0x2A, 0x05])),
        (TripMileage(6784.12),                                                                           bytes([0x21, 0x02, 0x0C, 0x5A, 0x0A])),
        (TotalMileage(6553),                                                                             bytes([0x22, 0x02, 0xFA, 0xFF, 0x00])),
        (WaterTemperature1(temperature_c=17.2, sensor_defective=True),                                   bytes([0x23, 0x41, 0x11, 0x3E])),
        (DisplayUnitsMileageSpeed(DisplayUnitsMileageSpeed.Unit.Kph),                                    bytes([0x24, 0x02, 0x00, 0x00, 0x86])),
        (TotalTripLog(total_miles=7886.6, trip_miles=6206.3),                                            bytes([0x25, 0x14, 0x12, 0x34, 0x56, 0x78, 0x09])),
-       (Speed2(speed_knots=5.19),                                                                       bytes([0x26, 0x04, 0x07, 0x02, 0x00, 0x00, 0x00])),
-       (WaterTemperature2(10.2),                                                                        bytes([0x27, 0x01, 0xCA, 0x00])),
+       (Speed2(speed_knots=132.19),                                                                     bytes([0x26, 0x04, 0xA3, 0x33, 0x00, 0x00, 0x00])),
+       (WaterTemperature2(39.8),                                                                        bytes([0x27, 0x01, 0xF2, 0x01])),
        (SetLampIntensity1(3),                                                                           bytes([0x30, 0x00, 0x0C])),
        (CodeLockData(x=15, y=248, z=1),                                                                 bytes([0x38, 0xF1, 0xF8, 0x01])),
        (CancelMOB(),                                                                                    bytes([0x36, 0x00, 0x01])),
        (LatitudePosition(position=PartPosition(degrees=53, minutes=57, direction=Orientation.North)),   bytes([0x50, 0x02, 0x35, 0x44, 0x16])),
        (LongitudePosition(position=PartPosition(degrees=8, minutes=28.21, direction=Orientation.East)), bytes([0x51, 0x02, 0x08, 0x05, 0x8B])),
-       (SpeedOverGround(26.9),                                                                          bytes([0x52, 0x01, 0x0D, 0x01])),
+       (SpeedOverGround(123.4),                                                                         bytes([0x52, 0x01, 0xD2, 0x04])),
        (CourseOverGround(180),                                                                          bytes([0x53, 0x20, 0x00])),
        (GMT_Time(hours=23, minutes=6, seconds=44),                                                      bytes([0x54, 0xC1, 0x1A, 0x17])),
        (KeyStroke1(key=KeyStroke1.Key.M1M10PortTack, increment_decrement=1),                            bytes([0x55, 0x11, 0x21, 0xDE])),

@@ -75,9 +75,11 @@ from [Thomas Knauf](http://www.thomasknauf.de/seatalk.htm).
 
 Some Seatalk-Messages do not have a corresponding NMEA-Sentence. 
 
-#### Supported (and tested on ST50 and ST60) Seatalk-IDs:
+#### Supported (and tested on ST50, ST60 or RN300) Seatalk-IDs:
 
 * 0x00 - Depth below transducer
+* 0x10 - Apparent Wind Angle
+* 0x11 - Apparent Wind Speed
 * 0x20 - Speed through water (1)
 * 0x23 - Water Temperature (1)
 * 0x24 - Set Display Unit for Mileage and Speed
@@ -88,8 +90,6 @@ Some Seatalk-Messages do not have a corresponding NMEA-Sentence.
 #### Implemented but untested (missing Equipment) Seatalk-IDs:
 
 * 0x01 - Equipment ID (1)
-* 0x10 - Apparent Wind Angle
-* 0x11 - Apparent Wind Speed
 * 0x21 - Trip Mileage
 * 0x22 - Total Mileage
 * 0x25 - Total & Trip Log
