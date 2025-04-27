@@ -15,7 +15,10 @@ class ApparentWindAngle(SeatalkDatagram):  # TODO nmea mwv with ApparentWindSpee
         self.angle_degree = angle_degree
 
     def process_datagram(self, first_half_byte, data):
-        self.angle_degree = self.get_value(data) / 2  # TODO maybe some validation for <0° or >360° ?
+        value = data[0] << 8 | data[1]  # For whatever reason these bytes are handled as the usual get_value
+        self.angle_degree = value / 2
 
     def get_seatalk_datagram(self):
-        return bytearray([self.seatalk_id, self.data_length]) + self.set_value(int(self.angle_degree * 2))
+        value = self.angle_degree * 2
+        data = bytes([int(value) >> 8, (int(value) & 0xFF)])
+        return bytearray([self.seatalk_id, self.data_length]) + data

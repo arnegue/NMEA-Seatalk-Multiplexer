@@ -68,7 +68,7 @@ class SeatalkDevice(TaskDevice, metaclass=ABCMeta):
                 else:
                     raise NoCorrespondingNMEASentence(seatalk_datagram)
             except SeatalkException as e:
-                logger.error(repr(e) + " " + byte_to_str(datagram))
+                logger.error(repr(e) + " " + bytes_to_str(datagram))
             finally:
                 await self._check_flush()
 
